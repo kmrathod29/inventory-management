@@ -41,7 +41,7 @@ Only works with electron version 38.7.0!
 
    ```bash
    git clone https://github.com/kmrathod29/inventory-management.git
-   cd inventory-manager
+   cd inventory-management
    ```
 
 2. Install dependencies:
