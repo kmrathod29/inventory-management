@@ -1,0 +1,317 @@
+.product-list-container {
+  height: 100%;
+  width: 100%;
+}
+
+.inventory-edit-toggle.active {
+  background: var(--button-primary);
+  color: var(--primary-foreground);
+}
+
+.products-list {
+  height: 100%;
+  overflow-y: auto;
+  padding: 24px 28px;
+  background: var(--background-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.table-products {
+  width: 100%;
+  min-width: 860px;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.table-products .product-column {
+  width: 18%;
+}
+
+.table-products .base-column {
+  width: 14%;
+}
+
+.table-products .bucket-column {
+  width: 12%;
+}
+
+.table-products .price-column {
+  width: 14%;
+}
+
+.table-products .stock-column {
+  width: 10%;
+}
+
+.table-products .actions-column {
+  width: 4%;
+}
+
+.inventory-row {
+  user-select: none;
+}
+.product-row td {
+  border-top: 2px solid var(--border-color);
+}
+.base-row td {
+  color: var(--color-muted);
+}
+.size-row {
+  cursor: default;
+}
+.inline-edit-input {
+  width: 100%;
+  min-width: 70px;
+  box-sizing: border-box;
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  padding: 4px 6px;
+  background: var(--background-primary);
+  color: var(--color-primary);
+}
+.selection-rectangle {
+  position: fixed;
+  z-index: 5;
+  pointer-events: none;
+  border: 1px solid rgba(59, 130, 246, 0.65);
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.bulk-actions-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--background-secondary);
+  color: var(--color-primary);
+}
+
+.bulk-actions-toolbar strong {
+  margin-right: auto;
+}
+
+.bulk-actions-toolbar button {
+  cursor: pointer;
+}
+
+.bulk-actions-toolbar button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-danger {
+  border: 1px solid var(--danger);
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: var(--danger);
+  color: white;
+}
+
+.bulk-update-dialog {
+  width: min(420px, calc(100vw - 32px));
+}
+
+.bulk-update-dialog h2 {
+  margin-top: 0;
+}
+
+.bulk-update-dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+  color: var(--color-primary);
+}
+
+.bulk-update-dialog input {
+  min-height: 36px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0 10px;
+  background: var(--background-primary);
+  color: var(--color-primary);
+}
+.low-stocks-message {
+  color: var(--danger);
+  font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS", sans-serif;
+  font-size: 10px;
+  display: inline;
+  margin-left: 20px;
+  padding: 5px;
+}
+
+.table-products thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--background-secondary);
+  color: var(--color-secondary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 11px 14px;
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table-products thead th.th-data {
+  cursor: pointer;
+}
+
+.table-products thead th.th-data:hover {
+  background: var(--background-tertiary);
+  border-radius: 10px;
+}
+
+.table-products thead th.is-sorted {
+  color: var(--color-primary);
+}
+
+.sort-indicator {
+  display: inline-block;
+  width: 1.1em;
+  margin-left: 6px;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+.table-products tbody td {
+  color: var(--color-primary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 13px 14px;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.table-products tbody td.selected-row-cell {
+  background: rgba(59, 130, 246, 0.15);
+  transition: background 0.14s;
+}
+
+.table-products tbody td.target-hover {
+  background: var(--background-secondary);
+}
+
+.table-products tbody td.target-hover.selected-row-cell {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.table-products tbody tr.size-row:hover > td.size-data-cell:not(.selected-row-cell) {
+  background: var(--background-secondary);
+}
+.edit-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-secondary);
+  font-size: 14px;
+}
+
+.edit-btn:hover {
+  color: var(--color-primary);
+}
+
+.base-remove-button {
+  margin-left: 8px;
+}
+
+.inventory-add-mode-dialog {
+  width: min(520px, calc(100vw - 32px));
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--background-primary);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  margin: auto;
+}
+
+.inventory-add-mode-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.inventory-add-mode-content {
+  position: relative;
+  padding: 28px;
+}
+
+.inventory-add-mode-content h2 {
+  margin: 0 32px 8px 0;
+  font-size: 20px;
+}
+
+.inventory-add-mode-content p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.inventory-add-mode-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  border: 0;
+  background: transparent;
+  color: var(--color-muted);
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.inventory-add-mode-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.inventory-add-mode-actions button {
+  min-height: 44px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--background-secondary);
+  color: var(--color-primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.inventory-add-mode-actions button:hover {
+  border-color: var(--primary);
+}
+
+.inventory-add-mode-actions button:last-child {
+  border-color: var(--button-primary);
+  background: var(--button-primary);
+  color: var(--primary-foreground);
+}
+
+.inventory-add-mode-remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  color: var(--color-muted);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+@media (max-width: 420px) {
+  .inventory-add-mode-content {
+    padding: 24px 18px;
+  }
+
+  .inventory-add-mode-actions {
+    grid-template-columns: 1fr;
+  }
+}

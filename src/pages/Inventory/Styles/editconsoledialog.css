@@ -1,0 +1,184 @@
+dialog.edit-console {
+  width: 940px;
+  border: none;
+  border-radius: 12px;
+  padding: 0;
+  background: var(--background-primary);
+  color: var(--color-primary);
+  justify-self: center;
+  align-self: center;
+}
+
+dialog.edit-console::backdrop {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.edit-console-body {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+}
+
+.left-side {
+  padding: 1.25rem;
+  border-right: 1px solid var(--border-color);
+}
+.dialog-body{
+  color: var(--color-primary);
+}
+
+.product-image-placeholder {
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--background-secondary);
+  border: 1px dashed var(--color-muted);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-muted);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.variant-table {
+  width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+  color: var(--color-primary);
+}
+
+.variant-table th {
+  font-weight: 400;
+  text-align: left;
+  color: var(--color-muted);
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.variant-table td {
+  padding: 4px 0;
+}
+
+.right-side {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.right-side input,
+.right-side select {
+  width: 100%;
+  height: 36px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0 10px;
+  font-size: 13px;
+  box-sizing: border-box;
+  background: var(--background-primary);
+  color: var(--color-primary);
+}
+
+.base-size-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.field-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 6px 0;
+}
+
+.btn-update,
+.btn-add {
+  height: 38px;
+  background: var(--button-primary);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+}
+.confirm-btn{
+  color: var(--color-primary);
+}
+.btn-update:hover,
+.btn-add:hover {
+  background: var(--button-primary-hover);
+}
+.base-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.base-input-row input {
+  width: 25%;
+  flex-shrink: 0;
+}
+
+.btn-add-base {
+  flex: 1;
+  padding: 8px 12px;
+  background-color: var(--button-primary);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  max-width: 100px;
+}
+.btn-add-base:hover{
+    background-color: var(--button-primary-hover);
+}
+
+.base-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0;
+}
+
+.base-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.base-chip button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+
+}
+.variant-input-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+}
+
+.variant-input-table th {
+  font-size: 12px;
+  color: var(--color-secondary);
+  text-align: left;
+  padding: 4px;
+}
+
+.variant-input-table td {
+  padding: 4px;
+}
+
+.variant-input-table input {
+  width: 100%;
+  box-sizing: border-box;
+}

@@ -1,0 +1,261 @@
+/* Global Dialog and Button Styles */
+
+/* ── Buttons ── */
+.btn-primary {
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: none;
+  background: var(--button-primary);
+  color: var(--primary-foreground);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s;
+  white-space: nowrap;
+}
+
+.btn-primary:hover {
+  background: var(--button-primary-hover);
+}
+
+.btn-secondary {
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--background-secondary);
+  color: var(--color-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s;
+  white-space: nowrap;
+}
+
+.btn-secondary:hover {
+  background: var(--button-secondary-hover);
+  border-color: var(--button-primary);
+}
+
+/* ── Dialog Overlay and Container ── */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog {
+  background: var(--background-primary);
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dialog-small {
+  max-width: 450px;
+  width: 450px;
+}
+
+/* ── Dialog Header ── */
+.dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.dialog-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--color-primary);
+}
+
+.dialog-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--color-secondary);
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.dialog-close:hover {
+  background: var(--background-secondary);
+  color: var(--color-primary);
+}
+
+/* ── Dialog Body ── */
+.dialog-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 28px;
+}
+
+.dialog-section {
+  margin-bottom: 24px;
+}
+
+.dialog-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-secondary);
+  margin: 0 0 12px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── Dialog Footer ── */
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 28px;
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+  background: var(--background-secondary);
+}
+
+/* ── Form Fields ── */
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.field-full {
+  grid-column: 1 / -1;
+}
+
+.field label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--color-primary);
+}
+
+.field input,
+.field select,
+.field textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--background-primary);
+  color: var(--color-primary);
+  font-size: 0.875rem;
+  font-family: inherit;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--button-primary);
+  background: var(--background-primary);
+}
+
+.field input:disabled,
+.field select:disabled {
+  background: var(--background-secondary);
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+
+/* ── Remove/Delete Button ── */
+.btn-remove-row {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 1.5rem;
+  padding: 4px 8px;
+  transition: color 0.2s;
+}
+
+.btn-remove-row:hover {
+  color: var(--destructive);
+}
+
+/* ── Confirm Button ── */
+.confirm-btn {
+  min-width: 100px;
+}
+
+/* ── Tables ── */
+.bill-products-table,
+.products-table,
+.expenses-table,
+.sales-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.bill-products-table thead tr,
+.products-table thead tr,
+.expenses-table thead tr,
+.sales-table thead tr {
+  background: var(--background-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.bill-products-table th,
+.products-table th,
+.expenses-table th,
+.sales-table th {
+  padding: 11px 14px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-secondary);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.bill-products-table td,
+.products-table td,
+.expenses-table td,
+.sales-table td {
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--color-primary);
+  vertical-align: middle;
+}
+
+.bill-products-table tbody tr:hover,
+.products-table tbody tr:hover,
+.expenses-table tbody tr:hover,
+.sales-table tbody tr:hover {
+  background: var(--background-secondary);
+}

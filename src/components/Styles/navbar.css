@@ -1,0 +1,73 @@
+
+
+/* From Uiverse.io by Madflows */
+.header {
+  display: flex;
+  height: 60px;
+  width: 100%;
+  background: var(--background-secondary);
+  align-items: center;
+  padding: 0 20px;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.searchbar {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  width: 100%;
+  align-items: center;
+}
+
+.search-wrapper {
+  position: relative;
+  width: 80%;
+  margin: 0 auto;
+}
+
+.search-input {
+  width: 100%;
+  background-color: var(--background-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--color-primary);
+  height: 36px;
+  border-radius: 10px;
+  font-size: 15px;
+  padding: 0 15px 0 36px;
+  box-sizing: border-box;
+}
+
+.search-input::placeholder {
+  color: var(--color-muted);
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  color: var(--color-muted);
+  pointer-events: none;
+}
+
+.nav-add-item-btn {
+    margin: auto;
+    margin-left: 10px;
+    width: 130px;
+    border: none;
+    cursor: pointer;
+    background: var(--button-primary);
+    color: var(--primary-foreground);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 13.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background-color 0.15s ease;
+}

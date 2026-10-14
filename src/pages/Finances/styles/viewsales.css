@@ -1,0 +1,110 @@
+.view-sales {
+  border: 1px solid var(--border-color);
+  margin: 1rem;
+  border-radius: 10px;
+  background-color: var(--background-secondary);
+  display: flex;
+  flex-direction: column;
+  height: max-content;
+  
+}
+.sales-top {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  height: 44px;
+  padding: 10px;
+  color: var(--color-primary);
+}
+.switch-btns {
+  display: flex;
+  background: var(--background-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  gap: 2px;
+}
+.switch-viewing-btn {
+  border: none;
+  background: transparent;
+  padding: 4px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--color-muted);
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+.switch-viewing-btn:hover {
+  color: var(--color-secondary);
+}
+
+.switch-viewing-btn-active {
+  background: var(--button-primary);
+  color: var(--primary-foreground);
+}
+
+.switch-viewing-btn-active:hover {
+  background: var(--button-primary-hover);
+}
+.switch-viewing-btn-custom{
+      display: flex;
+  align-items: center;
+  justify-content: center; 
+  line-height: 1;
+}
+.sales-overview-table{
+    border: 1px solid var(--border-color);
+    height: 100%;
+    margin: 5px;
+    border-radius: 10px;
+}
+.no-items{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--color-secondary);
+    height: 100%;
+}
+.sales-table-container {
+    margin-top: 1px;
+    overflow-y: scroll;
+}
+
+.sales-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    
+}
+
+.sales-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: var(--background-tertiary);
+    color: var(--color-primary);
+    border: 1px solid var(--border-secondary);
+    border-radius: 5px;
+    padding: 10px 15px;
+    text-align: left;
+}
+.empty-th{
+    width: 130px;
+    padding: 30px;
+}
+
+.sales-table tbody td {
+    color: var(--color-primary);
+    border: 1px solid var(--border-tertiary);
+    border-top: none;
+    padding: 5px 15px;
+}
+.details-btn{
+    background: none;
+    border: none;
+    color: var(--color-primary);
+    cursor: pointer;
+}
+

@@ -1,0 +1,103 @@
+.finance-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 20px;
+  background: var(--background-secondary);
+  border-bottom: 1px solid var(--border-color);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.finance-header-left {
+  display: flex;
+  flex-direction: row;
+  color: var(--color-primary);
+  gap: 1px;
+}
+
+.finance-header-eyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--button-primary);
+}
+
+.analytics-h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-primary);
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.sub-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  padding: 0 20px;
+  background: var(--background-tertiary);
+  border-bottom: 1px solid var(--border-color);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sub-header-label {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+.add-expenses-btn {
+  flex: 1;
+  padding: 8px 12px;
+  background-color: var(--button-primary);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  max-width: 120px;
+}
+.add-expenses-btn:hover {
+  background-color: var(--button-primary-hover);
+}
+
+.tab-switcher {
+  display: flex;
+  background: var(--background-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.tab-btn {
+  border: none;
+  background: transparent;
+  padding: 4px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--color-muted);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.tab-btn:hover {
+  color: var(--color-secondary);
+}
+
+.tab-btn.tab-active {
+  background: var(--button-primary);
+  color: var(--primary-foreground);
+}
+
+.tab-btn.tab-active:hover {
+  background: var(--button-primary-hover);
+}

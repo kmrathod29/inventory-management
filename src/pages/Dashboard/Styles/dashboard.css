@@ -1,0 +1,193 @@
+.products-container {
+    width: 100%;
+    min-height: 100%;
+    height: auto;
+    background: var(--background-primary);
+}
+
+.product-grid {
+    max-width: 1600px;
+    margin: 0px auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 18px;
+    padding: 10px 20px;
+}
+
+/* ── Single product card: vertical emphasis ── */
+.product-card {
+    background: var(--background-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    width: 250px;
+    min-height: 340px;
+    transition: border-color 0.15s ease;
+}
+
+.product-card:hover {
+    border-color: var(--color-muted);
+}
+
+.image-wrapper {
+    background: var(--background-secondary);
+    border-bottom: 1px solid var(--border-color);
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.product-img {
+    width: 70%;
+    height: 70%;
+    object-fit: contain;
+}
+
+.product-info {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    padding: 12px 14px 14px;
+    gap: 10px;
+}
+
+.product-name {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--color-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    align-self: flex-start;
+}
+
+.product-sku {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    color: var(--color-muted);
+    margin: -6px 0 0;
+}
+
+.price-block {
+    display: flex;
+    flex-direction: column;
+    justify-self: flex-start;
+    gap: 5px;
+    font-family: "JetBrains Mono", monospace;
+    padding-top: 4px;
+    border-top: 1px solid var(--border-color);
+    align-self: flex-start;
+    width: 100%;
+}
+
+.price-line {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    font-size: 13px;
+}
+
+.price-label {
+    color: var(--color-secondary);
+    font-family: "Inter", sans-serif;
+    font-size: 12px;
+}
+
+.price-value {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--color-secondary);
+}
+
+.add-item-btn {
+    margin-top: auto;
+    width: 100%;
+    border: none;
+    cursor: pointer;
+    background: var(--button-primary);
+    color: var(--primary-foreground);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 13.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background-color 0.15s ease;
+}
+
+.add-item-btn:hover {
+    background: var(--button-primary-hover);
+}
+
+.add-item-btn:focus-visible {
+    outline: 2px solid var(--info);
+    outline-offset: 2px;
+}
+
+.add-item-btn svg {
+    width: 15px;
+    height: 15px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .product-card,
+    .add-item-btn {
+        transition: none;
+    }
+}
+
+
+.bucket-selector-p {
+    display: block;
+    width: 100%;
+    color: var(--color-primary);
+    font-size: 10px;
+}
+
+.bucket-selector {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding-top: 2px;
+        align-self: flex-start;
+
+}
+
+.bucket-pill {
+    border: 1px solid var(--border-color);
+    background: var(--button-secondary);
+    color: var(--color-primary);
+    border-radius: 6px;
+    padding: 4px 9px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.bucket-pill:hover {
+    background: var(--button-secondary-hover);
+}
+
+.bucket-pill-active {
+    background: var(--button-primary);
+    border-color: var(--button-primary);
+    color: var(--primary-foreground);
+}
+
+.bucket-pill-active:hover {
+    background: var(--button-primary-hover);
+}

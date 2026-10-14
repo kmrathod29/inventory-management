@@ -1,0 +1,135 @@
+.nepali-date-picker {
+  position: relative;
+  width: 100%;
+}
+
+.nepali-date-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+  background: var(--background-primary);
+  color: var(--color-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nepali-date-trigger:hover:not(:disabled) {
+  border-color: var(--ring);
+}
+
+.nepali-date-trigger:focus-visible,
+.nepali-calendar-header button:focus-visible,
+.nepali-calendar-day:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.nepali-date-trigger:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.nepali-date-trigger svg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  color: var(--color-muted);
+}
+
+.nepali-date-calendar {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  z-index: 1200;
+  width: min(300px, calc(100vw - 48px));
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--background-primary);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-lg);
+}
+
+.nepali-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.nepali-calendar-header strong {
+  font-size: 0.9rem;
+}
+
+.nepali-calendar-header button {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--background-secondary);
+  color: var(--color-primary);
+  font: inherit;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.nepali-calendar-header button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.nepali-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  text-align: center;
+}
+
+.nepali-calendar-weekday {
+  padding: 5px 0;
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.nepali-calendar-day {
+  min-width: 0;
+  aspect-ratio: 1;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-primary);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.nepali-calendar-day:hover {
+  background: var(--background-secondary);
+}
+
+.nepali-calendar-day.today {
+  border-color: var(--ring);
+}
+
+.nepali-calendar-day.selected,
+.nepali-calendar-day.selected:hover {
+  border-color: var(--button-primary);
+  background: var(--button-primary);
+  color: var(--primary-foreground);
+}
+
+.nepali-date-unavailable {
+  color: var(--color-muted);
+  font-size: 0.8rem;
+}
