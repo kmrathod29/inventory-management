@@ -34,6 +34,7 @@ export function validateProduct(product) {
 
   const name = normalizeText(product.name);
   assert(name.length > 0, "Product name is required.");
+  const category = normalizeText(product.category, "General");
 
   const variants = Array.isArray(product.variants) ? product.variants : [];
   const bases = Array.isArray(product.bases) ? product.bases : [];
@@ -80,6 +81,7 @@ export function validateProduct(product) {
     ...product,
     id: normalizeText(product.id, ""),
     name,
+    category,
     images: product.images ?? "",
     variants: nextVariants,
     bases: nextBases,
@@ -143,14 +145,13 @@ export function validateBillPayload(customerId, bill) {
     };
   });
 
-  let expectedTotal = computedTotal;
-  let invoiceData = null;
+  let invoiceData = bill.invoiceData && typeof bill.invoiceData === "object"
+    ? bill.invoiceData
+    : {};
+  const discount = parseRequiredNumber(invoiceData.discount ?? 0, "Invoice discount", { min: 0 });
+  assert(discount <= computedTotal, "Invoice discount cannot exceed the item subtotal.");
+  let expectedTotal = computedTotal - discount;
   if (billType === "vat") {
-    invoiceData = bill.invoiceData && typeof bill.invoiceData === "object"
-      ? bill.invoiceData
-      : {};
-    const discount = parseRequiredNumber(invoiceData.discount ?? 0, "Invoice discount", { min: 0 });
-    assert(discount <= computedTotal, "Invoice discount cannot exceed the item subtotal.");
     const taxableAmount = computedTotal - discount;
     assert(
       normalizeText(invoiceData.vatPercent ?? "13").length > 0,
@@ -188,7 +189,7 @@ export function validateBillPayload(customerId, bill) {
     billType,
     panNumber: normalizeText(bill.panNumber ?? bill.pan_number ?? ""),
     billNumber: normalizeText(bill.billNumber ?? bill.bill_number ?? ""),
-    invoiceData,
+    invoiceData: { ...invoiceData, discount, subtotal: computedTotal, grandTotal: expectedTotal },
   };
 }
 

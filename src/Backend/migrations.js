@@ -148,6 +148,36 @@ const migrations = [
       }
     },
   },
+  {
+    version: 5,
+    up(db) {
+      const tableExists = db.prepare(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'products'",
+      ).get();
+      if (!tableExists) return;
+      const productColumns = db.prepare("PRAGMA table_info(products)").all();
+      if (!productColumns.some((column) => column.name === "category")) {
+        db.exec("ALTER TABLE products ADD COLUMN category TEXT NOT NULL DEFAULT 'General'");
+      }
+    },
+  },
+  {
+    version: 6,
+    up(db) {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS inventory_stock_history (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          product_id TEXT NOT NULL,
+          action TEXT NOT NULL,
+          quantity REAL NOT NULL,
+          previous_stock REAL NOT NULL,
+          new_stock REAL NOT NULL,
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (product_id) REFERENCES products(id)
+        );
+      `);
+    },
+  },
 ];
 
 export function migrateDatabase(db) {

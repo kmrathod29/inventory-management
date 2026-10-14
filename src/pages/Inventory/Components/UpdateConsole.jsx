@@ -31,6 +31,7 @@ export function UpdateConsole({ product, setProduct }) {
     await handleAsync(async () => {
       await window.db.editProduct(product.id, {
         name,
+        category: product.category || product.bases[0]?.name || "General",
         images: product.images,
         variants: product.variants.map((v) =>
           v.id === selectedVariant

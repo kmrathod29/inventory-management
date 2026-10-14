@@ -1,231 +1,117 @@
-import { useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useResolvedImage } from "../../../hooks/resolvedImage.js";
 import { useToast } from "../../../hooks/ToastContext.jsx";
-import { BUCKET_SIZES } from "../../../utils/constants.js";
 import { useErrorHandler } from "../../../hooks/useErrorHandler";
 
-export function AddConsole() {
-    const showToast = useToast();
-    const { handleAsync } = useErrorHandler();
-  const [name, setName] = useState("");
-  const [baseInput, setBaseInput] = useState("");
-  const [basesList, setBasesList] = useState([]);
-  const [image, setImage] = useState("");
+export function AddConsole({ product, setProduct }) {
+  const showToast = useToast();
+  const { handleAsync } = useErrorHandler();
+  const [name, setName] = useState(product?.name || "");
+  const [category, setCategory] = useState(product?.category || product?.bases?.[0]?.name || "");
+  const [categories, setCategories] = useState([]);
+  const [image, setImage] = useState(product?.images || "");
+  const [landing, setLanding] = useState(String(product?.variants?.[0]?.landing ?? ""));
+  const [selling, setSelling] = useState(String(product?.variants?.[0]?.sales ?? ""));
+  const [stock, setStock] = useState(String(product?.bases?.reduce((total, base) => total + (base.stocks || []).reduce((sum, value) => sum + Number(value || 0), 0), 0) ?? ""));
   const [isSaving, setIsSaving] = useState(false);
   const resolvedImage = useResolvedImage(image);
 
-  // Keyboard shortcut support
-  const baseInputRef = useRef(null);
-
-  const [rows, setRows] = useState(
-    BUCKET_SIZES.reduce((acc, size) => {
-      acc[size] = { landing: "", mp: "", sales: "", stock: "" };
-      return acc;
-    }, {}),
-  );
-
-  function updateRow(size, field, value) {
-    setRows((prev) => ({
-      ...prev,
-      [size]: { ...prev[size], [field]: value },
-    }));
-  }
-
-  function handleAddBase() {
-    const trimmed = baseInput.trim();
-    if (!trimmed) return;
-    if (basesList.includes(trimmed)) {
-      showToast("This base is already in the list.");
-      return;
-    }
-    setBasesList((prev) => [...prev, trimmed]);
-    setBaseInput("");
-  }
-
-  function handleRemoveBase(base) {
-    setBasesList((prev) => prev.filter((b) => b !== base));
-  }
+  useEffect(() => {
+    let cancelled = false;
+    window.db.getProducts().then((products) => {
+      if (cancelled) return;
+      setCategories([...new Set(products.map((product) => product.category || product.bases?.[0]?.name || "General"))].sort());
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   async function handlePickImage() {
-    const filePath = await handleAsync(
-      () => window.db.pickImage(),
-      "Failed to pick image"
-    );
+    const filePath = await handleAsync(() => window.db.pickImage(), "Failed to pick image");
     if (!filePath) return;
-    const relativePath = await handleAsync(
-      () => window.db.copyImage(filePath),
-      "Failed to copy image"
-    );
-    if (relativePath) {
-      setImage(relativePath);
-    }
+    const relativePath = await handleAsync(() => window.db.copyImage(filePath), "Failed to copy image");
+    if (relativePath) setImage(relativePath);
   }
 
-  async function handleAdd() {
+  async function handleAdd(event) {
+    event.preventDefault();
     if (isSaving) return;
-
-    const filledRows = BUCKET_SIZES.filter((size) => {
-      const r = rows[size];
-      return r.landing !== "" && r.mp !== "" && r.sales !== "";
-    });
-
-    if (!name || basesList.length === 0 || filledRows.length === 0) {
-      showToast(
-        "Please enter a product name, add at least one base, and fill in at least one size row.",
-      );
+    const values = [landing, selling, stock].map(Number);
+    if (!name.trim() || !category.trim() || values.some((value) => !Number.isFinite(value) || value < 0)) {
+      showToast("Enter product name, category, valid prices, and stock quantity.", "error");
       return;
     }
-
     setIsSaving(true);
     const success = await handleAsync(
-      () => window.db.saveInventoryProduct({
-        name,
+      () => product ? window.db.editProduct(product.id, {
+        id: product.id,
+        name: name.trim(),
+        category: category.trim(),
         images: image,
-        variants: filledRows.map((size) => ({
-          bucket_size: size,
-          landing: parseFloat(rows[size].landing),
-          sales: parseFloat(rows[size].sales),
-          mp: parseFloat(rows[size].mp),
+        variants: product.variants.map((variant, index) => ({
+          ...variant,
+          landing: index === 0 ? values[0] : variant.landing,
+          sales: index === 0 ? values[1] : variant.sales,
         })),
-        bases: basesList.map((baseName) => ({
-          name: baseName,
-          stocks: filledRows.map((size) => parseFloat(rows[size].stock || 0)),
+        bases: product.bases.map((base, baseIndex) => ({
+          ...base,
+          stocks: base.stocks.map((value, index) => baseIndex === 0 && index === 0 ? values[2] : value),
         })),
+      }) : window.db.saveInventoryProduct({
+        name: name.trim(),
+        category: category.trim(),
+        images: image,
+        variants: [{ bucket_size: 1, landing: values[0], sales: values[1], mp: values[1] }],
+        bases: [{ name: category.trim(), stocks: [values[2]] }],
       }),
-      "Failed to add product and stock",
+      "Failed to add product",
     );
     setIsSaving(false);
-
     if (!success) return;
-
-    showToast("Added successfully!");
-    setBasesList([]);
-    setRows(
-      BUCKET_SIZES.reduce((acc, size) => {
-        acc[size] = { landing: "", mp: "", sales: "", stock: "" };
-        return acc;
-      }, {}),
-    );
+    showToast(product ? "Product updated successfully." : "Product added successfully.", "success");
+    if (product) {
+      const updated = await window.db.getProducts();
+      setProduct?.(updated.find((item) => item.id === product.id) || product);
+      document.querySelector(".edit-console")?.close();
+      return;
+    }
+    setName("");
+    setCategory("");
+    setImage("");
+    setLanding("");
+    setSelling("");
+    setStock("");
   }
 
   return (
-    <div className="edit-console-body">
-      <div className="left-side">
-        <h4 style={{ fontWeight: 500, margin: "0 0 4px" }}>Add an Item</h4>
-        <div
-          className="product-image-placeholder"
-          onClick={handlePickImage}
-          style={{ cursor: "pointer" }}
-        >
-          <img
-            src={resolvedImage}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              borderRadius: 8,
-            }}
-          />
-        </div>
-      </div>
-
-      <div className="right-side">
-        <input
-          type="text"
-          placeholder="Product name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-
-        <div className="base-input-row">
-          <input
-            ref={baseInputRef}
-            type="text"
-            placeholder="Base (e.g. AC1)"
-            value={baseInput}
-            onChange={(e) => setBaseInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || (e.shiftKey && e.key === "Enter")) {
-                e.preventDefault();
-                handleAddBase();
-              }
-            }}
-          />
-          <button
-            type="button"
-            className="btn-add-base"
-            onClick={handleAddBase}
-          >
-            Add base
+    <form className="inventory-add-form" onSubmit={handleAdd}>
+      <h2>{product ? "Edit Product" : "Add Product"}</h2>
+      <p className="inventory-add-form-subtitle">{product ? "Update product details, prices and stock." : "Add a product with its price and available stock."}</p>
+      <div className="inventory-add-form-grid">
+        <label className="inventory-add-field inventory-add-field-full">
+          Product Name
+          <input value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Ultratech Cement 50kg" autoFocus required />
+        </label>
+        <label className="inventory-add-field">
+          Category
+          <input list="inventory-category-options" value={category} onChange={(event) => setCategory(event.target.value)} placeholder="Select or type a category" required />
+          <datalist id="inventory-category-options">{categories.map((item) => <option key={item} value={item} />)}</datalist>
+          <small>New categories are saved and available next time.</small>
+        </label>
+        <div className="inventory-add-field">
+          Image <span className="inventory-optional">(Optional)</span>
+          <button type="button" className="inventory-image-picker" onClick={handlePickImage}>
+            <span className="inventory-image-preview">{resolvedImage ? <img src={resolvedImage} alt="Product preview" /> : <i className="ti ti-photo-plus" />}</span>
+            <span>{image ? "Change image" : "Choose image"}</span>
           </button>
         </div>
-
-        {basesList.length > 0 && (
-          <div className="base-chip-list">
-            {basesList.map((b) => (
-              <span key={b} className="base-chip">
-                {b}
-                <button type="button" onClick={() => handleRemoveBase(b)}>
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
-
-        <div className="field-divider"></div>
-
-        <table className="variant-input-table">
-          <thead>
-            <tr>
-              <th>Size</th>
-              <th>Landing</th>
-              <th>MP</th>
-              <th>Sales</th>
-              <th>Stock</th>
-            </tr>
-          </thead>
-          <tbody>
-            {BUCKET_SIZES.map((size) => (
-              <tr key={size}>
-                <td>{size}</td>
-                <td>
-                  <input
-                    type="number"
-                    value={rows[size].landing}
-                    onChange={(e) => updateRow(size, "landing", e.target.value)}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={rows[size].mp}
-                    onChange={(e) => updateRow(size, "mp", e.target.value)}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={rows[size].sales}
-                    onChange={(e) => updateRow(size, "sales", e.target.value)}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={rows[size].stock}
-                    onChange={(e) => updateRow(size, "stock", e.target.value)}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <button className="btn-add" onClick={handleAdd} disabled={isSaving}>
-          {isSaving ? "Saving..." : "Add as new"}
-        </button>
+        <label className="inventory-add-field">Landing Price (₹)<input type="number" min="0" step="any" value={landing} onChange={(event) => setLanding(event.target.value)} placeholder="0.00" required /></label>
+        <label className="inventory-add-field">Selling Price (₹)<input type="number" min="0" step="any" value={selling} onChange={(event) => setSelling(event.target.value)} placeholder="0.00" required /></label>
+        <label className="inventory-add-field">Stock Quantity<input type="number" min="0" step="any" value={stock} onChange={(event) => setStock(event.target.value)} placeholder="0" required /><small>0 = Out of Stock, below 10 = Low Stock.</small></label>
       </div>
-    </div>
+      <div className="inventory-add-form-actions">
+        <button type="button" className="btn-secondary" onClick={() => document.querySelector(".edit-console")?.close()}>Cancel</button>
+        <button type="submit" className="btn-primary" disabled={isSaving}>{isSaving ? "Saving..." : product ? "Save Changes" : "Add Product"}</button>
+      </div>
+    </form>
   );
 }

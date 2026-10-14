@@ -1,6 +1,7 @@
 import "./Styles/sidebar.css";
 import { useState } from "react";
 import { Link, useLocation } from "react-router";
+import dipaliLogo from "../../Dipali_Logo.png";
 
 const navLinks = [
   {
@@ -10,17 +11,12 @@ const navLinks = [
     path: "/",
   },
   { id: "inventory", label: "Inventory", icon: "ti-box", path: "/inventory" },
-  { id: "billing", label: "Billing", icon: "ti-box", path: "/billing" },
-  { id: "finances", label: "Finances", icon: "ti-receipt", path: "/finances" },
-  {
-    id: "analytics",
-    label: "Analytics",
-    icon: "ti-chart-bar",
-    path: "/analytics",
-  },
+  { id: "history", label: "History", icon: "ti-history", path: "/billing" },
+  { id: "new-bills", label: "New Bills", icon: "ti-file-invoice", path: "/billing/new" },
+  { id: "reports", label: "Reports", icon: "ti-chart-bar", path: "/reports" },
 ];
 
-export function SideBar({ isDark }) {
+export function SideBar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
 
@@ -29,9 +25,8 @@ export function SideBar({ isDark }) {
       <div className={`sidebar ${collapsed ? "collapsed" : ""}`}>
         <div className="logo-area">
           <div className="logo-icon">
-            <img src={isDark ? "logo-white.png" : "logo-dark.png"} alt="StockWise logo" />
+            <img src={dipaliLogo} alt="Dipali Traders logo" />
           </div>
-          <span className="logo-name">StockWise</span>
         </div>
 
         <div className="nav-links">

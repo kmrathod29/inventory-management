@@ -85,7 +85,7 @@ export function BillDialog({
   const vatAmount = vatTaxableAmount * vatPercent / 100;
   const billTotal = form.billType === "vat"
     ? vatTaxableAmount + vatAmount
-    : totalPurchased;
+    : Math.max(0, totalPurchased - vatDiscount);
   const amountPaidNum = parseFloat(form.amountPaid) || 0;
   const amountDue = Math.max(0, billTotal - amountPaidNum);
   const status = computeStatus(billTotal, amountPaidNum);
@@ -154,7 +154,7 @@ export function BillDialog({
   }
 
   async function handleSave() {
-    if (isSaving) return;
+    if (isSaving) return false;
 
     if (form.billType === "vat") {
       const validationErrors = validateInvoiceDraft({
@@ -172,26 +172,26 @@ export function BillDialog({
       setInvoiceErrors(validationErrors);
       if (Object.keys(validationErrors).length > 0) {
         showToast("Review the highlighted VAT invoice fields.", "error");
-        return;
+        return false;
       }
     }
 
     const customerName = form.name.trim() || "Unknown";
     const customerPhone = form.phone.trim() || "0";
-    if(isNew && customers.find((customer) => customer.name === customerName && customer.phone === customerPhone) ){
+    if (isNew && !form.customerId && customers.find((customer) => customer.name === customerName && customer.phone === customerPhone)) {
       showToast("The user already exists!");
-      return;
+      return false;
     }
     
     
 
     if (form.products.length === 0) {
       showToast("Please add at least one product.", "error");
-      return;
+      return false;
     }
     if (amountPaidNum > billTotal) {
       showToast("Amount paid cannot exceed the bill total.", "error");
-      return;
+      return false;
     }
 
     const submittedItems = form.billType === "vat"
@@ -200,15 +200,15 @@ export function BillDialog({
           priceAtSale: item.priceAtSale ?? item.costPrice,
         }))
       : form.products;
-    const finalInvoice = form.billType === "vat"
-      ? {
-          ...invoice,
-          discount: vatDiscount,
-          tax: vatAmount,
-          taxableAmount: vatTaxableAmount,
-          vatPercent,
-        }
-      : null;
+    const finalInvoice = {
+      ...invoice,
+      invoiceNumber: invoice.invoiceNumber || "",
+      buyerGstin: invoice.buyerGstin || "",
+      discount: vatDiscount,
+      subtotal: totalPurchased,
+      grandTotal: billTotal,
+      ...(form.billType === "vat" ? { tax: vatAmount, taxableAmount: vatTaxableAmount, vatPercent } : {}),
+    };
     const billPayload = {
       date: form.date,
       paymentMethod: form.paymentMethod,
@@ -236,7 +236,11 @@ export function BillDialog({
       };
 
       if (isNew) {
-        await window.db.addCustomerBill(customer, billPayload);
+        if (form.customerId) {
+          await window.db.addBillToCustomer(form.customerId, customer, billPayload);
+        } else {
+          await window.db.addCustomerBill(customer, billPayload);
+        }
       } else {
         await window.db.editCustomerBill(form.customerId, customer, form.id, billPayload);
       }
@@ -265,8 +269,10 @@ export function BillDialog({
           : "Bill saved, but VAT invoice defaults could not be updated.",
         invoiceDefaultsSaved ? "success" : "error",
       );
+      return true;
     } catch (error) {
       showToast(error?.message || "Failed to save bill. Your changes are still available.", "error");
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -465,6 +471,156 @@ export function BillDialog({
     );
   }
 
+  if (form.billType === "default") {
+    function selectCustomer(event) {
+      const customer = customers.find((item) => item.name === event.target.value);
+      if (!customer) {
+        setForm((current) => ({ ...current, customerId: undefined, name: event.target.value }));
+        return;
+      }
+      setForm((current) => ({
+        ...current,
+        customerId: customer.id,
+        name: customer.name,
+        phone: customer.phone || "",
+        address: customer.address || "",
+        notes: customer.notes || "",
+      }));
+      const customerBill = customer.bills?.at(-1);
+      if (customerBill?.invoice_data) {
+        try {
+          setInvoice((current) => ({ ...current, ...JSON.parse(customerBill.invoice_data) }));
+        } catch {
+          // Ignore malformed historical invoice metadata for the new draft.
+        }
+      }
+    }
+
+    return (
+      <div className="bill-page-shell bill-regular-page-shell">
+        <div className="bill-page-card invoice-card">
+          <header className="invoice-screen-header">
+            <div>
+              <h1>New Bill</h1>
+              <p>Create a new sales invoice</p>
+            </div>
+            <div className="offline-status">
+              <span className="offline-dot" aria-hidden="true" />
+              <span><strong>Offline</strong><small>Data stored locally</small></span>
+            </div>
+          </header>
+
+          <section className="invoice-meta-card">
+            <div className="invoice-meta-row">
+              <div className="invoice-field">
+                <label htmlFor="invoice-number">Invoice No.</label>
+                <input id="invoice-number" value={invoice.invoiceNumber || ""} readOnly />
+              </div>
+              <div className="invoice-field invoice-date-control">
+                <label>Date</label>
+                <GregorianDatePicker value={form.date} onChange={(date) => setForm((current) => ({ ...current, date }))} disabled={locked} />
+              </div>
+            </div>
+            <div className="invoice-meta-row invoice-customer-row">
+              <div className="invoice-field invoice-customer-field">
+                <label htmlFor="customer-name">Customer Name</label>
+                <div className="invoice-input-with-icon">
+                  <i className="ti ti-user" aria-hidden="true" />
+                  <input
+                    id="customer-name"
+                    list="customer-options"
+                    value={form.name || ""}
+                    onChange={selectCustomer}
+                    disabled={locked}
+                    placeholder="Search or select customer..."
+                  />
+                  <i className="ti ti-chevron-down" aria-hidden="true" />
+                </div>
+                <datalist id="customer-options">
+                  {customers.map((customer) => <option key={customer.id} value={customer.name} />)}
+                </datalist>
+              </div>
+              <div className="invoice-field">
+                <label htmlFor="customer-mobile">Mobile No. <span>(Optional)</span></label>
+                <div className="invoice-input-with-icon">
+                  <i className="ti ti-phone" aria-hidden="true" />
+                  <input id="customer-mobile" value={form.phone || ""} onChange={set("phone")} disabled={locked} placeholder="Enter mobile number" />
+                </div>
+              </div>
+              <div className="invoice-field">
+                <label htmlFor="customer-gstin">Customer GSTIN <span>(Optional)</span></label>
+                <input id="customer-gstin" value={invoice.buyerGstin || ""} onChange={(event) => setInvoice((current) => ({ ...current, buyerGstin: event.target.value.toUpperCase() }))} disabled={locked} placeholder="Enter GSTIN" />
+              </div>
+            </div>
+          </section>
+
+          <div className="invoice-workspace">
+            <section className="invoice-products-card">
+              <div className="invoice-section-heading">
+                <h2>Add Products</h2>
+                <button className="invoice-add-product" type="button" onClick={openAddPanel} disabled={locked}>
+                  <i className="ti ti-plus" aria-hidden="true" /> Add New Product
+                </button>
+              </div>
+              <button className="invoice-product-search" type="button" onClick={openAddPanel} disabled={locked}>
+                <i className="ti ti-search" aria-hidden="true" />
+                <span>Search product by name, brand, or SKU...</span>
+              </button>
+              <BillItemsTable
+                items={form.products}
+                isEditing={isEditing}
+                selectedIndex={selectedRow}
+                billDate={form.date}
+                setSelectedIndex={setSelectedIndex}
+                onEdit={handleEditRow}
+                onDelete={handleRemoveProduct}
+                onChangeQty={handleChangeQty}
+              />
+              {form.products.length === 0 && <p className="invoice-empty-products">No products added yet. Use the search field to add the first product.</p>}
+            </section>
+
+            <aside className="invoice-summary-card">
+              <h2>Bill Summary</h2>
+              <div className="invoice-summary-line"><span>Subtotal</span><strong>{formatCurrency(totalPurchased)}</strong></div>
+              <div className="invoice-summary-line invoice-discount-line">
+                <label htmlFor="bill-discount">Discount</label>
+                <NumericMathInput id="bill-discount" className="invoice-discount-input" value={invoice.discount ?? ""} onChange={(value) => setInvoice((current) => ({ ...current, discount: value }))} disabled={locked} placeholder="0.00" />
+              </div>
+              <div className="invoice-grand-total"><span>Grand Total</span><strong>{formatCurrency(billTotal)}</strong></div>
+              <div className="invoice-payment-line">
+                <label htmlFor="bill-amount-paid">Amount Paid</label>
+                <NumericMathInput id="bill-amount-paid" className="invoice-discount-input" value={form.amountPaid ?? ""} onChange={(value) => setForm((current) => ({ ...current, amountPaid: value }))} disabled={locked} placeholder="0.00" />
+              </div>
+              <button className="invoice-save-button" type="button" onClick={async () => { if (await handleSave()) window.print(); }} disabled={isSaving || locked}>
+                <i className="ti ti-printer" aria-hidden="true" />
+                <span><strong>{isSaving ? "Saving..." : "Save and Print"}</strong><small>Save bill, deduct stock and print</small></span>
+              </button>
+              <button className="invoice-secondary-button" type="button" onClick={async () => { if (await handleSave()) window.print(); }}>
+                <i className="ti ti-file-description" aria-hidden="true" /><span><strong>Save PDF</strong><small>Save bill and generate PDF</small></span>
+              </button>
+              <button className="invoice-cancel-button" type="button" onClick={onClose}>
+                <i className="ti ti-circle-x" aria-hidden="true" /><span><strong>Cancel</strong><small>Clear current bill</small></span>
+              </button>
+            </aside>
+          </div>
+        </div>
+
+        {showPanel && (
+          <AddProductPanel
+            ref={panelRef}
+            products={products}
+            usageMap={usageMap}
+            sessionMemory={sessionMemory}
+            initial={panelInitial}
+            onAdd={handleAddItem}
+            onReplace={handleReplaceItem}
+            onClose={() => setShowPanel(false)}
+          />
+        )}
+      </div>
+    );
+  }
+
   const overlayStyle = asPage
     ? {
         padding: "0",
@@ -570,6 +726,32 @@ export function BillDialog({
                   placeholder="98XXXXXXXX"
                 />
               </div>
+              {form.billType === "default" && (
+                <>
+                  <div className="field">
+                    <label htmlFor="invoice-number">Invoice Number</label>
+                    <input
+                      id="invoice-number"
+                      type="text"
+                      value={invoice.invoiceNumber || ""}
+                      onChange={(event) => setInvoice((current) => ({ ...current, invoiceNumber: event.target.value }))}
+                      disabled={locked}
+                      placeholder="Invoice number"
+                    />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="customer-gstin">Customer GSTIN</label>
+                    <input
+                      id="customer-gstin"
+                      type="text"
+                      value={invoice.buyerGstin || ""}
+                      onChange={(event) => setInvoice((current) => ({ ...current, buyerGstin: event.target.value.toUpperCase() }))}
+                      disabled={locked}
+                      placeholder="Optional GSTIN"
+                    />
+                  </div>
+                </>
+              )}
               <div className="field field-full">
                 <label>Address</label>
                 <input
@@ -664,13 +846,28 @@ export function BillDialog({
           </section>
 
           <section className="dialog-section">
-            <p className="section-label">Payment Details</p>
+            <p className="section-label">Invoice Summary</p>
             <div className="payment-summary-card">
               <div className="payment-summary-metric">
-                <span className="payment-summary-label">Total Purchased</span>
+                <span className="payment-summary-label">Subtotal</span>
                 <strong className="payment-summary-value">
                   {formatCurrency(totalPurchased)}
                 </strong>
+              </div>
+              <div className="payment-summary-metric">
+                <label className="payment-summary-label" htmlFor="bill-discount">Discount</label>
+                <NumericMathInput
+                  id="bill-discount"
+                  className="payment-summary-input"
+                  value={invoice.discount ?? ""}
+                  onChange={(value) => setInvoice((current) => ({ ...current, discount: value }))}
+                  disabled={locked}
+                  placeholder="0"
+                />
+              </div>
+              <div className="payment-summary-metric">
+                <span className="payment-summary-label">Grand Total</span>
+                <strong className="payment-summary-value">{formatCurrency(billTotal)}</strong>
               </div>
               <div className="payment-summary-metric payment-summary-paid">
                 <label className="payment-summary-label" htmlFor="bill-amount-paid">

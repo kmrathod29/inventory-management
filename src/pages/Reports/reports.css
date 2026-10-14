@@ -1,0 +1,35 @@
+.reports-page {
+  min-height: 100%;
+  position: relative;
+}
+
+.reports-switcher {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--background-primary);
+}
+
+.reports-switcher button {
+  min-width: 92px;
+  padding: 7px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--background-secondary);
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.reports-switcher button.active {
+  border-color: var(--button-primary);
+  background: var(--button-primary);
+  color: var(--primary-foreground);
+}

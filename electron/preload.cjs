@@ -10,12 +10,15 @@ const DATA_MUTATION_CHANNELS = new Set([
   "db:updateProducts",
   "db:updateVariantPrice",
   "db:updateBaseStock",
+  "db:addStockToProduct",
+  "db:getInventoryStockHistory",
   "db:addVariant",
   "db:addBase",
   "db:addBaseStock",
   "db:addCustomer",
   "db:addBill",
   "db:addCustomerBill",
+  "db:addBillToCustomer",
   "db:editCustomerBill",
   "db:deleteCustomer",
   "db:deleteBill",
@@ -70,6 +73,10 @@ contextBridge.exposeInMainWorld("db", {
     invoke("db:updateVariantPrice", productId, baseId, sizeId, field, value),
   updateBaseStock: (productId, baseId, sizeId, value) =>
     invoke("db:updateBaseStock", productId, baseId, sizeId, value),
+  addStockToProduct: (productId, quantity) =>
+    invoke("db:addStockToProduct", productId, quantity),
+  getInventoryStockHistory: (productId) =>
+    invoke("db:getInventoryStockHistory", productId),
   getProductByName: (name) => invoke("db:getProductByName", name),
   getVariantBySize: (productId, bucketSize) =>
     invoke("db:getVariantBySize", productId, bucketSize),
@@ -95,6 +102,8 @@ contextBridge.exposeInMainWorld("db", {
   addBill: (customerId, bill) =>
     invoke("db:addBill", customerId, bill),
   addCustomerBill: (customer, bill) => invoke("db:addCustomerBill", customer, bill),
+  addBillToCustomer: (customerId, customer, bill) =>
+    invoke("db:addBillToCustomer", customerId, customer, bill),
   editCustomerBill: (customerId, customer, billId, bill) =>
     invoke("db:editCustomerBill", customerId, customer, billId, bill),
   getCustomers: () => invoke("db:getCustomers"),

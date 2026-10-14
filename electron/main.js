@@ -49,6 +49,7 @@ import {
   restorePortableDatabase,
   saveInventoryProductChanges,
   addCustomerBill,
+  addBillToCustomer,
   editCustomerBill,
   getAppSettings,
   setLocalDataDirectory,
@@ -62,6 +63,8 @@ import {
   updateProducts,
   updateVariantPrice,
   updateBaseStock,
+  addStockToProduct,
+  getInventoryStockHistory,
   createProfile,
   switchProfile,
   setDefaultProfilePassword,
@@ -193,6 +196,12 @@ app.whenReady().then(() => {
   ipcMain.handle("db:updateBaseStock", (_, productId, baseId, sizeId, value) =>
     updateBaseStock(productId, baseId, sizeId, value),
   );
+  ipcMain.handle("db:addStockToProduct", (_, productId, quantity) =>
+    addStockToProduct(productId, quantity),
+  );
+  ipcMain.handle("db:getInventoryStockHistory", (_, productId) =>
+    getInventoryStockHistory(productId),
+  );
   ipcMain.handle("db:editProduct", (_, id, product) =>
     editProduct(id, product),
   );
@@ -222,6 +231,9 @@ app.whenReady().then(() => {
     addBill(customerId, bill),
   );
   ipcMain.handle("db:addCustomerBill", (_, customer, bill) => addCustomerBill(customer, bill));
+  ipcMain.handle("db:addBillToCustomer", (_, customerId, customer, bill) =>
+    addBillToCustomer(customerId, customer, bill),
+  );
   ipcMain.handle("db:editCustomerBill", (_, customerId, customer, billId, bill) =>
     editCustomerBill(customerId, customer, billId, bill),
   );

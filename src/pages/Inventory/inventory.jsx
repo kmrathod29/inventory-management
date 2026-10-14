@@ -1,22 +1,18 @@
 import "./Styles/inventory.css";
-import { NavBar } from "../../components/navbar";
-import { ProductsTable } from "./Components/ProductsTable";
-import { useState, useEffect } from "react";
+import { EditConsole } from "./Components/EditConsole";
+import { InventoryProductsTable } from "./Components/InventoryProductsTable";
+import { AddStockDialog } from "./Components/AddStockDialog";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { useErrorHandler } from "../../hooks/useErrorHandler";
-import { NewImportExpensePage } from "../Finances/Components/NewImportExpensePage";
-import { getBusinessDateISO } from "../../utils/regional";
 import { useDataChanged } from "../../hooks/useDataChanged";
 
 export function InventoryPage() {
-  const isInventoryPage = true;
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
-  const [showBillAddPage, setShowBillAddPage] = useState(false);
-  const [billDraft, setBillDraft] = useState({
-    nameOfExpense: "Inventory import",
-    date: getBusinessDateISO(),
-  });
-  const [editMode, setEditMode] = useState(false);
+  const [category, setCategory] = useState("All Categories");
+  const [status, setStatus] = useState("All Status");
+  const addDialogRef = useRef(null);
+  const [showStockDialog, setShowStockDialog] = useState(false);
   const { handleAsync } = useErrorHandler();
 
   async function fetchProducts() {
@@ -47,52 +43,54 @@ export function InventoryPage() {
 
   useDataChanged(fetchProducts);
 
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
-  );
-
   function handleSearchChange(value) {
     setSearch(value);
   }
 
-  if (showBillAddPage) {
-    return (
-      <NewImportExpensePage
-        nameOfExpense={billDraft.nameOfExpense}
-        setNameOfExpense={(nameOfExpense) =>
-          setBillDraft((current) => ({ ...current, nameOfExpense }))
-        }
-        date={billDraft.date}
-        setDate={(date) => setBillDraft((current) => ({ ...current, date }))}
-        draftKey="inventory"
-        onCancel={() => setShowBillAddPage(false)}
-        onSaved={() => {
-          setShowBillAddPage(false);
-          fetchProducts();
-        }}
-      />
-    );
+  const summaries = useMemo(() => products.map((product) => ({
+    category: product.category || product.bases?.[0]?.name || "General",
+    stock: (product.bases || []).reduce((total, base) => total + (base.stocks || []).reduce((sum, value) => sum + Number(value || 0), 0), 0),
+  })), [products]);
+  const categories = ["All Categories", ...new Set(summaries.map((product) => product.category))];
+  const totalProducts = products.length;
+  const inStock = summaries.filter((product) => product.stock >= 10).length;
+  const lowStock = summaries.filter((product) => product.stock > 0 && product.stock < 10).length;
+  const outOfStock = summaries.filter((product) => product.stock <= 0).length;
+
+  function openAddProduct() {
+    addDialogRef.current?.showModal();
   }
 
   return (
-    <>
-      <div className="product-list-container">
-        <NavBar
-          isInventoryPage={isInventoryPage}
-          fetchProducts={fetchProducts}
-          search={search}
-          setSearch={handleSearchChange}
-          onStartBillAdd={() => setShowBillAddPage(true)}
-          editMode={editMode}
-          onToggleEditMode={() => setEditMode((current) => !current)}
-        />
-        <ProductsTable
-          key={editMode ? "edit-mode" : "read-mode"}
-          products={filteredProducts}
-          fetchProducts={fetchProducts}
-          editMode={editMode}
-        />
-      </div>
-    </>
+    <div className="inventory-page">
+      <header className="inventory-page-header">
+        <div>
+          <h1>Inventory</h1>
+          <p>Manage products, prices and available stock</p>
+        </div>
+        <button type="button" className="inventory-add-stock-button" onClick={() => setShowStockDialog(true)}><i className="ti ti-plus" /> Add Stock</button>
+        <div className="inventory-offline-status"><span /> <strong>Offline</strong><small>Data stored locally</small></div>
+      </header>
+
+      <main className="inventory-content">
+        <section className="inventory-stat-grid" aria-label="Inventory summary">
+          <div className="inventory-stat-card inventory-stat-green"><span className="inventory-stat-icon"><i className="ti ti-package" /></span><div><small>Total Products</small><strong>{totalProducts}</strong></div></div>
+          <div className="inventory-stat-card inventory-stat-blue"><span className="inventory-stat-icon"><i className="ti ti-boxes" /></span><div><small>In Stock</small><strong>{inStock}</strong></div></div>
+          <div className="inventory-stat-card inventory-stat-orange"><span className="inventory-stat-icon"><i className="ti ti-alert-triangle" /></span><div><small>Low Stock</small><strong>{lowStock}</strong></div></div>
+          <div className="inventory-stat-card inventory-stat-red"><span className="inventory-stat-icon"><i className="ti ti-circle-x" /></span><div><small>Out of Stock</small><strong>{outOfStock}</strong></div></div>
+        </section>
+
+        <section className="inventory-controls">
+          <div className="inventory-list-search"><i className="ti ti-search" aria-hidden="true" /><input value={search} onChange={(event) => handleSearchChange(event.target.value)} placeholder="Search product by name, SKU or category..." /></div>
+          <select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="Filter by category">{categories.map((item) => <option key={item}>{item}</option>)}</select>
+          <select value={status} onChange={(event) => setStatus(event.target.value)} aria-label="Filter by status"><option>All Status</option><option>In Stock</option><option>Low Stock</option><option>Out of Stock</option></select>
+          <button className="inventory-add-button" type="button" onClick={openAddProduct}><i className="ti ti-plus" /> Add Product</button>
+        </section>
+
+        <InventoryProductsTable products={products} onRefresh={fetchProducts} search={search} category={category} status={status} />
+      </main>
+      <EditConsole ref={addDialogRef} />
+      {showStockDialog && <AddStockDialog products={products} onSaved={() => { setShowStockDialog(false); fetchProducts(); }} onClose={() => setShowStockDialog(false)} />}
+    </div>
   );
 }

@@ -1,11 +1,10 @@
 // Pages:
 import { DashboardPage } from "./pages/Dashboard/dashboard";
-import { AnalyticsPage } from "./pages/Analytics/analytics";
 import { InventoryPage } from "./pages/Inventory/inventory";
-import { FinancePage } from "./pages/Finances/finance";
+import { ReportsPage } from "./pages/Reports/reports";
 import { SettingsPage } from "./pages/Settings/settings";
 import { SideBar } from "./components/sidebar";
-import { HashRouter, Route, Routes } from "react-router";
+import { HashRouter, Navigate, Route, Routes } from "react-router";
 import "./App.css";
 import "./index.css";
 
@@ -51,8 +50,9 @@ function App() {
         <div className="main-content">
           <Routes>
             <Route path="/" element={<DashboardPage />} />
-            <Route path="/analytics" element={<AnalyticsPage />} />
-            <Route path="/finances" element={<FinancePage />} />
+            <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/finances" element={<Navigate to="/reports" replace />} />
+            <Route path="/analytics" element={<Navigate to="/reports" replace />} />
             <Route path="/inventory" element={<InventoryPage />} />
             <Route
               path="/settings"
@@ -65,6 +65,7 @@ function App() {
               }
             />
             <Route path="/billing" element={<Billing />} />
+            <Route path="/billing/new" element={<Billing initialNewBill />} />
           </Routes>
         </div>
       </div>

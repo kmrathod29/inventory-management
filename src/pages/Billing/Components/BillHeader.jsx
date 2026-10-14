@@ -2,7 +2,7 @@ export function BillHeader({ search, setSearch, openNew }) {
   return (
     <header className="billing-header">
       <div className="header-left">
-        <h1 className="page-title">Billing</h1>
+        <h1 className="page-title">History</h1>
       </div>
       <div className="header-right">
         <input

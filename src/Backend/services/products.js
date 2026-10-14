@@ -13,6 +13,7 @@ import {
   updateInventoryProducts as updateProductsBatch,
   updateVariantPrice as updateVariantPriceRecord,
   updateBaseStock as updateBaseStockRecord,
+  addStockToProduct as addStockToProductRecord,
   deleteInventoryRows as deleteRowsBatch,
   getNextInvoiceNumber as suggestNextInvoiceNumber,
   isInvoiceNumberAvailable as checkInvoiceNumberAvailable,
@@ -93,6 +94,14 @@ function updateVariantPrice(productId, baseId, sizeId, field, value) {
 
 function updateBaseStock(productId, baseId, sizeId, value) {
   return updateBaseStockRecord(ctx.db, productId, baseId, sizeId, value);
+}
+
+function addStockToProduct(productId, quantity) {
+  return addStockToProductRecord(ctx.db, productId, quantity);
+}
+
+function getInventoryStockHistory(productId) {
+  return ctx.db.prepare(`SELECT id, action, quantity, previous_stock, new_stock, created_at FROM inventory_stock_history WHERE product_id = ? ORDER BY created_at DESC, id DESC`).all(productId);
 }
 
 function editProduct(id, product) {
@@ -423,6 +432,8 @@ function importProductsFromExcel(filePath) {
     updateProducts,
     updateVariantPrice,
     updateBaseStock,
+    addStockToProduct,
+    getInventoryStockHistory,
     editProduct,
     getProductByName,
     getVariantBySize,

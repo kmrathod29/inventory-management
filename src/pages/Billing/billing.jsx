@@ -6,8 +6,9 @@ import { useConfirm } from "../../hooks/useConfirm";
 import { useErrorHandler } from "../../hooks/useErrorHandler";
 import { useProductUsage } from "../../hooks/useProductUsage";
 import { useDataChanged } from "../../hooks/useDataChanged";
+import { useNavigate } from "react-router";
 
-export function Billing() {
+export function Billing({ initialNewBill = false }) {
   const [search, setSearch] = useState("");
   const [selectedBill, setSelectedBill] = useState(null);
   const [isNewBill, setIsNewBill] = useState(false);
@@ -16,6 +17,7 @@ export function Billing() {
   const [invoiceDefaults, setInvoiceDefaults] = useState({});
   const { confirm, ConfirmDialogComponent } = useConfirm();
   const { handleAsync } = useErrorHandler();
+  const navigate = useNavigate();
 
   // Frequency/recency map derived from existing bill history (no new API call).
   const usageMap = useProductUsage(customers);
@@ -106,21 +108,36 @@ export function Billing() {
       c.phone.includes(search),
   );
 
-  const openNew = async () => {
-    const appSettings = await handleAsync(
-      () => window.db.getAppSettings(),
-      "Failed to load application defaults",
-    );
-    if (!appSettings) return;
-    setInvoiceDefaults(appSettings.invoiceDefaults || {});
-
-    setSelectedBill({
-      ...emptyBill,
-      paymentMethod: appSettings.defaultPaymentMethod,
-      invoiceDefaults: appSettings.invoiceDefaults || invoiceDefaults,
-    });
-    setIsNewBill(true);
-  };
+  useEffect(() => {
+    if (!initialNewBill || selectedBill) return;
+    let cancelled = false;
+    async function loadNewBill() {
+      const [appSettings, nextInvoiceNumber] = await Promise.all([
+        handleAsync(
+          () => window.db.getAppSettings(),
+          "Failed to load application defaults",
+        ),
+        handleAsync(
+          () => window.db.getNextInvoiceNumber(),
+          "Failed to generate invoice number",
+        ),
+      ]);
+      if (cancelled || !appSettings) return;
+      const defaults = {
+        ...(appSettings.invoiceDefaults || {}),
+        invoiceNumber: nextInvoiceNumber || appSettings.invoiceDefaults?.invoiceNumber || "",
+      };
+      setInvoiceDefaults(defaults);
+      setSelectedBill({
+        ...emptyBill,
+        paymentMethod: appSettings.defaultPaymentMethod,
+        invoiceDefaults: defaults,
+      });
+      setIsNewBill(true);
+    }
+    loadNewBill();
+    return () => { cancelled = true; };
+  }, [initialNewBill, selectedBill, handleAsync, invoiceDefaults]);
 
   const openExisting = (customer) => {
     setSelectedBill({ ...customer, invoiceDefaults });
@@ -128,6 +145,10 @@ export function Billing() {
   };
 
   const closeDialog = () => {
+    if (initialNewBill) {
+      navigate("/billing");
+      return;
+    }
     setSelectedBill(null);
     setIsNewBill(false);
   };
@@ -168,7 +189,7 @@ export function Billing() {
       <div className="billing-page">
         {!selectedBill ? (
           <>
-            <BillHeader search={search} setSearch={setSearch} openNew={openNew} />
+            <BillHeader search={search} setSearch={setSearch} openNew={() => navigate("/billing/new")} />
             <BillTable
               filtered={filtered}
               statusMeta={statusMeta}

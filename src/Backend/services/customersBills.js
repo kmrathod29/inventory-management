@@ -105,6 +105,16 @@ function addCustomerBill(customer, bill) {
   return run();
 }
 
+function addBillToCustomer(customerId, customer, bill) {
+  const normalizedCustomerId = Number(customerId);
+  const run = ctx.db.transaction(() => {
+    editCustomer(normalizedCustomerId, customer);
+    addBill(normalizedCustomerId, bill);
+    return normalizedCustomerId;
+  });
+  return run();
+}
+
 function deleteBill(billId) {
   const bill = ctx.db.prepare(`SELECT id FROM bills WHERE id = ?`).get(billId);
   if (!bill) {
@@ -259,6 +269,7 @@ function getLandingPrice(productName, bucketSize) {
     getCustomers,
     deleteCustomer,
     addCustomerBill,
+    addBillToCustomer,
     deleteBill,
     editCustomer,
     editBill,

@@ -11,10 +11,11 @@ export function saveInventoryProduct(db, product) {
     const productId = existingProduct?.id || validatedProduct.id || randomUUID();
 
     if (!existingProduct) {
-      db.prepare("INSERT INTO products (id, name, images) VALUES (?, ?, ?)").run(
+      db.prepare("INSERT INTO products (id, name, images, category) VALUES (?, ?, ?, ?)").run(
         productId,
         validatedProduct.name,
         validatedProduct.images,
+        validatedProduct.category,
       );
     }
 
@@ -63,6 +64,13 @@ export function saveInventoryProduct(db, product) {
       });
     }
 
+    const stockTotal = validatedProduct.bases.reduce(
+      (total, base) => total + base.stocks.reduce((sum, stock) => sum + stock, 0), 0,
+    );
+    if (stockTotal > 0) {
+      db.prepare(`INSERT INTO inventory_stock_history (product_id, action, quantity, previous_stock, new_stock) VALUES (?, ?, ?, ?, ?)`)
+        .run(productId, existingProduct ? "Stock imported" : "Product created", stockTotal, 0, stockTotal);
+    }
     return productId;
   })();
 }

@@ -1,5 +1,4 @@
 import "../Styles/editconsoledialog.css";
-import { UpdateConsole } from "./UpdateConsole";
 import { AddConsole } from "./AddConsole";
 import { useState, useEffect, forwardRef } from "react";
 
@@ -23,9 +22,9 @@ export const EditConsole = forwardRef((props, ref) => {
   return (
     <dialog ref={ref} className="edit-console">
       {product ? (
-        <UpdateConsole product={product} setProduct={setProduct} />
+        <AddConsole key={product.id} product={product} setProduct={setProduct} />
       ) : (
-        <AddConsole />
+        <AddConsole key="new-product" />
       )}
     </dialog>
   );

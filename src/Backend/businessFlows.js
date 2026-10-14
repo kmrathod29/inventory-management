@@ -18,10 +18,11 @@ export function addInventoryProduct(db, product) {
   }
 
   const run = db.transaction(() => {
-    db.prepare("INSERT INTO products (id, name, images) VALUES (?, ?, ?)").run(
+    db.prepare("INSERT INTO products (id, name, images, category) VALUES (?, ?, ?, ?)").run(
       productId,
       validatedProduct.name,
       validatedProduct.images,
+      validatedProduct.category,
     );
 
     for (const variant of validatedProduct.variants) {
@@ -58,6 +59,13 @@ export function addInventoryProduct(db, product) {
   });
 
   run();
+  const initialStock = validatedProduct.bases.reduce(
+    (total, base) => total + base.stocks.reduce((sum, stock) => sum + stock, 0), 0,
+  );
+  if (initialStock > 0) {
+    db.prepare(`INSERT INTO inventory_stock_history (product_id, action, quantity, previous_stock, new_stock) VALUES (?, ?, ?, ?, ?)`)
+      .run(productId, "Product created", initialStock, 0, initialStock);
+  }
   return productId;
 }
 
@@ -76,15 +84,17 @@ export function updateInventoryProduct(db, id, product) {
   const duplicateFromAnotherRecord = db
     .prepare("SELECT id FROM products WHERE TRIM(name) = TRIM(?) COLLATE NOCASE AND id != ?")
     .get(normalizedName, id);
+  const previousStock = db.prepare("SELECT COALESCE(SUM(stock), 0) AS total FROM base_stock WHERE base_id IN (SELECT id FROM bases WHERE product_id = ?)").get(id).total;
 
   if (duplicateFromAnotherRecord) {
     throw new Error(`Another product already uses the name "${normalizedName}".`);
   }
 
   const run = db.transaction(() => {
-    db.prepare("UPDATE products SET name = ?, images = ? WHERE id = ?").run(
+    db.prepare("UPDATE products SET name = ?, images = ?, category = ? WHERE id = ?").run(
       normalizedName,
       validatedProduct.images,
+      validatedProduct.category,
       id,
     );
 
@@ -130,6 +140,13 @@ export function updateInventoryProduct(db, id, product) {
   });
 
   run();
+  const nextStock = validatedProduct.bases.reduce(
+    (total, base) => total + base.stocks.reduce((sum, stock) => sum + stock, 0), 0,
+  );
+  if (nextStock !== Number(previousStock)) {
+    db.prepare(`INSERT INTO inventory_stock_history (product_id, action, quantity, previous_stock, new_stock) VALUES (?, ?, ?, ?, ?)`)
+      .run(id, "Stock adjusted", nextStock - Number(previousStock), previousStock, nextStock);
+  }
 }
 
 export function deleteInventoryProduct(db, id) {
@@ -382,6 +399,30 @@ export function updateBaseStock(db, productId, baseId, sizeId, value) {
   `).run(number, baseId, sizeId, productId, productId);
   if (result.changes !== 1) throw new Error("The selected stock could not be updated.");
   return number;
+}
+
+export function addStockToProduct(db, productId, quantity) {
+  const amount = validateInlineValue(quantity, "Stock quantity");
+  if (amount <= 0) throw new Error("Stock quantity must be greater than zero.");
+  const stockRow = db.prepare(`
+    SELECT bs.base_id, bs.variant_id
+    FROM base_stock bs
+    JOIN bases b ON b.id = bs.base_id
+    WHERE b.product_id = ?
+    ORDER BY bs.base_id, bs.variant_id
+    LIMIT 1
+  `).get(productId);
+  if (!stockRow) throw new Error("Product has no stock record.");
+  const currentStock = db.prepare("SELECT COALESCE(SUM(stock), 0) AS total FROM base_stock WHERE base_id IN (SELECT id FROM bases WHERE product_id = ?)").get(productId).total;
+  db.prepare("UPDATE base_stock SET stock = stock + ? WHERE base_id = ? AND variant_id = ?")
+    .run(amount, stockRow.base_id, stockRow.variant_id);
+  db.prepare(`INSERT INTO inventory_stock_history (product_id, action, quantity, previous_stock, new_stock) VALUES (?, ?, ?, ?, ?)`)
+    .run(productId, "Stock added", amount, currentStock, Number(currentStock) + amount);
+  return amount;
+}
+
+export function getInventoryStockHistory(db, productId) {
+  return db.prepare(`SELECT id, action, quantity, previous_stock, new_stock, created_at FROM inventory_stock_history WHERE product_id = ? ORDER BY created_at DESC, id DESC`).all(productId);
 }
 
 export function adjustStock(db, productName, baseName, bucketSize, deltaQty) {

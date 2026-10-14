@@ -5,7 +5,7 @@
 }
 
 .sidebar {
-  width: 220px;
+  width: 242px;
   height: 100vh;
   background: var(--sidebar);
   border-right: 1px solid var(--border-color);
@@ -21,19 +21,25 @@
   padding: 24px 8px;
 }
 
+.sidebar.collapsed .logo-icon,
+.sidebar.collapsed .logo-icon img {
+  width: 38px;
+  height: 38px;
+}
+
 .logo-area {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 8px;
-  margin-bottom: 32px;
+  justify-content: center;
+  padding: 0;
+  margin-bottom: 34px;
   overflow: hidden;
 }
 
 .logo-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 206px;
+  height: 172px;
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -41,7 +47,9 @@
 }
 
 .logo-icon img {
-  width: 32px;
+  width: 206px;
+  height: 172px;
+  object-fit: contain;
 }
 
 .logo-name {
