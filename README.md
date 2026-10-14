@@ -24,13 +24,6 @@ Bundler  : Vite
 
 ---
 
-## Download
-
-> Pre-built installer for Windows is available on the [Releases](https://github.com/Prayushstha/Inventory-Manager/releases) page.
-> No setup beyond running the installer is required.
-
----
-
 ## How to Run (Development)
 
 ### Prerequisites
