@@ -61,6 +61,7 @@ export function BillDialog({
   const [invoiceErrors, setInvoiceErrors] = useState({});
   const [isEditing, setIsEditing] = useState(isNew);
   const [isSaving, setIsSaving] = useState(false);
+  const savedInvoiceRef = useRef(null);
 
   const [showPanel, setShowPanel] = useState(false);
   const [panelInitial, setPanelInitial] = useState(null); // { item, editIndex }
@@ -81,8 +82,17 @@ export function BillDialog({
   );
   const vatDiscount = Math.max(0, Number(invoice.discount) || 0);
   const vatPercent = Number(invoice.vatPercent ?? 13);
-  const vatTaxableAmount = Math.max(0, totalPurchased - vatDiscount);
-  const vatAmount = vatTaxableAmount * vatPercent / 100;
+  const vatInclusiveTotal = Math.max(0, totalPurchased - vatDiscount);
+  const vatTaxableAmount = form.billType === "vat"
+    ? vatInclusiveTotal / (1 + vatPercent / 100)
+    : vatInclusiveTotal;
+  const vatAmount = form.billType === "vat"
+    ? vatInclusiveTotal - vatTaxableAmount
+    : 0;
+  const outOfGujarat = invoice.outOfGujarat === true;
+  const cgstAmount = outOfGujarat ? 0 : vatAmount / 2;
+  const sgstAmount = outOfGujarat ? 0 : vatAmount / 2;
+  const igstAmount = outOfGujarat ? vatAmount : 0;
   const billTotal = form.billType === "vat"
     ? vatTaxableAmount + vatAmount
     : Math.max(0, totalPurchased - vatDiscount);
@@ -200,6 +210,29 @@ export function BillDialog({
           priceAtSale: item.priceAtSale ?? item.costPrice,
         }))
       : form.products;
+    const invoiceItems = submittedItems.map((item) => {
+      const rowTotal = (Number(item.quantity) || 0) * (Number(item.priceAtSale) || 0);
+      const discountShare = totalPurchased > 0 ? vatDiscount * rowTotal / totalPurchased : 0;
+      const rowInclusiveTotal = Math.max(0, rowTotal - discountShare);
+      const rowTaxable = form.billType === "vat"
+        ? rowInclusiveTotal / (1 + vatPercent / 100)
+        : rowInclusiveTotal;
+      const rowTax = rowInclusiveTotal - rowTaxable;
+      return {
+        ...item,
+        taxableValue: rowTaxable,
+        taxableRate: (Number(item.quantity) || 0) > 0
+          ? rowTaxable / Number(item.quantity)
+          : 0,
+        tax: rowTax,
+        cgstPercent: outOfGujarat ? 0 : vatPercent / 2,
+        cgstAmount: outOfGujarat ? 0 : rowTax / 2,
+        sgstPercent: outOfGujarat ? 0 : vatPercent / 2,
+        sgstAmount: outOfGujarat ? 0 : rowTax / 2,
+        igstPercent: outOfGujarat ? vatPercent : 0,
+        igstAmount: outOfGujarat ? rowTax : 0,
+      };
+    });
     const finalInvoice = {
       ...invoice,
       invoiceNumber: invoice.invoiceNumber || "",
@@ -208,6 +241,9 @@ export function BillDialog({
       subtotal: totalPurchased,
       grandTotal: billTotal,
       ...(form.billType === "vat" ? { tax: vatAmount, taxableAmount: vatTaxableAmount, vatPercent } : {}),
+      cgstTotal: cgstAmount,
+      sgstTotal: sgstAmount,
+      igstTotal: igstAmount,
     };
     const billPayload = {
       date: form.date,
@@ -224,6 +260,16 @@ export function BillDialog({
         ...item,
         purchaseDate: item.purchaseDate || form.date,
       })),
+    };
+    savedInvoiceRef.current = {
+      ...finalInvoice,
+      date: form.date,
+      customerName,
+      customerAddress: form.address || "",
+      customerPhone,
+      amountPaid: amountPaidNum,
+      amountDue,
+      products: invoiceItems,
     };
 
     setIsSaving(true);
@@ -245,30 +291,9 @@ export function BillDialog({
         await window.db.editCustomerBill(form.customerId, customer, form.id, billPayload);
       }
 
-      let invoiceDefaultsSaved = true;
-      if (form.billType === "vat") {
-        try {
-          await window.db.updateInvoiceDefaults({
-            shopName: invoice.shopName || "",
-            shopAddress: invoice.shopAddress || "",
-            shopTelephone: invoice.shopTelephone || "",
-            invoiceNumber: invoice.invoiceNumber || "",
-            tpinNumber: invoice.tpinNumber || "",
-            vatPercent: invoice.vatPercent ?? "13",
-          });
-        } catch {
-          invoiceDefaultsSaved = false;
-        }
-      }
-
       setIsEditing(false);
       onSaved?.();
-      showToast(
-        invoiceDefaultsSaved
-          ? "Bill saved successfully."
-          : "Bill saved, but VAT invoice defaults could not be updated.",
-        invoiceDefaultsSaved ? "success" : "error",
-      );
+      showToast("Bill saved successfully.", "success");
       return true;
     } catch (error) {
       showToast(error?.message || "Failed to save bill. Your changes are still available.", "error");
@@ -279,6 +304,18 @@ export function BillDialog({
   }
 
   const handlePrint = () => window.print();
+
+  async function saveAndGenerateInvoice() {
+    if (!(await handleSave())) return;
+    try {
+      const files = await window.db.generateInvoiceFiles(savedInvoiceRef.current);
+      if (files) {
+        showToast(`Invoice PDF saved. DOCX copy created beside it.`, "success");
+      }
+    } catch (error) {
+      showToast(error?.message || "Bill saved, but the invoice files could not be generated.", "error");
+    }
+  }
 
   // ── global keyboard shortcuts (single document-level handler) ──────
   // Latest state/handlers live in a ref, refreshed each render via an effect,
@@ -591,11 +628,11 @@ export function BillDialog({
                 <label htmlFor="bill-amount-paid">Amount Paid</label>
                 <NumericMathInput id="bill-amount-paid" className="invoice-discount-input" value={form.amountPaid ?? ""} onChange={(value) => setForm((current) => ({ ...current, amountPaid: value }))} disabled={locked} placeholder="0.00" />
               </div>
-              <button className="invoice-save-button" type="button" onClick={async () => { if (await handleSave()) window.print(); }} disabled={isSaving || locked}>
+              <button className="invoice-save-button" type="button" onClick={saveAndGenerateInvoice} disabled={isSaving || locked}>
                 <i className="ti ti-printer" aria-hidden="true" />
                 <span><strong>{isSaving ? "Saving..." : "Save and Print"}</strong><small>Save bill, deduct stock and print</small></span>
               </button>
-              <button className="invoice-secondary-button" type="button" onClick={async () => { if (await handleSave()) window.print(); }}>
+              <button className="invoice-secondary-button" type="button" onClick={saveAndGenerateInvoice}>
                 <i className="ti ti-file-description" aria-hidden="true" /><span><strong>Save PDF</strong><small>Save bill and generate PDF</small></span>
               </button>
               <button className="invoice-cancel-button" type="button" onClick={onClose}>

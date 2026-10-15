@@ -2,6 +2,11 @@
 import { app, BrowserWindow, ipcMain, dialog, protocol, net, Menu, shell } from "electron";
 import { fileURLToPath } from "url";
 import path from "path";
+import fs from "node:fs";
+import { Buffer } from "node:buffer";
+import { createRequire } from "node:module";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { pathToFileURL } from "url";
 import {
   addProduct,
@@ -70,6 +75,9 @@ import {
   setDefaultProfilePassword,
 } from "../src/Backend/server.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const require = createRequire(import.meta.url);
+const AdmZip = require("adm-zip");
+const execFileAsync = promisify(execFile);
 
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
 if (!gotSingleInstanceLock) {
@@ -80,6 +88,151 @@ function restartApplication() {
   for (const window of BrowserWindow.getAllWindows()) window.destroy();
   app.relaunch();
   app.exit(0);
+}
+
+function escapeXml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function invoiceMoney(value) {
+  return `₹${(Number(value) || 0).toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function findInvoiceTemplate() {
+  const candidates = [
+    path.join(app.getAppPath(), "Invoice.docx"),
+    path.resolve(app.getAppPath(), "..", "Invoice.docx"),
+    path.join(process.resourcesPath, "Invoice.docx"),
+    path.resolve(process.cwd(), "..", "Invoice.docx"),
+  ];
+  const template = candidates.find((candidate) => fs.existsSync(candidate));
+  if (!template) throw new Error("Invoice.docx template was not found.");
+  return template;
+}
+
+function fillInvoiceTemplate(invoice) {
+  const zip = new AdmZip(findInvoiceTemplate());
+  let documentXml = zip.readAsText("word/document.xml");
+  const items = Array.isArray(invoice.products) ? invoice.products : [];
+  const subtotal = Number(invoice.subtotal) || items.reduce(
+    (sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.priceAtSale) || 0),
+    0,
+  );
+  const replacements = {
+    "{{SHOP_NAME}}": invoice.shopName,
+    "{{SHOP_TAGLINE}}": invoice.shopTagline,
+    "{{SHOP_ADDRESS}}": invoice.shopAddress,
+    "{{SHOP_PHONE}}": invoice.shopTelephone,
+    "{{SHOP_EMAIL}}": invoice.shopEmail,
+    "{{SHOP_GSTIN}}": invoice.tpinNumber || invoice.shopGstin,
+    "{{SHOP_PAN}}": invoice.shopPan,
+    "{{INVOICE_NUMBER}}": invoice.invoiceNumber,
+    "{{INVOICE_DATE}}": invoice.date,
+    "{{CUSTOMER_NAME}}": invoice.customerName,
+    "{{CUSTOMER_ADDRESS}}": invoice.customerAddress,
+    "{{CUSTOMER_PHONE}}": invoice.customerPhone,
+    "{{CUSTOMER_GSTIN}}": invoice.buyerGstin,
+    "{{TOTAL_QUANTITY}}": items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0),
+    "{{SUBTOTAL}}": invoiceMoney(subtotal),
+    "{{DISCOUNT}}": invoiceMoney(invoice.discount),
+    "{{TAXABLE_AMOUNT}}": invoiceMoney(invoice.taxableAmount ?? subtotal - (Number(invoice.discount) || 0)),
+    "{{CGST_TOTAL}}": invoiceMoney(invoice.cgstTotal),
+    "{{SGST_TOTAL}}": invoiceMoney(invoice.sgstTotal),
+    "{{IGST_TOTAL}}": invoiceMoney(invoice.igstTotal ?? invoice.tax),
+    "{{TOTAL_TAX}}": invoiceMoney(invoice.tax),
+    "{{GRAND_TOTAL}}": invoiceMoney(invoice.grandTotal),
+    "{{AMOUNT_PAID}}": invoiceMoney(invoice.amountPaid),
+    "{{AMOUNT_DUE}}": invoiceMoney(invoice.amountDue),
+    "{{AMOUNT_IN_WORDS}}": invoice.amountInWords,
+    "{{BANK_NAME}}": invoice.bankName,
+    "{{BANK_BRANCH}}": invoice.bankBranch,
+    "{{BANK_AC}}": invoice.bankAccountNumber,
+    "{{BANK_IFSC}}": invoice.bankIfsc,
+    "{{UPI_ID}}": invoice.upiId,
+  };
+
+  documentXml = documentXml
+    .replace(/\{\{INVOICE_NUMBER\}/g, "{{INVOICE_NUMBER}}")
+    .replace(/\{\{\s*S\s*GST_TOTAL\s*\}\}/g, "{{SGST_TOTAL}}")
+    .replace(/\{\{\s*I\s*GST_TOTAL\s*\}\}/g, "{{IGST_TOTAL}}");
+
+  const itemRowMatch = documentXml.match(/<w:tr\b[^>]*>[\s\S]*?\{\{ITEM_NO\}\}[\s\S]*?<\/w:tr>/);
+  if (itemRowMatch) {
+    const itemRow = itemRowMatch[0];
+    const rows = items.length ? items : [{}];
+    const generatedRows = rows.map((item, index) => {
+      const itemTaxable = (Number(item.quantity) || 0) * (Number(item.priceAtSale) || 0);
+      const itemTax = itemTaxable * (Number(invoice.vatPercent) || 0) / 100;
+      const itemOutOfGujarat = invoice.outOfGujarat === true;
+      const itemValues = {
+        "{{ITEM_NO}}": index + 1,
+        "{{ITEM_NAME}}": item.productName,
+        "{{ITEM_HSN}}": item.hsCode,
+        "{{ITEM_QTY}}": item.quantity,
+        "{{ITEM_RATE}}": invoiceMoney(
+          item.taxableRate
+          ?? (Number(item.quantity) > 0
+            ? (item.taxableValue ?? itemTaxable) / Number(item.quantity)
+            : item.priceAtSale),
+        ),
+        "{{ITEM_TAXABLE_VALUE}}": invoiceMoney(item.taxableValue ?? itemTaxable),
+        "{{ITEM_CGST_PERCENT}}": item.cgstPercent ?? (itemOutOfGujarat ? "0" : (Number(invoice.vatPercent) || 0) / 2),
+        "{{ITEM_CGST_AMOUNT}}": invoiceMoney(item.cgstAmount ?? (itemOutOfGujarat ? 0 : itemTax / 2)),
+        "{{ITEM_SGST_PERCENT}}": item.sgstPercent ?? (itemOutOfGujarat ? "0" : (Number(invoice.vatPercent) || 0) / 2),
+        "{{ITEM_SGST_AMOUNT}}": invoiceMoney(item.sgstAmount ?? (itemOutOfGujarat ? 0 : itemTax / 2)),
+        "{{ITEM_IGST_PERCENT}}": item.igstPercent ?? (itemOutOfGujarat ? invoice.vatPercent : "0"),
+        "{{ITEM_IGST_AMOUNT}}": invoiceMoney(item.igstAmount ?? (itemOutOfGujarat ? itemTax : 0)),
+        "{{ITEM_TOTAL}}": invoiceMoney(itemTaxable + itemTax),
+      };
+      return Object.entries(itemValues).reduce(
+        (row, [from, to]) => row.split(from).join(escapeXml(to)),
+        itemRow,
+      );
+    }).join("");
+    documentXml = documentXml.replace(itemRow, generatedRows);
+  }
+
+  for (const [from, to] of Object.entries(replacements)) {
+    documentXml = documentXml.split(from).join(escapeXml(to));
+  }
+  zip.updateFile("word/document.xml", Buffer.from(documentXml, "utf8"));
+  return zip;
+}
+
+function powershellPath(value) {
+  return `'${String(value).replace(/'/g, "''")}'`;
+}
+
+async function convertDocxToPdf(docxPath, pdfPath) {
+  if (process.platform !== "win32") {
+    throw new Error("DOCX to PDF conversion currently requires Microsoft Word on Windows.");
+  }
+
+  const script = `
+$ErrorActionPreference = 'Stop'
+$word = New-Object -ComObject Word.Application
+$word.Visible = $false
+$word.DisplayAlerts = 0
+$document = $null
+try {
+  $document = $word.Documents.Open(${powershellPath(docxPath)}, $false, $true, $false)
+  $document.ExportAsFixedFormat(${powershellPath(pdfPath)}, 17)
+} finally {
+  if ($document) { $document.Close($false) }
+  if ($word) { $word.Quit() }
+  if ($document) { [System.Runtime.InteropServices.Marshal]::ReleaseComObject($document) | Out-Null }
+  if ($word) { [System.Runtime.InteropServices.Marshal]::ReleaseComObject($word) | Out-Null }
+}
+`;
+  await execFileAsync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", script]);
 }
 
 function createWindow() {
@@ -110,6 +263,7 @@ function createWindow() {
       event.preventDefault();
       win.webContents.toggleDevTools();
     }
+
   });
   win.webContents.session.setSpellCheckerLanguages(["en-US"]);
   win.webContents.on("context-menu", (_event, params) => {
@@ -364,6 +518,23 @@ app.whenReady().then(() => {
     const settings = await setLocalDataDirectory(result.filePaths[0]);
     process.nextTick(restartApplication);
     return settings;
+  });
+  ipcMain.handle("invoice:generateFiles", async (event, invoice) => {
+    const result = await dialog.showSaveDialog(BrowserWindow.fromWebContents(event.sender), {
+      title: "Save invoice PDF",
+      defaultPath: `Invoice-${invoice?.invoiceNumber || new Date().toISOString().slice(0, 10)}.pdf`,
+      filters: [{ name: "PDF document", extensions: ["pdf"] }],
+    });
+    if (result.canceled || !result.filePath) return null;
+
+    const pdfPath = result.filePath.toLowerCase().endsWith(".pdf")
+      ? result.filePath
+      : `${result.filePath}.pdf`;
+    const docxPath = pdfPath.replace(/\.pdf$/i, ".docx");
+    fillInvoiceTemplate(invoice || {}).writeZip(docxPath);
+    await convertDocxToPdf(docxPath, pdfPath);
+    await shell.openPath(pdfPath);
+    return { pdfPath, docxPath };
   });
   ipcMain.handle("dialog:pickExcelFile", async () => {
     const result = await dialog.showOpenDialog({

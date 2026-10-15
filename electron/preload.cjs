@@ -150,6 +150,7 @@ contextBridge.exposeInMainWorld("db", {
     invoke("settings:updateAppearance", theme, mode),
   openDataDirectory: () => invoke("settings:openDataDirectory"),
   changeDataDirectory: () => invoke("settings:changeDataDirectory"),
+  generateInvoiceFiles: (invoice) => invoke("invoice:generateFiles", invoice),
 });
 
 contextBridge.exposeInMainWorld("app", {

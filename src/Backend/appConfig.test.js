@@ -54,11 +54,21 @@ test("loads defaults and persists validated settings", () => {
     assert.equal(loadAppConfig(configPath).appearanceMode, "light");
     assert.deepEqual(defaultInvoiceDefaults(), {
       shopName: "",
+      shopTagline: "",
       shopAddress: "",
       shopTelephone: "",
+      shopEmail: "",
+      shopGstin: "",
+      shopPan: "",
+      bankName: "",
+      bankBranch: "",
+      bankAccountNumber: "",
+      bankIfsc: "",
+      upiId: "",
       invoiceNumber: "",
       tpinNumber: "",
       vatPercent: "13",
+      outOfGujarat: false,
     });
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });

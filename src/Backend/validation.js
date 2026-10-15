@@ -152,23 +152,24 @@ export function validateBillPayload(customerId, bill) {
   assert(discount <= computedTotal, "Invoice discount cannot exceed the item subtotal.");
   let expectedTotal = computedTotal - discount;
   if (billType === "vat") {
-    const taxableAmount = computedTotal - discount;
     assert(
       normalizeText(invoiceData.vatPercent ?? "13").length > 0,
       "VAT percentage is required.",
     );
     const vatPercent = parseRequiredNumber(invoiceData.vatPercent ?? 13, "VAT percentage", { min: 0 });
     assert(vatPercent <= 100, "VAT percentage cannot exceed 100.");
+    const inclusiveTotal = computedTotal - discount;
+    const taxableAmount = inclusiveTotal / (1 + vatPercent / 100);
     const tax = parseRequiredNumber(
-      invoiceData.tax ?? taxableAmount * vatPercent / 100,
+      invoiceData.tax ?? inclusiveTotal - taxableAmount,
       "VAT amount",
       { min: 0 },
     );
     assert(
-      Math.abs(tax - taxableAmount * vatPercent / 100) < 0.01,
-      `VAT must equal ${vatPercent}% of the taxable amount.`,
+      Math.abs(tax - (inclusiveTotal - taxableAmount)) < 0.01,
+      `VAT must be backed out of the tax-inclusive total at ${vatPercent}%.`,
     );
-    expectedTotal = taxableAmount + tax;
+    expectedTotal = inclusiveTotal;
     invoiceData = { ...invoiceData, discount, vatPercent, tax, taxableAmount };
   }
   assert(Math.abs(expectedTotal - totalPurchased) < 0.01, "Bill total does not match its items and applicable tax/discount.");

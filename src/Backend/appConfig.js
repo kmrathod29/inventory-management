@@ -11,11 +11,21 @@ export const APPEARANCE_MODES = ["light", "dark"];
 export function defaultInvoiceDefaults() {
   return {
     shopName: "",
+    shopTagline: "",
     shopAddress: "",
     shopTelephone: "",
+    shopEmail: "",
+    shopGstin: "",
+    shopPan: "",
+    bankName: "",
+    bankBranch: "",
+    bankAccountNumber: "",
+    bankIfsc: "",
+    upiId: "",
     invoiceNumber: "",
     tpinNumber: "",
     vatPercent: "13",
+    outOfGujarat: false,
   };
 }
 
@@ -59,6 +69,13 @@ function validateAppConfig(config) {
   const defaults = defaultInvoiceDefaults();
   for (const key of Object.keys(defaults)) {
     const value = invoiceDefaults[key] ?? defaults[key];
+    if (key === "outOfGujarat") {
+      if (typeof value !== "boolean") {
+        throw new Error('Invoice default "outOfGujarat" must be true or false.');
+      }
+      defaults[key] = value;
+      continue;
+    }
     if (typeof value !== "string") {
       throw new Error(`Invoice default "${key}" must be text.`);
     }

@@ -4,6 +4,7 @@ import { useToast } from "../../hooks/ToastContext";
 import { AppearanceSection } from "./Components/AppearanceSection";
 import { DatabaseSection } from "./Components/DatabaseSection";
 import { DefaultsSection } from "./Components/DefaultsSection";
+import { InvoiceDefaultsSection } from "./Components/InvoiceDefaultsSection";
 import { ExportSection } from "./Components/ExportSection";
 import { ProfilesSection } from "./Components/ProfilesSection";
 import "./settings.css";
@@ -174,6 +175,20 @@ export function SettingsPage({
         error.message || "Could not update the default payment method.",
         "error",
       );
+    } finally {
+      setBusy("");
+    }
+
+  }
+
+  async function handleInvoiceDefaultsSave(invoiceDefaults) {
+    setBusy("invoice-defaults");
+    try {
+      const updatedSettings = await window.db.updateInvoiceDefaults(invoiceDefaults);
+      setSettings(updatedSettings);
+      showToast("Invoice details updated.", "success");
+    } catch (error) {
+      showToast(error.message || "Could not update invoice details.", "error");
     } finally {
       setBusy("");
     }
@@ -364,6 +379,13 @@ export function SettingsPage({
         busy={busy}
         onChange={handlePaymentMethodChange}
       />
+      {settings && (
+        <InvoiceDefaultsSection
+          settings={settings}
+          busy={busy}
+          onSave={handleInvoiceDefaultsSave}
+        />
+      )}
       <DatabaseSection
         settings={settings}
         busy={busy}

@@ -65,6 +65,12 @@
         "AppImage"
       ],
       "category": "Office"
-    }
+    },
+    "extraResources": [
+      {
+        "from": "Invoice.docx",
+        "to": "Invoice.docx"
+      }
+    ]
   }
 }

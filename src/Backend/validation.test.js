@@ -48,27 +48,27 @@ test("validateBillPayload includes VAT and discount in VAT bill total", () => {
   const result = validateBillPayload(1, {
     date: "2026-10-10",
     billType: "vat",
-    totalPurchased: 24.86,
+    totalPurchased: 22,
     amountPaid: 10,
-    amountDue: 14.86,
+    amountDue: 12,
     paymentMethod: "Cash",
-    invoiceData: { discount: 2, tax: 2.86 },
+    invoiceData: { discount: 2, tax: 22 - (22 / 1.13) },
     products: [
       { productName: "Tea", base: "A", bucketSize: 1, quantity: 2, priceAtSale: 12 },
     ],
   });
 
-  assert.equal(result.totalPurchased, 24.86);
-  assert.equal(result.invoiceData.taxableAmount, 22);
-  assert.equal(result.invoiceData.tax, 2.86);
+  assert.equal(result.totalPurchased, 22);
+  assert.ok(Math.abs(result.invoiceData.taxableAmount - (22 / 1.13)) < 0.01);
+  assert.ok(Math.abs(result.invoiceData.tax - (22 - (22 / 1.13))) < 0.01);
   assert.equal(result.billType, "vat");
   assert.throws(
     () => validateBillPayload(1, {
       date: "2026-10-10",
       billType: "vat",
-      totalPurchased: 24,
+      totalPurchased: 25,
       amountPaid: 0,
-      amountDue: 24,
+      amountDue: 25,
       products: [{ productName: "Tea", base: "A", bucketSize: 1, quantity: 2, priceAtSale: 12 }],
     }),
     /items and applicable tax\/discount/,
@@ -77,16 +77,16 @@ test("validateBillPayload includes VAT and discount in VAT bill total", () => {
   const customRate = validateBillPayload(1, {
     date: "2026-10-10",
     billType: "vat",
-    totalPurchased: 20.7,
+    totalPurchased: 18,
     amountPaid: 0,
-    amountDue: 20.7,
-    invoiceData: { discount: 2, vatPercent: 15, tax: 2.7 },
+    amountDue: 18,
+    invoiceData: { discount: 2, vatPercent: 15, tax: 18 - (18 / 1.15) },
     products: [
       { productName: "Tea", base: "A", bucketSize: 1, quantity: 2, priceAtSale: 10 },
     ],
   });
   assert.equal(customRate.invoiceData.vatPercent, 15);
-  assert.equal(customRate.invoiceData.tax, 2.7);
+  assert.ok(Math.abs(customRate.invoiceData.tax - (18 - (18 / 1.15))) < 0.01);
 });
 
 test("validateExpensePayload accepts valid data and rejects invalid type", () => {
