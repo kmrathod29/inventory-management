@@ -154,6 +154,8 @@ contextBridge.exposeInMainWorld("db", {
     invoke("settings:updateInventoryAddItemMode", mode),
   updateAppearanceSettings: (theme, mode) =>
     invoke("settings:updateAppearance", theme, mode),
+  setTitleBarOverlay: (color, symbolColor) =>
+    invoke("settings:setTitleBarOverlay", color, symbolColor),
   openDataDirectory: () => invoke("settings:openDataDirectory"),
   changeDataDirectory: () => invoke("settings:changeDataDirectory"),
   generateInvoiceFiles: (invoice) => invoke("invoice:generateFiles", invoice),

@@ -307,7 +307,10 @@
 .payment-dialog-overlay {
   position: fixed;
   z-index: 100;
-  inset: 0;
+  top: 40px;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: grid;
   place-items: center;
   padding: 16px;
@@ -388,7 +391,10 @@
 
 .dialog-overlay {
   position: fixed;
-  inset: 0;
+  top: 40px;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(2px);
   display: flex;
@@ -1035,7 +1041,10 @@ select::-webkit-scrollbar {
 /* ── Product add popup ── */
 .product-popup-overlay {
   position: fixed;
-  inset: 0;
+  top: 40px;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;

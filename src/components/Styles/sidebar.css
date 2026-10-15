@@ -6,7 +6,7 @@
 
 .sidebar {
   width: 242px;
-  height: 100vh;
+  height: calc(100vh - 40px);
   background: var(--sidebar);
   border-right: 1px solid var(--border-color);
   display: flex;

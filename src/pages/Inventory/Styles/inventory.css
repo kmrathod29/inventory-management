@@ -119,7 +119,7 @@
 .inventory-pagination button.active { border-color: #d71920; background: #df1d24; color: #fff; }
 .inventory-pagination button:disabled { opacity: .45; cursor: not-allowed; }
 
-.inventory-stock-dialog-overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 24px; background: rgba(16, 28, 43, .48); }
+.inventory-stock-dialog-overlay { position: fixed; top: 40px; left: 0; right: 0; bottom: 0; z-index: 1000; display: grid; place-items: center; padding: 24px; background: rgba(16, 28, 43, .48); }
 .inventory-stock-dialog { width: min(760px, 100%); max-height: min(720px, calc(100vh - 48px)); overflow: hidden; border: 1px solid #dce4ed; border-radius: 10px; background: #fff; box-shadow: 0 24px 60px rgba(20, 35, 52, .22); color: #1d2939; }
 .inventory-stock-dialog-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 22px 24px 16px; border-bottom: 1px solid #e5eaf0; }
 .inventory-stock-dialog-header h2 { margin: 0; color: #152033; font-size: 22px; }
@@ -147,7 +147,7 @@
 .inventory-stock-row > button { border: 0; background: transparent; color: #c82027; font-size: 21px; cursor: pointer; }
 .inventory-stock-dialog-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px 20px; border-top: 1px solid #e5eaf0; }
 
-.inventory-history-overlay { position: fixed; inset: 0; z-index: 1001; display: grid; place-items: center; padding: 24px; background: rgba(16, 28, 43, .48); }
+.inventory-history-overlay { position: fixed; top: 40px; left: 0; right: 0; bottom: 0; z-index: 1001; display: grid; place-items: center; padding: 24px; background: rgba(16, 28, 43, .48); }
 .inventory-history-dialog { width: min(620px, 100%); max-height: calc(100vh - 48px); overflow: hidden; border: 1px solid #dce4ed; border-radius: 10px; background: #fff; box-shadow: 0 24px 60px rgba(20, 35, 52, .22); color: #1d2939; }
 .inventory-history-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 20px 22px; border-bottom: 1px solid #e5eaf0; }
 .inventory-history-header button { border: 0; background: transparent; color: #718096; font-size: 25px; line-height: 1; cursor: pointer; }

@@ -1,5 +1,5 @@
 .settings-page {
-  min-height: 100vh;
+  min-height: calc(100vh - 40px);
   padding: 34px 38px;
   background: var(--background-primary);
   color: var(--color-primary);

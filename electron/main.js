@@ -237,10 +237,19 @@ try {
   await execFileAsync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", script]);
 }
 
+let mainWindow;
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
+    backgroundColor: "#faf8f5",
+    titleBarStyle: "hidden",
+    titleBarOverlay: {
+      color: "#faf8f5",
+      symbolColor: "#3a2a20",
+      height: 40,
+    },
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
@@ -249,6 +258,7 @@ function createWindow() {
       spellcheck: true,
     },
   });
+  mainWindow = win;
   const isExternalHttpUrl = (url) =>
     url.startsWith("http://") || url.startsWith("https://");
 
@@ -521,6 +531,10 @@ app.whenReady().then(() => {
   ipcMain.handle("settings:updateAppearance", (_, theme, mode) =>
     updateAppearanceSettings(theme, mode),
   );
+  ipcMain.handle("settings:setTitleBarOverlay", (_, color, symbolColor) => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    mainWindow.setTitleBarOverlay({ color, symbolColor, height: 40 });
+  });
   ipcMain.handle("settings:openDataDirectory", async () => {
     const error = await shell.openPath(getAppSettings().dataDirectory);
     if (error) throw new Error(`Could not open the data folder: ${error}`);

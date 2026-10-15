@@ -30,7 +30,7 @@ class ErrorBoundary extends Component {
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          height: '100vh',
+          height: 'calc(100vh - 40px)',
           backgroundColor: '#1a1a1a',
           color: '#fff',
           fontFamily: 'system-ui, -apple-system, sans-serif',

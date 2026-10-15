@@ -4,6 +4,7 @@ import { InventoryPage } from "./pages/Inventory/inventory";
 import { ReportsPage } from "./pages/Reports/reports";
 import { SettingsPage } from "./pages/Settings/settings";
 import { SideBar } from "./components/sidebar";
+import { TitleBar } from "./components/TitleBar/TitleBar";
 import { HashRouter, Navigate, Route, Routes } from "react-router";
 import "./App.css";
 import "./index.css";
@@ -36,6 +37,11 @@ function App() {
     const root = document.documentElement;
     root.setAttribute("data-theme", appearanceTheme);
     root.setAttribute("data-mode", appearanceMode);
+
+    const bodyStyle = getComputedStyle(document.body);
+    const bgColor = bodyStyle.backgroundColor;
+    const textColor = bodyStyle.color;
+    window.db?.setTitleBarOverlay?.(bgColor, textColor);
   }, [appearanceTheme, appearanceMode]);
 
   function setAppearance(settings) {
@@ -46,6 +52,7 @@ function App() {
   return (
     <HashRouter>
       <div className="main-container" spellCheck={true}>
+        <TitleBar />
         <SideBar isDark={appearanceMode === "dark"} />
         <div className="main-content">
           <Routes>
