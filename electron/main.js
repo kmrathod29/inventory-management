@@ -56,10 +56,12 @@ import {
   addCustomerBill,
   addBillToCustomer,
   editCustomerBill,
+  updateBillPayment,
   getAppSettings,
   setLocalDataDirectory,
   updateDefaultPaymentMethod,
   updateInvoiceDefaults,
+  updateCategoryTaxRates,
   updateInventoryAddItemMode,
   updateAppearanceSettings,
   deleteProducts,
@@ -391,6 +393,9 @@ app.whenReady().then(() => {
   ipcMain.handle("db:editCustomerBill", (_, customerId, customer, billId, bill) =>
     editCustomerBill(customerId, customer, billId, bill),
   );
+  ipcMain.handle("db:updateBillPayment", (_, billId, amountPaid, status) =>
+    updateBillPayment(billId, amountPaid, status),
+  );
   ipcMain.handle("db:addBillActivity", (_, billId, activity) =>
     addBillActivity(billId, activity),
   );
@@ -494,6 +499,9 @@ app.whenReady().then(() => {
   );
   ipcMain.handle("settings:updateInvoiceDefaults", (_, invoiceDefaults) =>
     updateInvoiceDefaults(invoiceDefaults),
+  );
+  ipcMain.handle("settings:updateCategoryTaxRates", (_, categoryTaxRates) =>
+    updateCategoryTaxRates(categoryTaxRates),
   );
   ipcMain.handle("settings:updateInventoryAddItemMode", (_, mode) =>
     updateInventoryAddItemMode(mode),

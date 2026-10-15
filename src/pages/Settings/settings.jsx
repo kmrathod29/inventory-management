@@ -2,11 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { useConfirm } from "../../hooks/useConfirm";
 import { useToast } from "../../hooks/ToastContext";
 import { AppearanceSection } from "./Components/AppearanceSection";
-import { DatabaseSection } from "./Components/DatabaseSection";
-import { DefaultsSection } from "./Components/DefaultsSection";
-import { InvoiceDefaultsSection } from "./Components/InvoiceDefaultsSection";
-import { ExportSection } from "./Components/ExportSection";
+import { AboutSection } from "./Components/AboutSection";
+import { BackupRestoreSection } from "./Components/BackupRestoreSection";
+import { BillingTaxSection } from "./Components/BillingTaxSection";
 import { ProfilesSection } from "./Components/ProfilesSection";
+import { ShopDetailsSection } from "./Components/ShopDetailsSection";
 import "./settings.css";
 
 function fileName(filePath) {
@@ -30,19 +30,12 @@ export function SettingsPage({
   setAppearance,
 }) {
   const [busy, setBusy] = useState("");
+  const [activeSection, setActiveSection] = useState("shop");
   const [settings, setSettings] = useState(null);
   const [profileId, setProfileId] = useState("");
   const [profileUsername, setProfileUsername] = useState("");
   const [profilePassword, setProfilePassword] = useState("");
   const [profileDialogMode, setProfileDialogMode] = useState("");
-  const [exportPath, setExportPath] = useState("");
-  const [exportSelections, setExportSelections] = useState({
-    products: true,
-    customers: true,
-    bills: true,
-    imports: true,
-    expenses: true,
-  });
   const profileDialog = useRef(null);
   const showToast = useToast();
   const { confirm, ConfirmDialogComponent } = useConfirm();
@@ -162,25 +155,6 @@ export function SettingsPage({
     }
   }
 
-  async function handlePaymentMethodChange(event) {
-    setBusy("defaults");
-    try {
-      const updatedSettings = await window.db.updateDefaultPaymentMethod(
-        event.target.value,
-      );
-      setSettings(updatedSettings);
-      showToast("Default payment method updated.", "success");
-    } catch (error) {
-      showToast(
-        error.message || "Could not update the default payment method.",
-        "error",
-      );
-    } finally {
-      setBusy("");
-    }
-
-  }
-
   async function handleInvoiceDefaultsSave(invoiceDefaults) {
     setBusy("invoice-defaults");
     try {
@@ -189,6 +163,20 @@ export function SettingsPage({
       showToast("Invoice details updated.", "success");
     } catch (error) {
       showToast(error.message || "Could not update invoice details.", "error");
+    } finally {
+      setBusy("");
+    }
+
+  }
+
+  async function handleCategoryTaxRatesSave(categoryTaxRates) {
+    setBusy("category-tax-rates");
+    try {
+      const updatedSettings = await window.db.updateCategoryTaxRates(categoryTaxRates);
+      setSettings(updatedSettings);
+      showToast("Category tax rates updated.", "success");
+    } catch (error) {
+      showToast(error.message || "Could not update category tax rates.", "error");
     } finally {
       setBusy("");
     }
@@ -239,31 +227,6 @@ export function SettingsPage({
       }
     } catch (error) {
       showToast(error.message || "Could not change the data folder.", "error");
-    } finally {
-      setBusy("");
-    }
-  }
-
-  async function handlePickExportDirectory() {
-    try {
-      const directory = await window.db.pickExportDirectory();
-      if (directory) setExportPath(directory);
-    } catch (error) {
-      showToast(error.message || "Could not choose an export folder.", "error");
-    }
-  }
-
-  async function handleExport() {
-    if (!Object.values(exportSelections).some(Boolean)) {
-      showToast("Choose at least one data section to export.", "error");
-      return;
-    }
-    setBusy("export");
-    try {
-      const filePath = await window.db.exportData(exportPath, exportSelections);
-      showToast(`Export created: ${fileName(filePath)}.`, "success");
-    } catch (error) {
-      showToast(error.message || "Could not create the export.", "error");
     } finally {
       setBusy("");
     }
@@ -349,63 +312,100 @@ export function SettingsPage({
   return (
     <main className="settings-page">
       <header className="settings-header">
-        <h1>Settings</h1>
+        <div>
+          <h1>Settings</h1>
+          <p>Manage your shop and application preferences</p>
+        </div>
+        <div className="settings-status" aria-label="Application status">
+          <span className="settings-status-dot" />
+          <div>
+            <strong>Offline</strong>
+            <span>Data stored locally</span>
+          </div>
+        </div>
       </header>
-      <AppearanceSection
-        appearanceTheme={appearanceTheme}
-        appearanceMode={appearanceMode}
-        settings={settings}
-        busy={busy}
-        themes={APPEARANCE_THEMES}
-        onChange={handleAppearanceThemeChange}
-      />
-      <ProfilesSection
-        settings={settings}
-        busy={busy}
-        profileId={profileId}
-        profileUsername={profileUsername}
-        setProfileUsername={setProfileUsername}
-        profilePassword={profilePassword}
-        setProfilePassword={setProfilePassword}
-        profileDialogMode={profileDialogMode}
-        profileDialog={profileDialog}
-        onOpenDialog={openProfileDialog}
-        onSelectProfile={handleProfileSelection}
-        onSubmit={handleProfileDialogSubmit}
-        onClose={() => setProfileDialogMode("")}
-      />
-      <DefaultsSection
-        settings={settings}
-        busy={busy}
-        onChange={handlePaymentMethodChange}
-      />
-      {settings && (
-        <InvoiceDefaultsSection
-          settings={settings}
-          busy={busy}
-          onSave={handleInvoiceDefaultsSave}
-        />
-      )}
-      <DatabaseSection
-        settings={settings}
-        busy={busy}
-        onOpenDirectory={handleOpenDataDirectory}
-        onChangeDirectory={handleChangeDataDirectory}
-        onCreateBackup={handleCreateBackup}
-        onRestoreBackup={handleRestoreBackup}
-        onCreatePortableBackup={handleCreatePortableBackup}
-        onRestorePortableBackup={handleRestorePortableBackup}
-      />
-      <ExportSection
-        settings={settings}
-        busy={busy}
-        exportPath={exportPath}
-        setExportPath={setExportPath}
-        exportSelections={exportSelections}
-        setExportSelections={setExportSelections}
-        onPickDirectory={handlePickExportDirectory}
-        onExport={handleExport}
-      />
+      <div className="settings-layout">
+        <nav className="settings-navigation" aria-label="Settings sections">
+          {[
+            ["shop", "Shop Details", "Business information and logo", "ti-building-store"],
+            ["billing", "Billing & Tax", "Currency, tax and invoice defaults", "ti-receipt-tax"],
+            ["backup", "Backup & Restore", "Manage your data and backups", "ti-database"],
+            ["appearance", "Appearance", "Theme and interface preferences", "ti-palette"],
+            ["about", "About", "Application version and support", "ti-info-circle"],
+          ].map(([id, label, description, icon]) => (
+            <button
+              key={id}
+              className={`settings-navigation-item ${activeSection === id ? "active" : ""}`}
+              type="button"
+              onClick={() => setActiveSection(id)}
+              aria-current={activeSection === id ? "page" : undefined}
+            >
+              <i className={`ti ${icon}`} aria-hidden="true" />
+              <span>
+                <strong>{label}</strong>
+                <small>{description}</small>
+              </span>
+              <i className="ti ti-chevron-right" aria-hidden="true" />
+            </button>
+          ))}
+        </nav>
+
+        <div className="settings-panel">
+          {activeSection === "shop" && (
+            <ShopDetailsSection settings={settings} busy={busy} onSave={handleInvoiceDefaultsSave} />
+          )}
+          {activeSection === "billing" && (
+            <BillingTaxSection
+              settings={settings}
+              busy={busy}
+              onInvoiceDefaultsSave={handleInvoiceDefaultsSave}
+              onCategoryTaxRatesSave={handleCategoryTaxRatesSave}
+            />
+          )}
+          {activeSection === "backup" && (
+            <BackupRestoreSection
+              settings={settings}
+              busy={busy}
+              onOpenDirectory={handleOpenDataDirectory}
+              onChangeDirectory={handleChangeDataDirectory}
+              onCreateBackup={handleCreateBackup}
+              onRestoreBackup={handleRestoreBackup}
+              onCreatePortableBackup={handleCreatePortableBackup}
+              onRestorePortableBackup={handleRestorePortableBackup}
+            />
+          )}
+          {activeSection === "appearance" && (
+            <AppearanceSection
+              appearanceTheme={appearanceTheme}
+              appearanceMode={appearanceMode}
+              settings={settings}
+              busy={busy}
+              themes={APPEARANCE_THEMES}
+              onChange={handleAppearanceThemeChange}
+            />
+          )}
+          {activeSection === "about" && (
+            <>
+              <AboutSection />
+              <ProfilesSection
+                settings={settings}
+                busy={busy}
+                profileId={profileId}
+                profileUsername={profileUsername}
+                setProfileUsername={setProfileUsername}
+                profilePassword={profilePassword}
+                setProfilePassword={setProfilePassword}
+                profileDialogMode={profileDialogMode}
+                profileDialog={profileDialog}
+                onOpenDialog={openProfileDialog}
+                onSelectProfile={handleProfileSelection}
+                onSubmit={handleProfileDialogSubmit}
+                onClose={() => setProfileDialogMode("")}
+              />
+            </>
+          )}
+        </div>
+      </div>
       {ConfirmDialogComponent}
     </main>
   );

@@ -160,6 +160,15 @@ function updateInvoiceDefaults(invoiceDefaults) {
   return getAppSettings();
 }
 
+function updateCategoryTaxRates(categoryTaxRates) {
+  const nextConfig = saveAppConfig(ctx.appConfigPath, {
+    ...ctx.appConfig,
+    categoryTaxRates,
+  });
+  ctx.appConfig = nextConfig;
+  return getAppSettings();
+}
+
 function updateInventoryAddItemMode(inventoryAddItemMode) {
   const nextConfig = saveAppConfig(ctx.appConfigPath, {
     ...ctx.appConfig,
@@ -231,6 +240,7 @@ async function setLocalDataDirectory(destinationDirectory) {
     switchProfile,
     updateDefaultPaymentMethod,
     updateInvoiceDefaults,
+    updateCategoryTaxRates,
     updateInventoryAddItemMode,
     updateAppearanceSettings,
     setLocalDataDirectory,

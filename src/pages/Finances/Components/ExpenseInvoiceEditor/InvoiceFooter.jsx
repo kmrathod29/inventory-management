@@ -1,4 +1,4 @@
-export function InvoiceFooter({ shopName, isSaving, onCancel, onSave }) {
+export function InvoiceFooter({ shopName, isSaving, onCancel, onSave, saveLabel = "Save Invoice" }) {
   return (
     <>
       <footer className="invoice-footer">
@@ -9,7 +9,7 @@ export function InvoiceFooter({ shopName, isSaving, onCancel, onSave }) {
       <div className="invoice-action-bar">
         <button className="btn btn-ghost" type="button" onClick={onCancel} disabled={isSaving}>Cancel</button>
         <button className="btn btn-primary" type="button" onClick={onSave} disabled={isSaving}>
-          {isSaving ? "Saving..." : "Save Invoice"}
+          {isSaving ? "Saving..." : saveLabel}
         </button>
       </div>
     </>

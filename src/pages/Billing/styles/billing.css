@@ -257,6 +257,135 @@
   background: color-mix(in srgb, var(--danger) 8%, transparent);
 }
 
+.action-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.action-menu-trigger {
+  display: grid;
+  width: 34px;
+  height: 32px;
+  padding: 0;
+  place-items: center;
+}
+
+.action-menu-popover {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 4px);
+  right: 0;
+  display: grid;
+  min-width: 120px;
+  padding: 5px;
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+  background: var(--background-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.action-menu-popover button {
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--color-primary);
+  text-align: left;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.action-menu-popover button:hover {
+  background: var(--background-tertiary);
+}
+
+.action-menu-popover .action-menu-danger {
+  color: var(--danger);
+}
+
+.payment-dialog-overlay {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(0 0 0 / 50%);
+}
+
+.payment-dialog {
+  width: min(420px, calc(100vw - 32px));
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--background-primary);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-lg);
+}
+
+.payment-dialog form {
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+}
+
+.payment-dialog h2,
+.payment-dialog p {
+  margin: 0;
+}
+
+.payment-dialog-due {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 12px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--warning) 12%, var(--background-primary));
+  color: var(--warning);
+}
+
+.payment-dialog-due strong {
+  font-size: 1.05rem;
+}
+
+.bill-due-label {
+  display: block;
+  margin-top: 4px;
+  color: var(--danger);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.payment-dialog p {
+  color: var(--color-muted);
+}
+
+.payment-dialog label {
+  display: grid;
+  gap: 7px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.payment-dialog select,
+.payment-dialog input {
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--background-secondary);
+  color: var(--color-primary);
+  font: inherit;
+}
+
+.payment-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
 .dialog-overlay {
   position: fixed;
   inset: 0;

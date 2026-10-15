@@ -36,6 +36,7 @@ export function BillDialog({
   customers,
   onSaved,
   asPage = false,
+  startEditing = false,
 }) {
   const showToast = useToast();
 
@@ -59,7 +60,7 @@ export function BillDialog({
     ...(bill.invoiceData || {}),
   }));
   const [invoiceErrors, setInvoiceErrors] = useState({});
-  const [isEditing, setIsEditing] = useState(isNew);
+  const [isEditing, setIsEditing] = useState(isNew || startEditing || !asPage);
   const [isSaving, setIsSaving] = useState(false);
   const savedInvoiceRef = useRef(null);
 
@@ -288,7 +289,7 @@ export function BillDialog({
           await window.db.addCustomerBill(customer, billPayload);
         }
       } else {
-        await window.db.editCustomerBill(form.customerId, customer, form.id, billPayload);
+        await window.db.editCustomerBill(form.customerId || bill.customerId, customer, form.id, billPayload);
       }
 
       setIsEditing(false);
@@ -463,6 +464,7 @@ export function BillDialog({
           compactToolbar
           accountingNote={false}
           enableShortcuts
+          saveLabel={isNew ? "Save Bill" : "Save Edit"}
           errors={invoiceErrors}
           setErrors={setInvoiceErrors}
           billTypeControl={
@@ -538,8 +540,8 @@ export function BillDialog({
         <div className="bill-page-card invoice-card">
           <header className="invoice-screen-header">
             <div>
-              <h1>New Bill</h1>
-              <p>Create a new sales invoice</p>
+              <h1>{isNew ? "New Bill" : "Edit Bill"}</h1>
+              <p>{isNew ? "Create a new sales invoice" : "Update this sales invoice"}</p>
             </div>
             <div className="offline-status">
               <span className="offline-dot" aria-hidden="true" />
@@ -959,7 +961,7 @@ export function BillDialog({
           </button>
           {isEditing ? (
             <button className="btn-primary bill-action-primary" onClick={handleSave} disabled={isSaving}>
-              {isSaving ? "Saving..." : "Save Bill"}
+              {isSaving ? "Saving..." : isNew ? "Save Bill" : "Save Edit"}
             </button>
           ) : (
             <button className="btn-primary bill-action-primary" onClick={() => setIsEditing(true)}>

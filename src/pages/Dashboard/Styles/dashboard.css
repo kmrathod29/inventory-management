@@ -47,7 +47,7 @@
 .dashboard-panel-heading button { display: inline-flex; align-items: center; gap: 7px; padding: 9px 13px; border: 1px solid #d8e0e9; border-radius: 7px; background: #fff; color: #1762bd; font-weight: 600; cursor: pointer; }
 .dashboard-panel-heading button:hover { background: #f4f7fa; }
 .dashboard-invoice-table-wrap { overflow-x: auto; border: 1px solid #e1e7ef; border-radius: 8px; }
-.dashboard-invoice-table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: 13px; }
+.dashboard-invoice-table { width: 100%; min-width: 980px; border-collapse: collapse; font-size: 13px; }
 .dashboard-invoice-table th { padding: 13px 20px; background: #f0f4f8; color: #344155; font-size: 12px; font-weight: 700; text-align: left; }
 .dashboard-invoice-table td { padding: 15px 20px; border-top: 1px solid #e7ecf1; color: #2a3647; }
 .dashboard-invoice-table tbody tr { cursor: pointer; }
@@ -55,6 +55,14 @@
 .dashboard-status { display: inline-block; padding: 6px 12px; border-radius: 5px; font-size: 12px; }
 .dashboard-status-paid { background: #d9f5e5; color: #16824e; }
 .dashboard-status-pending { background: #fff0cf; color: #996000; }
+.dashboard-status-completed { background: #d9f5e5; color: #16824e; }
+.dashboard-status-partially-paid { background: #fff0cf; color: #996000; }
+.dashboard-action-menu { position: relative; display: inline-block; }
+.dashboard-action-menu > button { display: grid; width: 32px; height: 30px; place-items: center; border: 1px solid #d8e0e8; border-radius: 5px; background: #fff; color: #344155; cursor: pointer; }
+.dashboard-action-popover { position: absolute; z-index: 10; top: calc(100% + 4px); right: 0; display: grid; min-width: 105px; padding: 4px; border: 1px solid #d8e0e8; border-radius: 6px; background: #fff; box-shadow: 0 4px 14px rgba(25, 40, 60, .15); }
+.dashboard-action-popover button { padding: 7px 9px; border: 0; border-radius: 4px; background: transparent; color: #344155; text-align: left; font-size: 11px; cursor: pointer; }
+.dashboard-action-popover button:hover { background: #f0f4f8; }
+.dashboard-due-label { display: block; margin-top: 4px; color: #b42318; font-size: 11px; font-weight: 600; }
 .dashboard-empty { padding: 38px 20px !important; color: #7b8797 !important; text-align: center; }
 
 @media (max-width: 1000px) { .dashboard-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

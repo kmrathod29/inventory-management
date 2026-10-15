@@ -32,6 +32,7 @@ export function defaultInvoiceDefaults() {
 export function defaultAppConfig() {
   return {
     defaultPaymentMethod: DEFAULT_PAYMENT_METHOD,
+    categoryTaxRates: {},
     dataDirectory: null,
     invoiceDefaults: defaultInvoiceDefaults(),
     inventoryAddItemMode: null,
@@ -51,6 +52,20 @@ function validateAppConfig(config) {
   const defaultPaymentMethod = config.defaultPaymentMethod ?? DEFAULT_PAYMENT_METHOD;
   if (!PAYMENT_METHODS.includes(defaultPaymentMethod)) {
     throw new Error("Default payment method must be Cash, UPI, Card, or Credit.");
+  }
+
+  const categoryTaxRates = config.categoryTaxRates ?? {};
+  if (!categoryTaxRates || typeof categoryTaxRates !== "object" || Array.isArray(categoryTaxRates)) {
+    throw new Error("Category tax rates must be an object.");
+  }
+  const normalizedCategoryTaxRates = {};
+  for (const [category, rate] of Object.entries(categoryTaxRates)) {
+    const normalizedCategory = category.trim();
+    const numericRate = Number(rate);
+    if (!normalizedCategory || !Number.isFinite(numericRate) || numericRate < 0 || numericRate > 100) {
+      throw new Error("Category tax rates must have non-empty names and values between 0 and 100.");
+    }
+    normalizedCategoryTaxRates[normalizedCategory] = String(numericRate);
   }
 
   const dataDirectory = config.dataDirectory ?? null;
@@ -115,6 +130,7 @@ function validateAppConfig(config) {
 
   return {
     defaultPaymentMethod,
+    categoryTaxRates: normalizedCategoryTaxRates,
     dataDirectory,
     invoiceDefaults: defaults,
     inventoryAddItemMode,

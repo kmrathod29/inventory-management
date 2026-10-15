@@ -1,21 +1,12 @@
 import { useState } from "react";
 import { formatDate } from "../../../utils/regional";
 import { formatCurrency } from "../../../utils/regional";
-export function BillTable({ filtered, statusMeta, openExisting, onDelete }) {
+export function BillTable({ filtered, statusMeta, openExisting, onDelete, onPayment }) {
   const [sortKey, setSortKey] = useState("id");
   const [sortOrder, setSortOrder] = useState(true);
-  const [sortStatus, setSortStatus] = useState(1);
-  const statusCycles = [
-    { Due: 0, Partial: 1, Paid: 2 }, // 0
-    { Partial: 0, Paid: 1, Due: 2 }, // 1
-    { Paid: 0, Due: 1, Partial: 2 }, // 2
-  ];
+  const [openActions, setOpenActions] = useState(null);
 
   const sortedFiltered = [...filtered].sort((a, b) => {
-    if (sortKey === "status") {
-      const currentOrder = statusCycles[sortStatus];
-      return currentOrder[a[sortKey]] - currentOrder[b[sortKey]];
-    }
     if (typeof a[sortKey] === "string" || typeof b[sortKey] === "string") {
       if (sortOrder) return a[sortKey].localeCompare(b[sortKey]);
       else return b[sortKey].localeCompare(a[sortKey]);
@@ -38,15 +29,8 @@ export function BillTable({ filtered, statusMeta, openExisting, onDelete }) {
             >
               SN
             </th>
-            <th
-              className="th-data"
-              onClick={() => {
-                setSortKey("name");
-                setSortOrder(!sortOrder);
-              }}
-            >
-              Customer Name
-            </th>
+            <th className="th-data">Invoice No.</th>
+            <th className="th-data">Name</th>
             <th
               className="th-data"
               onClick={() => {
@@ -63,16 +47,7 @@ export function BillTable({ filtered, statusMeta, openExisting, onDelete }) {
                 setSortOrder(!sortOrder);
               }}
             >
-              Total Purchased
-            </th>
-            <th
-              className="th-data"
-              onClick={() => {
-                setSortKey("totalDue");
-                setSortOrder(!sortOrder);
-              }}
-            >
-              Total Due
+              Grand Total
             </th>
             <th
               className="th-data"
@@ -83,72 +58,50 @@ export function BillTable({ filtered, statusMeta, openExisting, onDelete }) {
             >
               Date
             </th>
-            <th
-              className="th-data"
-              onClick={() => {
-                if (sortKey === "status") {
-                  setSortStatus((sortStatus + 1) % 3);
-                } else {
-                  setSortKey("status");
-                }
-              }}
-            >
-              Status
-            </th>
-            <th
-              className="th-data"
-              onClick={() => {
-                setSortKey("billType");
-                setSortOrder(!sortOrder);
-              }}
-            >
-              Types
-            </th>
+            <th className="th-data">Payment Status</th>
             <th className="th-actions">Actions</th>
           </tr>
         </thead>
         <tbody>
           {filtered.length === 0 ? (
             <tr>
-              <td colSpan={9} className="empty-row">
+              <td colSpan={8} className="empty-row">
                 No bills found.
               </td>
             </tr>
           ) : (
-            sortedFiltered.map((c) => (
+            sortedFiltered.map((c, index) => (
               <tr
                 key={c.id}
                 className="table-row"
                 onClick={() => openExisting(c)}
               >
-                <td>{c.id}</td>
+                <td>{index + 1}</td>
+                <td>{c.invoiceNumber || c.billNumber || `INV-${String(c.id).padStart(4, "0")}`}</td>
                 <td className="name-cell">{c.name}</td>
                 <td>{c.phone}</td>
                 <td>{formatCurrency(c.totalPurchased)}</td>
-                <td>{formatCurrency(c.totalDue)}</td>
                 <td>{formatDate(c.date)}</td>
                 <td>
-                  <span className={`status-badge ${statusMeta[c.status].cls}`}>
-                    {statusMeta[c.status].label}
+                  <span className={`status-badge ${statusMeta[c.status]?.cls || "status-due"}`}>
+                    {{ Paid: "Completed", Partial: "Partially Paid", Due: "Pending" }[c.status] || "Pending"}
                   </span>
+                  {Number(c.amountDue) > 0 && (
+                    <small className="bill-due-label">Due {formatCurrency(c.amountDue)}</small>
+                  )}
                 </td>
-                <td>{({ default: "Default", pan: "PAN", vat: "VAT" })[c.billType] || "Default"}</td>
                 <td onClick={(e) => e.stopPropagation()}>
-                  <div className="action-btns">
-                    <button
-                      className="action-btn"
-                      title="View"
-                      onClick={() => openExisting(c)}
-                    >
-                      View
+                  <div className="action-menu">
+                    <button className="action-btn action-menu-trigger" title="Actions" aria-label="Open actions" onClick={() => setOpenActions(openActions === c.id ? null : c.id)}>
+                      <i className="ti ti-dots-vertical" aria-hidden="true" />
                     </button>
-                    <button
-                      className="action-btn action-btn-danger"
-                      title="Delete"
-                      onClick={() => onDelete(c.id)}
-                    >
-                      Delete
-                    </button>
+                    {openActions === c.id && (
+                      <div className="action-menu-popover">
+                        <button onClick={() => { setOpenActions(null); openExisting(c); }}>Edit</button>
+                        <button onClick={() => { setOpenActions(null); onPayment(c); }}>Payment</button>
+                        <button className="action-menu-danger" onClick={() => { setOpenActions(null); onDelete(c.id); }}>Delete</button>
+                      </div>
+                    )}
                   </div>
                 </td>
               </tr>

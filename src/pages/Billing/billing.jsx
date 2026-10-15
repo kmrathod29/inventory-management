@@ -6,7 +6,9 @@ import { useConfirm } from "../../hooks/useConfirm";
 import { useErrorHandler } from "../../hooks/useErrorHandler";
 import { useProductUsage } from "../../hooks/useProductUsage";
 import { useDataChanged } from "../../hooks/useDataChanged";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
+import { formatCurrency } from "../../utils/regional";
+import { useToast } from "../../hooks/ToastContext";
 
 export function Billing({ initialNewBill = false }) {
   const [search, setSearch] = useState("");
@@ -15,9 +17,14 @@ export function Billing({ initialNewBill = false }) {
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
   const [invoiceDefaults, setInvoiceDefaults] = useState({});
+  const [paymentBill, setPaymentBill] = useState(null);
+  const [paymentStatus, setPaymentStatus] = useState("Paid");
+  const [partialAmount, setPartialAmount] = useState("");
   const { confirm, ConfirmDialogComponent } = useConfirm();
   const { handleAsync } = useErrorHandler();
   const navigate = useNavigate();
+  const location = useLocation();
+  const showToast = useToast();
 
   // Frequency/recency map derived from existing bill history (no new API call).
   const usageMap = useProductUsage(customers);
@@ -95,6 +102,7 @@ export function Billing({ initialNewBill = false }) {
       panNumber: bill.pan_number || "",
       billNumber: bill.bill_number || "",
       invoiceData: bill.invoice_data ? JSON.parse(bill.invoice_data) : null,
+      invoiceNumber: bill.invoice_data ? JSON.parse(bill.invoice_data).invoiceNumber || "" : "",
       status: bill.status,
       products: bill.products,
     })),
@@ -107,6 +115,21 @@ export function Billing({ initialNewBill = false }) {
       c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.phone.includes(search),
   );
+
+  useEffect(() => {
+    const requestedBillId = location.state?.billId;
+    if (!requestedBillId || selectedBill || customers.length === 0) return;
+    const bill = rows.find((item) => item.id === requestedBillId);
+    if (!bill) return;
+    if (location.state.action === "payment") openPayment(bill);
+    else {
+      // Deep-linking from Dashboard opens the selected bill in the existing editor.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedBill({ ...bill, invoiceDefaults });
+      setIsNewBill(false);
+    }
+    navigate(location.pathname, { replace: true, state: null });
+  }, [customers, location, navigate, rows, selectedBill, invoiceDefaults]);
 
   useEffect(() => {
     if (!initialNewBill || selectedBill) return;
@@ -184,6 +207,37 @@ export function Billing({ initialNewBill = false }) {
     }
   }
 
+  function openPayment(bill) {
+    setPaymentBill(bill);
+    setPaymentStatus(bill.status === "Paid" ? "Paid" : bill.status === "Partial" ? "Partial" : "Due");
+    setPartialAmount("");
+  }
+
+  async function savePayment(event) {
+    event.preventDefault();
+    if (!paymentBill) return;
+    const outstanding = Math.max(0, Number(paymentBill.amountDue || 0));
+    const additionalPayment = Number(partialAmount);
+    if (paymentStatus === "Partial" &&
+        (!Number.isFinite(additionalPayment) || additionalPayment <= 0 || additionalPayment >= outstanding)) {
+      showToast(`Partial payment must be greater than zero and less than the due amount (${formatCurrency(outstanding)}).`, "error");
+      return;
+    }
+    const amountPaid = paymentStatus === "Paid"
+      ? Number(paymentBill.totalPurchased)
+      : paymentStatus === "Due"
+        ? 0
+        : Number(paymentBill.amountPaid || 0) + additionalPayment;
+    const result = await handleAsync(
+      () => window.db.updateBillPayment(paymentBill.id, amountPaid, paymentStatus),
+      "Failed to update payment status",
+    );
+    if (!result && result !== undefined) return;
+    setPaymentBill(null);
+    const data = await handleAsync(() => window.db.getCustomers(), "Failed to refresh customers");
+    if (data) setCustomers(data);
+  }
+
   return (
     <>
       <div className="billing-page">
@@ -195,6 +249,7 @@ export function Billing({ initialNewBill = false }) {
               statusMeta={statusMeta}
               openExisting={openExisting}
               onDelete={handleDelete}
+              onPayment={openPayment}
             />
           </>
         ) : (
@@ -215,12 +270,47 @@ export function Billing({ initialNewBill = false }) {
               onSaved={handleSaved}
               customers={customers}
               asPage
+              startEditing
             />
           </>
         )}
       </div>
 
       {ConfirmDialogComponent}
+      {paymentBill && (
+        <div className="payment-dialog-overlay" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setPaymentBill(null);
+        }}>
+          <div className="payment-dialog" role="dialog" aria-modal="true" aria-labelledby="payment-dialog-title">
+          <form onSubmit={savePayment}>
+            <h2 id="payment-dialog-title">Update Payment</h2>
+            <p>{paymentBill.name} · {formatCurrency(paymentBill.totalPurchased)}</p>
+            <div className="payment-dialog-due">
+              <span>Amount due</span>
+              <strong>{formatCurrency(Math.max(0, Number(paymentBill.amountDue || 0)))}</strong>
+            </div>
+            <label>
+              Payment status
+              <select value={paymentStatus} onChange={(event) => setPaymentStatus(event.target.value)}>
+                <option value="Paid">Completed</option>
+                <option value="Due">Pending</option>
+                <option value="Partial">Partially Paid</option>
+              </select>
+            </label>
+            {paymentStatus === "Partial" && (
+              <label>
+                Payment amount
+                <input type="number" min="0.01" max={Math.max(0, Number(paymentBill.amountDue || 0) - 0.01)} step="0.01" value={partialAmount} onChange={(event) => setPartialAmount(event.target.value)} required />
+              </label>
+            )}
+            <div className="payment-dialog-actions">
+              <button type="button" className="btn-secondary" onClick={() => setPaymentBill(null)}>Cancel</button>
+              <button type="submit" className="btn-primary">Save Payment</button>
+            </div>
+          </form>
+          </div>
+        </div>
+      )}
     </>
   );
 }

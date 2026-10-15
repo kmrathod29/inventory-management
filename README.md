@@ -56,6 +56,14 @@ Only works with electron version 38.7.0!
    npx @electron/rebuild
    ```
 
+   The `dev`, `build`, and installer commands also perform this rebuild
+   automatically. If you run the Node test suite afterward, rebuild the
+   SQLite module for Node first:
+
+   ```bash
+   npm rebuild better-sqlite3
+   ```
+
 4. Start the app in development mode:
 
    ```bash

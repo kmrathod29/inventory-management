@@ -244,8 +244,48 @@ function editBill(billId, bill) {
 
 function editCustomerBill(customerId, customer, billId, bill) {
   const run = ctx.db.transaction(() => {
-    editCustomer(customerId, customer);
+    const billRecord = ctx.db.prepare(`SELECT customer_id FROM bills WHERE id = ?`).get(billId);
+    if (!billRecord) throw new Error("Bill not found.");
+    const resolvedCustomerId = Number(customerId) || billRecord.customer_id;
+    editCustomer(resolvedCustomerId, customer);
     editBill(billId, bill);
+  });
+  run();
+}
+
+function updateBillPayment(billId, amountPaid, status) {
+  const bill = ctx.db.prepare(`SELECT total_purchased, amount_paid FROM bills WHERE id = ?`).get(billId);
+  if (!bill) throw new Error("Bill not found.");
+  const paid = Number(amountPaid);
+  if (!Number.isFinite(paid) || paid < 0 || paid > Number(bill.total_purchased)) {
+    throw new Error("Payment amount must be between zero and the bill total.");
+  }
+  if (!["Paid", "Partial", "Due"].includes(status)) {
+    throw new Error("Invalid payment status.");
+  }
+  if (status === "Paid" && paid !== Number(bill.total_purchased)) {
+    throw new Error("A completed payment must cover the full bill.");
+  }
+  if (status === "Due" && paid !== 0) {
+    throw new Error("A pending payment cannot include a paid amount.");
+  }
+  if (status === "Partial" && (paid <= 0 || paid >= Number(bill.total_purchased))) {
+    throw new Error("A partial payment must be less than the bill total.");
+  }
+  const amountDue = Number(bill.total_purchased) - paid;
+  const run = ctx.db.transaction(() => {
+    ctx.db.prepare(
+      `UPDATE bills SET amount_paid = ?, amount_due = ?, status = ? WHERE id = ?`,
+    ).run(paid, amountDue, status, billId);
+    const difference = paid - Number(bill.amount_paid || 0);
+    if (Math.abs(difference) > 0.01) {
+      addBillActivity(billId, {
+        type: "payment",
+        amount: difference,
+        paymentMethod: "",
+        note: "Payment status updated",
+      });
+    }
   });
   run();
 }
@@ -274,5 +314,6 @@ function getLandingPrice(productName, bucketSize) {
     editCustomer,
     editBill,
     editCustomerBill,
+    updateBillPayment,
   };
 }

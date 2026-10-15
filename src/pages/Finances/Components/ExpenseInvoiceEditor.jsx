@@ -24,7 +24,7 @@ export function ExpenseInvoiceEditor({
   items, setItems, isSaving, onSave, onCancel, onClose, products = [], errors = {},
   setErrors, isDirty = false, recordLabel = "Import record", accountingNote = true,
   enableShortcuts = true, billTypeControl, extraControls, backLabel = "Back to Expenses",
-  showBackButton = true, compactToolbar = false,
+  showBackButton = true, compactToolbar = false, saveLabel = "Save Invoice",
 }) {
   const itemRefs = useRef([]);
   const editorRef = useRef(null);
@@ -217,7 +217,7 @@ export function ExpenseInvoiceEditor({
           Tax and discount are shown on this invoice only; the recorded import amount and stock cost use item quantity × rate.
         </p>}
         {extraControls}
-        <InvoiceFooter shopName={invoice.shopName} isSaving={isSaving} onCancel={onCancel} onSave={onSave} />
+        <InvoiceFooter shopName={invoice.shopName} isSaving={isSaving} onCancel={onCancel} onSave={onSave} saveLabel={saveLabel} />
       </article>
     </main>
   );

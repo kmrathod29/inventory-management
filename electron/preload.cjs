@@ -20,6 +20,7 @@ const DATA_MUTATION_CHANNELS = new Set([
   "db:addCustomerBill",
   "db:addBillToCustomer",
   "db:editCustomerBill",
+  "db:updateBillPayment",
   "db:deleteCustomer",
   "db:deleteBill",
   "db:editCustomer",
@@ -39,6 +40,7 @@ const DATA_MUTATION_CHANNELS = new Set([
   "settings:switchProfile",
   "settings:updateDefaultPaymentMethod",
   "settings:updateInvoiceDefaults",
+  "settings:updateCategoryTaxRates",
   "settings:updateInventoryAddItemMode",
   "settings:updateAppearance",
   "settings:changeDataDirectory",
@@ -106,6 +108,8 @@ contextBridge.exposeInMainWorld("db", {
     invoke("db:addBillToCustomer", customerId, customer, bill),
   editCustomerBill: (customerId, customer, billId, bill) =>
     invoke("db:editCustomerBill", customerId, customer, billId, bill),
+  updateBillPayment: (billId, amountPaid, status) =>
+    invoke("db:updateBillPayment", billId, amountPaid, status),
   getCustomers: () => invoke("db:getCustomers"),
   deleteCustomer: (id) => invoke("db:deleteCustomer", id),
   deleteBill: (billId) => invoke("db:deleteBill", billId),
@@ -144,6 +148,8 @@ contextBridge.exposeInMainWorld("db", {
     invoke("settings:updateDefaultPaymentMethod", paymentMethod),
   updateInvoiceDefaults: (invoiceDefaults) =>
     invoke("settings:updateInvoiceDefaults", invoiceDefaults),
+  updateCategoryTaxRates: (categoryTaxRates) =>
+    invoke("settings:updateCategoryTaxRates", categoryTaxRates),
   updateInventoryAddItemMode: (mode) =>
     invoke("settings:updateInventoryAddItemMode", mode),
   updateAppearanceSettings: (theme, mode) =>

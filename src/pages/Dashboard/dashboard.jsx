@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { useErrorHandler } from "../../hooks/useErrorHandler";
 import { useDataChanged } from "../../hooks/useDataChanged";
 import { formatCurrency, formatDate, getBusinessDateISO } from "../../utils/regional";
+import { useConfirm } from "../../hooks/useConfirm";
 
 function stockTotal(product) {
   return (product.bases || []).reduce(
@@ -15,9 +16,11 @@ function stockTotal(product) {
 export function DashboardPage() {
   const navigate = useNavigate();
   const { handleAsync } = useErrorHandler();
+  const { confirm, ConfirmDialogComponent } = useConfirm();
   const [products, setProducts] = useState([]);
   const [sales, setSales] = useState([]);
   const [search, setSearch] = useState("");
+  const [openActions, setOpenActions] = useState(null);
 
   async function loadDashboard() {
     const [productData, salesData] = await Promise.all([
@@ -49,6 +52,12 @@ export function DashboardPage() {
     return !search.trim() || text.includes(search.trim().toLocaleLowerCase());
   }).sort((first, second) => new Date(second.customer.date) - new Date(first.customer.date) || second.id - first.id).slice(0, 5), [sales, search]);
 
+  async function deleteRecent(sale) {
+    if (!await confirm("Are you sure you want to delete this bill? Stock will be restored.")) return;
+    await handleAsync(() => window.db.deleteBill(sale.id), "Failed to delete bill");
+    loadDashboard();
+  }
+
   return (
     <div className="dashboard-page">
       <header className="dashboard-topbar">
@@ -66,9 +75,10 @@ export function DashboardPage() {
         </section>
         <section className="dashboard-invoices-panel">
           <div className="dashboard-panel-heading"><h2>Recent Invoices</h2><button type="button" onClick={() => navigate("/billing")}>View all invoices <i className="ti ti-chevron-right" /></button></div>
-          <div className="dashboard-invoice-table-wrap"><table className="dashboard-invoice-table"><thead><tr><th>Invoice No.</th><th>Customer</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead><tbody>{recentInvoices.map((sale) => { const invoice = sale.invoiceData || {}; const invoiceNumber = invoice.invoiceNumber || sale.billNumber || `INV-${String(sale.id).padStart(4, "0")}`; const status = sale.customer.amountDue > 0 ? "Pending" : "Paid"; return <tr key={sale.id} onClick={() => navigate("/billing")}><td>{invoiceNumber}</td><td>{sale.customer.name}</td><td>{formatDate(sale.customer.date, "DD MMM YYYY")}</td><td>{formatCurrency(sale.sellingPrice)}</td><td><span className={`dashboard-status dashboard-status-${status.toLowerCase()}`}>{status}</span></td></tr>; })}{recentInvoices.length === 0 && <tr><td colSpan="5" className="dashboard-empty">No invoices found.</td></tr>}</tbody></table></div>
+          <div className="dashboard-invoice-table-wrap"><table className="dashboard-invoice-table"><thead><tr><th>SN</th><th>Invoice No.</th><th>Name</th><th>Mobile</th><th>Grand Total</th><th>Date</th><th>Payment Status</th><th>Actions</th></tr></thead><tbody>{recentInvoices.map((sale, index) => { const invoice = sale.invoiceData || {}; const invoiceNumber = invoice.invoiceNumber || sale.billNumber || `INV-${String(sale.id).padStart(4, "0")}`; const status = sale.customer.amountDue > 0 && sale.customer.amountPaid > 0 ? "Partially Paid" : sale.customer.amountDue > 0 ? "Pending" : "Completed"; const route = (action) => navigate("/billing", { state: { billId: sale.id, action } }); return <tr key={sale.id}><td>{index + 1}</td><td>{invoiceNumber}</td><td>{sale.customer.name}</td><td>{sale.customer.phone}</td><td>{formatCurrency(sale.customer.totalPurchased)}</td><td>{formatDate(sale.customer.date, "DD MMM YYYY")}</td><td><span className={`dashboard-status dashboard-status-${status.toLowerCase().replaceAll(" ", "-")}`}>{status}</span>{Number(sale.customer.amountDue) > 0 && <small className="dashboard-due-label">Due {formatCurrency(sale.customer.amountDue)}</small>}</td><td><div className="dashboard-action-menu"><button type="button" aria-label="Open actions" onClick={() => setOpenActions(openActions === sale.id ? null : sale.id)}><i className="ti ti-dots-vertical" aria-hidden="true" /></button>{openActions === sale.id && <div className="dashboard-action-popover"><button type="button" onClick={() => route("edit")}>Edit</button><button type="button" onClick={() => route("payment")}>Payment</button><button type="button" onClick={() => deleteRecent(sale)}>Delete</button></div>}</div></td></tr>; })}{recentInvoices.length === 0 && <tr><td colSpan="8" className="dashboard-empty">No invoices found.</td></tr>}</tbody></table></div>
         </section>
       </main>
+      {ConfirmDialogComponent}
     </div>
   );
 }
