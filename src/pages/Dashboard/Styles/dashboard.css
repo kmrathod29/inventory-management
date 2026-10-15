@@ -5,6 +5,28 @@
   color: #1b2738;
 }
 
+/* Keep this page on the application theme tokens instead of its original
+   fixed light palette. Semantic status and metric colors remain intentional. */
+.dashboard-page { background: var(--background); color: var(--foreground); }
+.dashboard-topbar { border-color: var(--border); background: var(--card); }
+.dashboard-topbar h2, .dashboard-heading h1, .dashboard-panel-heading h2 { color: var(--foreground); }
+.dashboard-global-search, .dashboard-global-search input, .dashboard-metric,
+.dashboard-invoices-panel, .dashboard-panel-heading button,
+.dashboard-action-menu > button, .dashboard-action-popover { background: var(--card); color: var(--foreground); }
+.dashboard-global-search, .dashboard-metric, .dashboard-invoices-panel,
+.dashboard-invoice-table-wrap, .dashboard-panel-heading button,
+.dashboard-action-menu > button, .dashboard-action-popover { border-color: var(--border); }
+.dashboard-global-search input { color: var(--foreground); }
+.dashboard-offline, .dashboard-global-search, .dashboard-global-search kbd,
+.dashboard-offline b, .dashboard-heading p, .dashboard-metric small,
+.dashboard-metric > i, .dashboard-empty { color: var(--muted-foreground); }
+.dashboard-metric strong, .dashboard-invoice-table td { color: var(--card-foreground); }
+.dashboard-invoice-table th { background: var(--muted); color: var(--foreground); }
+.dashboard-invoice-table td { border-color: var(--border); }
+.dashboard-invoice-table tbody tr:hover, .dashboard-action-popover button:hover,
+.dashboard-panel-heading button:hover { background: var(--accent); }
+.dashboard-action-popover button { color: var(--foreground); }
+
 .dashboard-topbar {
   display: flex;
   align-items: center;
@@ -75,3 +97,15 @@
   .dashboard-heading p { font-size: 15px; }
 }
 @media (max-width: 480px) { .dashboard-metric-grid { grid-template-columns: 1fr; } .dashboard-panel-heading { align-items: flex-start; flex-direction: column; } }
+.dashboard-page { background: var(--background); color: var(--foreground); }
+.dashboard-topbar { border-color: var(--border); background: var(--card); }
+.dashboard-topbar h2, .dashboard-heading h1, .dashboard-panel-heading h2 { color: var(--foreground); }
+.dashboard-global-search, .dashboard-global-search input, .dashboard-metric, .dashboard-invoices-panel, .dashboard-panel-heading button, .dashboard-action-menu > button, .dashboard-action-popover { background: var(--card); color: var(--foreground); }
+.dashboard-global-search, .dashboard-metric, .dashboard-invoices-panel, .dashboard-invoice-table-wrap, .dashboard-panel-heading button, .dashboard-action-menu > button, .dashboard-action-popover { border-color: var(--border); }
+.dashboard-global-search input { color: var(--foreground); }
+.dashboard-offline, .dashboard-global-search, .dashboard-global-search kbd, .dashboard-offline b, .dashboard-heading p, .dashboard-metric small, .dashboard-metric > i, .dashboard-empty { color: var(--muted-foreground); }
+.dashboard-metric strong, .dashboard-invoice-table td { color: var(--card-foreground); }
+.dashboard-invoice-table th { background: var(--muted); color: var(--foreground); }
+.dashboard-invoice-table td { border-color: var(--border); }
+.dashboard-invoice-table tbody tr:hover, .dashboard-action-popover button:hover, .dashboard-panel-heading button:hover { background: var(--accent); }
+.dashboard-action-popover button { color: var(--foreground); }

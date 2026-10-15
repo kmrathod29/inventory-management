@@ -741,6 +741,25 @@ select::-webkit-scrollbar {
   background: #f5f8fc;
 }
 
+/* The regular invoice editor predates the shared tokens; keep it theme aware. */
+.bill-regular-page-shell, .invoice-card { background: var(--background); color: var(--foreground); }
+.invoice-screen-header { border-color: var(--border); }
+.invoice-screen-header h1, .invoice-field label, .invoice-section-heading h2,
+.invoice-summary-card h2, .invoice-summary-line strong, .invoice-grand-total { color: var(--foreground); }
+.invoice-screen-header p, .invoice-field label span, .invoice-input-with-icon i,
+.invoice-empty-products, .invoice-summary-line, .invoice-discount-line label,
+.invoice-payment-line label, .invoice-payment-line { color: var(--muted-foreground); }
+.offline-status, .invoice-meta-card, .invoice-products-card, .invoice-summary-card,
+.invoice-field input, .invoice-input-with-icon, .invoice-add-product,
+.invoice-product-search, .invoice-discount-input, .invoice-secondary-button,
+.invoice-cancel-button { background: var(--card); color: var(--foreground); border-color: var(--border); }
+.invoice-field input, .invoice-input-with-icon input, .invoice-discount-input { color: var(--foreground); }
+.invoice-products-card .bill-products-table th { background: var(--muted); color: var(--foreground); }
+.invoice-products-card .bill-products-table td, .invoice-summary-line,
+.invoice-grand-total, .invoice-payment-line { border-color: var(--border); }
+.invoice-add-product:hover, .invoice-secondary-button:hover, .invoice-cancel-button:hover { background: var(--accent); }
+.invoice-field input:focus, .invoice-discount-input:focus { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 20%, transparent); }
+
 .invoice-card {
   max-width: none;
   min-height: 100%;
@@ -1257,3 +1276,13 @@ kbd {
 .bill-item-row:focus-visible {
   background: color-mix(in srgb, var(--primary) 16%, transparent);
 }
+.bill-regular-page-shell, .invoice-card { background: var(--background); color: var(--foreground); }
+.invoice-screen-header { border-color: var(--border); }
+.invoice-screen-header h1, .invoice-field label, .invoice-section-heading h2, .invoice-summary-card h2, .invoice-summary-line strong, .invoice-grand-total { color: var(--foreground); }
+.invoice-screen-header p, .invoice-field label span, .invoice-input-with-icon i, .invoice-empty-products, .invoice-summary-line, .invoice-discount-line label, .invoice-payment-line label, .invoice-payment-line { color: var(--muted-foreground); }
+.offline-status, .invoice-meta-card, .invoice-products-card, .invoice-summary-card, .invoice-field input, .invoice-input-with-icon, .invoice-add-product, .invoice-product-search, .invoice-discount-input, .invoice-secondary-button, .invoice-cancel-button { background: var(--card); color: var(--foreground); border-color: var(--border); }
+.invoice-field input, .invoice-input-with-icon input, .invoice-discount-input { color: var(--foreground); }
+.invoice-products-card .bill-products-table th { background: var(--muted); color: var(--foreground); }
+.invoice-products-card .bill-products-table td, .invoice-summary-line, .invoice-grand-total, .invoice-payment-line { border-color: var(--border); }
+.invoice-add-product:hover, .invoice-secondary-button:hover, .invoice-cancel-button:hover { background: var(--accent); }
+.invoice-field input:focus, .invoice-discount-input:focus { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 20%, transparent); }

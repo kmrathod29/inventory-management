@@ -10,6 +10,40 @@
   color: #1d2939;
 }
 
+/* Shared semantic surfaces for the inventory page and its native dialogs. */
+.inventory-page { background: var(--background); color: var(--foreground); }
+.inventory-page-header { background: var(--card); border-color: var(--border); }
+.inventory-page-header h1, .inventory-stat-card strong, .inventory-product-table td,
+.inventory-product-table td strong, .inventory-history-change { color: var(--foreground); }
+.inventory-page-header p, .inventory-offline-status, .inventory-offline-status small,
+.inventory-stat-card small, .inventory-product-table th span,
+.inventory-product-table td small { color: var(--muted-foreground); }
+.inventory-stat-card, .inventory-product-table-shell, .inventory-stock-dialog,
+.inventory-history-dialog, .inventory-add-form { background: var(--card); color: var(--foreground); border-color: var(--border); }
+.inventory-list-search, .inventory-controls select, .inventory-product-table th,
+.inventory-action-menu, .inventory-history-summary, .inventory-stock-results,
+.inventory-add-field input, .inventory-image-picker, .inventory-stock-row input { background: var(--card); color: var(--foreground); border-color: var(--border); }
+.inventory-list-search input, .inventory-controls select,
+.inventory-stock-search input { background: transparent; color: var(--foreground); }
+.inventory-product-table th { background: var(--muted); }
+.inventory-product-table td, .inventory-stock-row, .inventory-history-entry,
+.inventory-stock-dialog-header, .inventory-history-header,
+.inventory-stock-dialog-footer, .inventory-history-dialog footer,
+.inventory-add-form-actions { border-color: var(--border); }
+.inventory-product-table tbody tr:hover, .inventory-stock-results button:hover,
+.inventory-action-menu button:hover { background: var(--accent); color: var(--foreground); }
+.inventory-action-menu button, .inventory-stock-results button { color: var(--foreground); }
+.inventory-stock-dialog-header h2, .inventory-history-product h2,
+.inventory-history-summary strong { color: var(--foreground); }
+.inventory-stock-dialog-header p, .inventory-stock-close,
+.inventory-stock-results small, .inventory-stock-product small,
+.inventory-history-product strong, .inventory-history-entry small,
+.inventory-add-form-subtitle, .inventory-add-field small,
+.inventory-optional { color: var(--muted-foreground); }
+.inventory-stock-search { border-color: var(--border); color: var(--muted-foreground); }
+.inventory-stock-result-image, .inventory-history-product > span,
+.inventory-image-preview { background: var(--muted); border-color: var(--border); }
+
 .inventory-page-header {
   display: flex;
   align-items: center;
@@ -486,3 +520,18 @@
     grid-template-columns: 1fr;
   }
 }
+.inventory-page { background: var(--background); color: var(--foreground); }
+.inventory-page-header { background: var(--card); border-color: var(--border); }
+.inventory-page-header h1, .inventory-stat-card strong, .inventory-product-table td, .inventory-product-table td strong, .inventory-history-change { color: var(--foreground); }
+.inventory-page-header p, .inventory-offline-status, .inventory-offline-status small, .inventory-stat-card small, .inventory-product-table th span, .inventory-product-table td small { color: var(--muted-foreground); }
+.inventory-stat-card, .inventory-product-table-shell, .inventory-stock-dialog, .inventory-history-dialog, .inventory-add-form { background: var(--card); color: var(--foreground); border-color: var(--border); }
+.inventory-list-search, .inventory-controls select, .inventory-product-table th, .inventory-action-menu, .inventory-history-summary, .inventory-stock-results, .inventory-add-field input, .inventory-image-picker, .inventory-stock-row input { background: var(--card); color: var(--foreground); border-color: var(--border); }
+.inventory-list-search input, .inventory-controls select, .inventory-stock-search input { background: transparent; color: var(--foreground); }
+.inventory-product-table th { background: var(--muted); }
+.inventory-product-table td, .inventory-stock-row, .inventory-history-entry, .inventory-stock-dialog-header, .inventory-history-header, .inventory-stock-dialog-footer, .inventory-history-dialog footer, .inventory-add-form-actions { border-color: var(--border); }
+.inventory-product-table tbody tr:hover, .inventory-stock-results button:hover, .inventory-action-menu button:hover { background: var(--accent); color: var(--foreground); }
+.inventory-action-menu button, .inventory-stock-results button { color: var(--foreground); }
+.inventory-stock-dialog-header h2, .inventory-history-product h2, .inventory-history-summary strong { color: var(--foreground); }
+.inventory-stock-dialog-header p, .inventory-stock-close, .inventory-stock-results small, .inventory-stock-product small, .inventory-history-product strong, .inventory-history-entry small, .inventory-add-form-subtitle, .inventory-add-field small, .inventory-optional { color: var(--muted-foreground); }
+.inventory-stock-search { border-color: var(--border); color: var(--muted-foreground); }
+.inventory-stock-result-image, .inventory-history-product > span, .inventory-image-preview { background: var(--muted); border-color: var(--border); }
