@@ -1,7 +1,7 @@
 import "./Styles/sidebar.css";
 import { useState } from "react";
 import { Link, useLocation } from "react-router";
-import dipaliLogo from "../../Dipali_Logo.png";
+import dipaliLogo from "../assets/Dipali_Logo.png";
 
 const navLinks = [
   {

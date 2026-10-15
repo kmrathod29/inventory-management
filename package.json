@@ -50,7 +50,7 @@
   },
   "build": {
     "appId": "com.yourname.inventorymanager",
-    "productName": "StockWise",
+    "productName": "Dipali Traders Inventory Manager",
     "directories": {
       "output": "release"
     },
