@@ -81,6 +81,9 @@ const require = createRequire(import.meta.url);
 const AdmZip = require("adm-zip");
 const execFileAsync = promisify(execFile);
 
+const TITLEBAR_HEIGHT = 40;
+const OVERLAY_HEIGHT = TITLEBAR_HEIGHT - 1; // 39, so native buttons don't cover the border
+
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
 if (!gotSingleInstanceLock) {
   app.quit();
@@ -248,7 +251,7 @@ function createWindow() {
     titleBarOverlay: {
       color: "#faf8f5",
       symbolColor: "#3a2a20",
-      height: 40,
+      height: OVERLAY_HEIGHT,
     },
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
@@ -533,7 +536,7 @@ app.whenReady().then(() => {
   );
   ipcMain.handle("settings:setTitleBarOverlay", (_, color, symbolColor) => {
     if (!mainWindow || mainWindow.isDestroyed()) return;
-    mainWindow.setTitleBarOverlay({ color, symbolColor, height: 40 });
+    mainWindow.setTitleBarOverlay({ color, symbolColor, height: OVERLAY_HEIGHT });
   });
   ipcMain.handle("settings:openDataDirectory", async () => {
     const error = await shell.openPath(getAppSettings().dataDirectory);
