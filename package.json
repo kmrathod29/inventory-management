@@ -49,10 +49,11 @@
     "vite-plugin-electron-renderer": "^1.0.0"
   },
   "build": {
-    "appId": "com.yourname.inventorymanager",
+    "appId": "com.dipalitraders.inventorymanager",
     "productName": "Dipali Traders Inventory Manager",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "build"
     },
     "files": [
       "dist/**/*",
@@ -62,18 +63,30 @@
       "src/Database/.gitkeep"
     ],
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
+      "shortcutName": "Dipali Traders"
     },
     "linux": {
       "target": [
         "AppImage"
       ],
-      "category": "Office"
+      "category": "Office",
+      "icon": "build/icon.png"
     },
     "extraResources": [
       {
         "from": "Invoice.docx",
         "to": "Invoice.docx"
+      },
+      {
+        "from": "build/icon.ico",
+        "to": "icon.ico"
       }
     ]
   }

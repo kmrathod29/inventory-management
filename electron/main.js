@@ -89,6 +89,12 @@ if (!gotSingleInstanceLock) {
   app.quit();
 }
 
+app.setAppUserModelId("com.dipalitraders.inventorymanager");
+
+const iconPath = app.isPackaged
+  ? path.join(process.resourcesPath, "icon.png")
+  : path.join(app.getAppPath(), "build", "icon.png");
+
 function restartApplication() {
   for (const window of BrowserWindow.getAllWindows()) window.destroy();
   app.relaunch();
@@ -246,6 +252,7 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
+    icon: iconPath,
     backgroundColor: "#faf8f5",
     titleBarStyle: "hidden",
     titleBarOverlay: {
