@@ -249,13 +249,25 @@ function createWindow() {
       spellcheck: true,
     },
   });
-  win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  const isExternalHttpUrl = (url) =>
+    url.startsWith("http://") || url.startsWith("https://");
+
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (isExternalHttpUrl(url)) {
+      shell.openExternal(url);
+    }
+    return { action: "deny" };
+  });
   win.webContents.on("will-navigate", (event, url) => {
     const devUrl = process.env.VITE_DEV_SERVER_URL;
-    const allowed = devUrl
+    const isAppUrl = devUrl
       ? url.startsWith(devUrl)
       : url.startsWith("file://");
-    if (!allowed) event.preventDefault();
+    if (isAppUrl) return;
+    if (isExternalHttpUrl(url)) {
+      event.preventDefault();
+      shell.openExternal(url);
+    }
   });
   win.webContents.on("before-input-event", (event, input) => {
     const devToolsShortcut =

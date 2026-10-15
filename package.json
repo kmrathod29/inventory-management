@@ -16,12 +16,13 @@
     "prebuild:linux": "electron-rebuild -f -w better-sqlite3",
     "lint": "eslint .",
     "preview": "vite preview",
-     "test": "node --test"
+    "test": "node --test"
   },
   "dependencies": {
     "adm-zip": "^0.6.1",
     "archiver": "^8.0.0",
     "better-sqlite3": "^12.4.1",
+    "lucide-react": "^1.57.0",
     "nepali-date-converter": "^3.4.0",
     "ngrok": "^4.3.3",
     "pdfkit": "^0.20.2",
