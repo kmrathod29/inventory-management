@@ -10,7 +10,7 @@
     "predev": "electron-rebuild -f -w better-sqlite3",
     "build": "vite build",
     "prebuild": "electron-rebuild -f -w better-sqlite3",
-    "build:win": "vite build && electron-builder --win nsis --publish never",
+    "build:win": "vite build && electron-builder --win --publish never",
     "prebuild:win": "electron-rebuild -f -w better-sqlite3",
     "build:linux": "vite build && electron-builder --linux AppImage --publish never",
     "prebuild:linux": "electron-rebuild -f -w better-sqlite3",
@@ -24,7 +24,6 @@
     "better-sqlite3": "^12.4.1",
     "lucide-react": "^1.57.0",
     "nepali-date-converter": "^3.4.0",
-    "ngrok": "^4.3.3",
     "pdfkit": "^0.20.2",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
@@ -60,24 +59,26 @@
       "dist-electron/**/*",
       "electron/**/*",
       "src/Backend/**/*",
+      "src/utils/**/*",
       "src/Database/.gitkeep"
     ],
     "win": {
-      "target": "nsis",
+      "target": "msi",
       "icon": "build/icon.ico"
     },
-    "nsis": {
-      "installerIcon": "build/icon.ico",
-      "uninstallerIcon": "build/icon.ico",
-      "installerHeaderIcon": "build/icon.ico",
-      "shortcutName": "Dipali Traders"
+    "msi": {
+      "oneClick": false,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     },
     "linux": {
       "target": [
         "AppImage"
       ],
       "category": "Office",
-      "icon": "build/icon.png"
+      "icon": "build/icon.ico"
     },
     "extraResources": [
       {

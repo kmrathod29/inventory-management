@@ -92,8 +92,8 @@ if (!gotSingleInstanceLock) {
 app.setAppUserModelId("com.dipalitraders.inventorymanager");
 
 const iconPath = app.isPackaged
-  ? path.join(process.resourcesPath, "icon.png")
-  : path.join(app.getAppPath(), "build", "icon.png");
+  ? path.join(process.resourcesPath, "icon.ico")
+  : path.join(app.getAppPath(), "build", "icon.ico");
 
 function restartApplication() {
   for (const window of BrowserWindow.getAllWindows()) window.destroy();
