@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useToast } from "../../../hooks/ToastContext";
+import { useConfirm } from "../../../hooks/useConfirm";
 import { AddProductPanel } from "./AddProductPanel";
 import { BillItemsTable } from "./BillItemsTable";
 import { NumericMathInput } from "./NumericMathInput";
@@ -39,6 +40,7 @@ export function BillDialog({
   startEditing = false,
 }) {
   const showToast = useToast();
+  const { confirm, ConfirmDialogComponent } = useConfirm();
 
   const [form, setForm] = useState({
     ...bill,
@@ -118,7 +120,10 @@ export function BillDialog({
       products: f.products.map((p, i) => (i === index ? item : p)),
     }));
   }
-  function handleRemoveProduct(index) {
+  async function handleRemoveProduct(index) {
+    const product = form.products[index];
+    const confirmed = await confirm(`Remove "${product?.productName || "this product"}" from this bill?`);
+    if (!confirmed) return;
     setForm((f) => ({
       ...f,
       products: f.products.filter((_, i) => i !== index),
@@ -433,6 +438,7 @@ export function BillDialog({
   if (form.billType === "vat" && isEditing) {
     return (
       <div className="bill-page-shell bill-vat-page-shell">
+        {ConfirmDialogComponent}
         <ExpenseInvoiceEditor
           details={{ id: form.id || "new" }}
           nameOfExpense={form.name || ""}
@@ -573,7 +579,6 @@ export function BillDialog({
                     disabled={locked}
                     placeholder="Search or select customer..."
                   />
-                  <i className="ti ti-chevron-down" aria-hidden="true" />
                 </div>
                 <datalist id="customer-options">
                   {customers.map((customer) => <option key={customer.id} value={customer.name} />)}
@@ -630,9 +635,9 @@ export function BillDialog({
                 <label htmlFor="bill-amount-paid">Amount Paid</label>
                 <NumericMathInput id="bill-amount-paid" className="invoice-discount-input" value={form.amountPaid ?? ""} onChange={(value) => setForm((current) => ({ ...current, amountPaid: value }))} disabled={locked} placeholder="0.00" />
               </div>
-              <button className="invoice-save-button" type="button" onClick={saveAndGenerateInvoice} disabled={isSaving || locked}>
-                <i className="ti ti-printer" aria-hidden="true" />
-                <span><strong>{isSaving ? "Saving..." : "Save and Print"}</strong><small>Save bill, deduct stock and print</small></span>
+              <button className="invoice-save-button" type="button" onClick={handleSave} disabled={isSaving || locked}>
+                <i className="ti ti-save" aria-hidden="true" />
+                <span><strong>{isSaving ? "Saving..." : "Save Changes"}</strong><small>Save bill and deduct stock</small></span>
               </button>
               <button className="invoice-secondary-button" type="button" onClick={saveAndGenerateInvoice}>
                 <i className="ti ti-file-description" aria-hidden="true" /><span><strong>Save PDF</strong><small>Save bill and generate PDF</small></span>
@@ -656,6 +661,7 @@ export function BillDialog({
             onClose={() => setShowPanel(false)}
           />
         )}
+        {ConfirmDialogComponent}
       </div>
     );
   }
@@ -983,6 +989,7 @@ export function BillDialog({
           onClose={() => setShowPanel(false)}
         />
       )}
+      {ConfirmDialogComponent}
     </div>
   );
 }

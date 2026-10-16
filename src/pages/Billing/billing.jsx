@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import "./styles/billing.css";
 import { emptyBill, statusMeta } from "../../Backend/customers";
 import { BillDialog, BillHeader, BillTable } from "./Components/index.js";
@@ -10,7 +10,7 @@ import { useLocation, useNavigate } from "react-router";
 import { formatCurrency } from "../../utils/regional";
 import { useToast } from "../../hooks/ToastContext";
 
-export function Billing({ initialNewBill = false }) {
+export function Billing() {
   const [search, setSearch] = useState("");
   const [selectedBill, setSelectedBill] = useState(null);
   const [isNewBill, setIsNewBill] = useState(false);
@@ -24,6 +24,8 @@ export function Billing({ initialNewBill = false }) {
   const { handleAsync } = useErrorHandler();
   const navigate = useNavigate();
   const location = useLocation();
+  const isNewRoute = location.pathname === "/billing/new";
+  const previousPath = useRef(location.pathname);
   const showToast = useToast();
 
   // Frequency/recency map derived from existing bill history (no new API call).
@@ -132,7 +134,30 @@ export function Billing({ initialNewBill = false }) {
   }, [customers, location, navigate, rows, selectedBill, invoiceDefaults]);
 
   useEffect(() => {
-    if (!initialNewBill || selectedBill) return;
+    if (previousPath.current === location.pathname) return;
+    const fromPath = previousPath.current;
+    previousPath.current = location.pathname;
+    if (!location.pathname.startsWith("/billing")) return;
+    if (selectedBill?.products?.length) {
+      confirm("You have unsaved changes in this bill. Discard them and continue?").then((accepted) => {
+        if (accepted) {
+          setSelectedBill(null);
+          setIsNewBill(false);
+        } else {
+          previousPath.current = fromPath;
+          navigate(fromPath, { replace: true });
+        }
+      });
+    } else {
+      // Route changes are the source of truth for the active billing view.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedBill(null);
+      setIsNewBill(false);
+    }
+  }, [location.pathname, selectedBill, confirm, navigate]);
+
+  useEffect(() => {
+    if (!isNewRoute || selectedBill) return;
     let cancelled = false;
     async function loadNewBill() {
       const [appSettings, nextInvoiceNumber] = await Promise.all([
@@ -160,7 +185,7 @@ export function Billing({ initialNewBill = false }) {
     }
     loadNewBill();
     return () => { cancelled = true; };
-  }, [initialNewBill, selectedBill, handleAsync, invoiceDefaults]);
+  }, [isNewRoute, selectedBill, handleAsync, invoiceDefaults]);
 
   const openExisting = (customer) => {
     setSelectedBill({ ...customer, invoiceDefaults });
@@ -168,7 +193,7 @@ export function Billing({ initialNewBill = false }) {
   };
 
   const closeDialog = () => {
-    if (initialNewBill) {
+    if (isNewRoute) {
       navigate("/billing");
       return;
     }
@@ -177,7 +202,9 @@ export function Billing({ initialNewBill = false }) {
   };
 
   const handleSaved = async () => {
-    closeDialog();
+    setSelectedBill(null);
+    setIsNewBill(false);
+    if (isNewRoute) navigate("/billing");
     const data = await handleAsync(
       () => window.db.getCustomers(),
       "Failed to refresh customers"
@@ -257,7 +284,7 @@ export function Billing({ initialNewBill = false }) {
             <div className="billing-detail-topbar">
               <button className="btn-secondary" type="button" onClick={closeDialog}>
                 <i className="ti ti-arrow-left" aria-hidden="true" />
-                <span>Back to Bills</span>
+                <span>Back to History</span>
               </button>
             </div>
 

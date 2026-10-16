@@ -71,8 +71,7 @@ function App() {
                 />
               }
             />
-            <Route path="/billing" element={<Billing />} />
-            <Route path="/billing/new" element={<Billing initialNewBill />} />
+            <Route path="/billing/*" element={<Billing />} />
           </Routes>
         </div>
       </div>

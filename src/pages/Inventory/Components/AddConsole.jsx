@@ -3,7 +3,7 @@ import { useResolvedImage } from "../../../hooks/resolvedImage.js";
 import { useToast } from "../../../hooks/ToastContext.jsx";
 import { useErrorHandler } from "../../../hooks/useErrorHandler";
 
-export function AddConsole({ product, setProduct }) {
+export function AddConsole({ product, setProduct, onClose, onSaved }) {
   const showToast = useToast();
   const { handleAsync } = useErrorHandler();
   const [name, setName] = useState(product?.name || "");
@@ -41,8 +41,7 @@ export function AddConsole({ product, setProduct }) {
       return;
     }
     setIsSaving(true);
-    const success = await handleAsync(
-      () => product ? window.db.editProduct(product.id, {
+    const save = product ? () => window.db.editProduct(product.id, {
         id: product.id,
         name: name.trim(),
         category: category.trim(),
@@ -56,24 +55,25 @@ export function AddConsole({ product, setProduct }) {
           ...base,
           stocks: base.stocks.map((value, index) => baseIndex === 0 && index === 0 ? values[2] : value),
         })),
-      }) : window.db.saveInventoryProduct({
+      }) : () => window.db.saveInventoryProduct({
         name: name.trim(),
         category: category.trim(),
         images: image,
         variants: [{ bucket_size: 1, landing: values[0], sales: values[1], mp: values[1] }],
         bases: [{ name: category.trim(), stocks: [values[2]] }],
-      }),
-      "Failed to add product",
-    );
+      });
+    const success = await handleAsync(save, product ? "Failed to update product" : "Failed to add product");
     setIsSaving(false);
-    if (!success) return;
+    if (success === null) return;
+    await onSaved?.();
     showToast(product ? "Product updated successfully." : "Product added successfully.", "success");
     if (product) {
       const updated = await window.db.getProducts();
       setProduct?.(updated.find((item) => item.id === product.id) || product);
-      document.querySelector(".edit-console")?.close();
+      onClose?.();
       return;
     }
+    onClose?.();
     setName("");
     setCategory("");
     setImage("");
@@ -109,7 +109,7 @@ export function AddConsole({ product, setProduct }) {
         <label className="inventory-add-field">Stock Quantity<input type="number" min="0" step="any" value={stock} onChange={(event) => setStock(event.target.value)} placeholder="0" required /><small>0 = Out of Stock, below 10 = Low Stock.</small></label>
       </div>
       <div className="inventory-add-form-actions">
-        <button type="button" className="btn-secondary" onClick={() => document.querySelector(".edit-console")?.close()}>Cancel</button>
+        <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
         <button type="submit" className="btn-primary" disabled={isSaving}>{isSaving ? "Saving..." : product ? "Save Changes" : "Add Product"}</button>
       </div>
     </form>

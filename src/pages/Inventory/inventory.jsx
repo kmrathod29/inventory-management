@@ -75,7 +75,7 @@ export function InventoryPage() {
       <main className="inventory-content">
         <section className="inventory-stat-grid" aria-label="Inventory summary">
           <div className="inventory-stat-card inventory-stat-green"><span className="inventory-stat-icon"><i className="ti ti-package" /></span><div><small>Total Products</small><strong>{totalProducts}</strong></div></div>
-          <div className="inventory-stat-card inventory-stat-blue"><span className="inventory-stat-icon"><i className="ti ti-boxes" /></span><div><small>In Stock</small><strong>{inStock}</strong></div></div>
+          <div className="inventory-stat-card inventory-stat-blue"><span className="inventory-stat-icon"><i className="ti ti-box" /></span><div><small>In Stock</small><strong>{inStock}</strong></div></div>
           <div className="inventory-stat-card inventory-stat-orange"><span className="inventory-stat-icon"><i className="ti ti-alert-triangle" /></span><div><small>Low Stock</small><strong>{lowStock}</strong></div></div>
           <div className="inventory-stat-card inventory-stat-red"><span className="inventory-stat-icon"><i className="ti ti-circle-x" /></span><div><small>Out of Stock</small><strong>{outOfStock}</strong></div></div>
         </section>
@@ -89,7 +89,11 @@ export function InventoryPage() {
 
         <InventoryProductsTable products={products} onRefresh={fetchProducts} search={search} category={category} status={status} />
       </main>
-      <EditConsole ref={addDialogRef} />
+      <EditConsole
+        ref={addDialogRef}
+        onSaved={fetchProducts}
+        onClose={() => addDialogRef.current?.close()}
+      />
       {showStockDialog && <AddStockDialog products={products} onSaved={() => { setShowStockDialog(false); fetchProducts(); }} onClose={() => setShowStockDialog(false)} />}
     </div>
   );

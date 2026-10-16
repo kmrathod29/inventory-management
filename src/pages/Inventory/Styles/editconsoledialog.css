@@ -1,5 +1,8 @@
 dialog.edit-console {
-  width: 940px;
+  width: fit-content;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  overflow: auto;
   border: none;
   border-radius: 12px;
   padding: 0;
@@ -7,6 +10,10 @@ dialog.edit-console {
   color: var(--color-primary);
   justify-self: center;
   align-self: center;
+}
+
+@media (max-width: 600px) {
+  dialog.edit-console { max-width: calc(100vw - 24px); }
 }
 
 dialog.edit-console::backdrop {

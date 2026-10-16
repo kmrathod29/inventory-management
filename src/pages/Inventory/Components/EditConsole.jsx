@@ -3,7 +3,7 @@ import { AddConsole } from "./AddConsole";
 import { useState, useEffect, forwardRef } from "react";
 
 export const EditConsole = forwardRef((props, ref) => {
-  const { editingItem } = props;
+  const { editingItem, onClose, onSaved } = props;
   const [product, setProduct] = useState(null);
 
   useEffect(() => {
@@ -22,9 +22,9 @@ export const EditConsole = forwardRef((props, ref) => {
   return (
     <dialog ref={ref} className="edit-console">
       {product ? (
-        <AddConsole key={product.id} product={product} setProduct={setProduct} />
+        <AddConsole key={product.id} product={product} setProduct={setProduct} onSaved={onSaved} onClose={onClose} />
       ) : (
-        <AddConsole key="new-product" />
+        <AddConsole key="new-product" onSaved={onSaved} onClose={onClose} />
       )}
     </dialog>
   );

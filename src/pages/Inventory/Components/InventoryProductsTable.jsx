@@ -175,7 +175,12 @@ export function InventoryProductsTable({ products, onRefresh, search, category, 
           <button type="button" onClick={() => setPage((current) => Math.min(pageCount, current + 1))} disabled={currentPage === pageCount} aria-label="Next page">›</button>
         </div>
       </div>
-      <EditConsole ref={editDialogRef} editingItem={editingProduct} />
+      <EditConsole
+        ref={editDialogRef}
+        editingItem={editingProduct}
+        onSaved={onRefresh}
+        onClose={() => { editDialogRef.current?.close(); setEditingProduct(null); }}
+      />
       {ConfirmDialogComponent}
       {historyProduct && <InventoryHistoryDialog product={historyProduct} onClose={() => setHistoryProduct(null)} />}
     </>
