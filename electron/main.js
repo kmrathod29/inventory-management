@@ -42,6 +42,7 @@ import {
   deleteBill,
   addExpense,
   getExpenses,
+  getReportData,
   deleteExpense,
   getSales,
   getNetPosition,
@@ -395,6 +396,7 @@ app.whenReady().then(() => {
   );
   ipcMain.handle("db:addExpense", (_, expense) => addExpense(expense));
   ipcMain.handle("db:getExpenses", () => getExpenses());
+  ipcMain.handle("db:getReportData", (_, startDate, endDate) => getReportData(startDate, endDate));
   ipcMain.handle("db:deleteExpense", (_, id) => deleteExpense(id));
   ipcMain.handle("db:getSales", () => getSales());
   ipcMain.handle("db:getNetPosition", (_, period) => getNetPosition(period));

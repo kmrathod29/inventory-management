@@ -73,7 +73,7 @@ export const {
   updateBillPayment,
 } = services[3];
 export const {
-  addExpense, getExpenses, deleteExpense, getSales, getNetPosition,
+  addExpense, getExpenses, getReportData, deleteExpense, getSales, getNetPosition,
   getTopProducts, getTopCustomers, recordImportExpense, editImportExpense,
   editExpense, getExpenseDetails,
 } = services[4];

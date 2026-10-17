@@ -122,6 +122,7 @@ contextBridge.exposeInMainWorld("db", {
   importExcel: (filePath) => invoke("db:importExcel", filePath),
   addExpense: (expense) => invoke("db:addExpense", expense),
   getExpenses: () => invoke("db:getExpenses"),
+  getReportData: (startDate, endDate) => invoke("db:getReportData", startDate, endDate),
   deleteExpense: (id) => invoke("db:deleteExpense", id),
   getSales: () => invoke("db:getSales"),
   getNetPosition: (period) => invoke("db:getNetPosition", period),
