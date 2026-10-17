@@ -44,6 +44,7 @@ button.report-metric:not(:disabled):hover { border-color:var(--primary); transfo
 .report-section th,.report-section td { max-width:260px; padding:9px 11px; border-bottom:1px solid var(--border); text-align:left; vertical-align:middle; }
 .report-section th { color:var(--muted-foreground); background:color-mix(in srgb,var(--muted) 55%,transparent); font-size:10px; font-weight:700; white-space:nowrap; }
 .report-section td { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.report-section tbody tr:nth-child(even) { background: color-mix(in srgb, var(--muted) 45%, var(--card)); }
 .report-section tbody tr:last-child td { border-bottom:0; }
 .report-section tbody tr[onclick] { cursor:pointer; }
 .report-section tbody tr[onclick]:hover { background:color-mix(in srgb,var(--primary) 7%,transparent); }

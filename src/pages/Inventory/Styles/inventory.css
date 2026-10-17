@@ -89,6 +89,7 @@
 .inventory-product-table th:not(:first-child):not(:nth-child(2)):not(:last-child) { cursor: pointer; }
 .inventory-product-table th span { margin-left: 4px; color: #718096; }
 .inventory-product-table td { position: relative; padding: 10px 12px; border-bottom: 1px solid #e6ebf1; color: #273548; vertical-align: middle; }
+.inventory-product-table tbody tr:nth-child(even) { background: color-mix(in srgb, var(--muted) 45%, var(--card)); }
 .inventory-product-table tbody tr:hover { background: #fbfcfe; }
 .inventory-product-table tbody tr:last-child td { border-bottom: 0; }
 .inventory-product-table td strong { display: block; color: #1a2739; font-size: 13px; }

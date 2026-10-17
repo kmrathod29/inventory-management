@@ -2,11 +2,17 @@ import { useState } from "react";
 import { formatDate } from "../../../utils/regional";
 import { formatCurrency } from "../../../utils/regional";
 export function BillTable({ filtered, statusMeta, openExisting, onDelete, onPayment }) {
-  const [sortKey, setSortKey] = useState("id");
-  const [sortOrder, setSortOrder] = useState(true);
+  const [sortKey, setSortKey] = useState("date");
+  const [sortOrder, setSortOrder] = useState(false);
   const [openActions, setOpenActions] = useState(null);
 
   const sortedFiltered = [...filtered].sort((a, b) => {
+    if (sortKey === "date") {
+      const firstDate = new Date(a.date).getTime();
+      const secondDate = new Date(b.date).getTime();
+      return sortOrder ? firstDate - secondDate : secondDate - firstDate;
+    }
+
     if (typeof a[sortKey] === "string" || typeof b[sortKey] === "string") {
       if (sortOrder) return a[sortKey].localeCompare(b[sortKey]);
       else return b[sortKey].localeCompare(a[sortKey]);
@@ -86,7 +92,7 @@ export function BillTable({ filtered, statusMeta, openExisting, onDelete, onPaym
                   <span className={`status-badge ${statusMeta[c.status]?.cls || "status-due"}`}>
                     {{ Paid: "Completed", Partial: "Partially Paid", Due: "Pending" }[c.status] || "Pending"}
                   </span>
-                  {Number(c.amountDue) > 0 && (
+                  {c.status === "Partial" && Number(c.amountDue) > 0 && (
                     <small className="bill-due-label">Due {formatCurrency(c.amountDue)}</small>
                   )}
                 </td>

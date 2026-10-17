@@ -72,6 +72,7 @@
 .dashboard-invoice-table { width: 100%; min-width: 980px; border-collapse: collapse; font-size: 13px; }
 .dashboard-invoice-table th { padding: 13px 20px; background: #f0f4f8; color: #344155; font-size: 12px; font-weight: 700; text-align: left; }
 .dashboard-invoice-table td { padding: 15px 20px; border-top: 1px solid #e7ecf1; color: #2a3647; }
+.dashboard-invoice-table tbody tr:nth-child(even) { background: color-mix(in srgb, var(--muted) 45%, var(--card)); }
 .dashboard-invoice-table tbody tr { cursor: pointer; }
 .dashboard-invoice-table tbody tr:hover { background: #fbfcfe; }
 .dashboard-status { display: inline-block; padding: 6px 12px; border-radius: 5px; font-size: 12px; }

@@ -183,6 +183,11 @@
   vertical-align: middle;
 }
 
+.billing-table tbody tr:nth-child(even),
+.bill-products-table tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--muted) 45%, var(--card));
+}
+
 .table-row {
   cursor: pointer;
   transition: background 0.14s;
@@ -1021,6 +1026,10 @@ select::-webkit-scrollbar {
   color: var(--muted-foreground);
   padding: 6px 8px;
   border-bottom: none;
+}
+
+.bill-products-table tbody tr:hover {
+  background: color-mix(in srgb, var(--primary) 8%, var(--card));
 }
 
 .btn-remove-row {
