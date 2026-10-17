@@ -298,12 +298,10 @@ export function BillDialog({
     const invoiceItems = submittedItems.map((item) => {
       const rowTotal = (Number(item.quantity) || 0) * (Number(item.priceAtSale) || 0);
       const itemVatPercent = getCategoryTaxRate(item);
-      const discountShare = totalPurchased > 0 ? vatDiscount * rowTotal / totalPurchased : 0;
-      const rowInclusiveTotal = Math.max(0, rowTotal - discountShare);
       const rowTaxable = itemVatPercent > 0
-        ? rowInclusiveTotal / (1 + itemVatPercent / 100)
-        : rowInclusiveTotal;
-      const rowTax = rowInclusiveTotal - rowTaxable;
+        ? rowTotal / (1 + itemVatPercent / 100)
+        : rowTotal;
+      const rowTax = rowTotal - rowTaxable;
       return {
         ...item,
         taxableValue: rowTaxable,

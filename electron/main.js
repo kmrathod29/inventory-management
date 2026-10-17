@@ -188,7 +188,7 @@ function fillInvoiceTemplate(invoice) {
   let documentXml = zip.readAsText("word/document.xml");
   const items = Array.isArray(invoice.products) ? invoice.products : [];
   const subtotal = items.reduce(
-    (sum, item) => sum + (Number(item.priceAtSale) || 0),
+    (sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.priceAtSale) || 0),
     0,
   );
   const discount = Number(invoice.discount) || 0;
@@ -200,13 +200,11 @@ function fillInvoiceTemplate(invoice) {
     const category = item.category || "General";
     return Number(item.taxRate ?? categoryTaxRates[category] ?? invoice.vatPercent ?? 0) || 0;
   };
-  const taxableSubtotal = Math.max(0, subtotal - discount);
+  const taxableSubtotal = subtotal;
   const taxTotals = items.reduce((totals, item) => {
-    const itemTotal = Number(item.priceAtSale) || 0;
+    const itemTotal = (Number(item.quantity) || 0) * (Number(item.priceAtSale) || 0);
     const rate = productTaxRate(item);
-    const discountShare = subtotal > 0 ? discount * itemTotal / subtotal : 0;
-    const netTotal = Math.max(0, itemTotal - discountShare);
-    const tax = rate > 0 ? netTotal - netTotal / (1 + rate / 100) : 0;
+    const tax = rate > 0 ? itemTotal - itemTotal / (1 + rate / 100) : 0;
     if (invoice.outOfGujarat === true) totals.igst += tax;
     else {
       totals.cgst += tax / 2;
@@ -275,14 +273,12 @@ function fillInvoiceTemplate(invoice) {
     const rows = items.length ? items : [{}];
     const generatedRows = rows.map((item, index) => {
       const quantity = Number(item.quantity) || 0;
-      const itemTotal = Number(item.priceAtSale) || 0;
-      const discountShare = subtotal > 0 ? discount * itemTotal / subtotal : 0;
-      const itemNetTotal = Math.max(0, itemTotal - discountShare);
+      const itemTotal = quantity * (Number(item.priceAtSale) || 0);
       const itemRatePercent = productTaxRate(item);
       const itemTaxable = itemRatePercent > 0
-        ? itemNetTotal / (1 + itemRatePercent / 100)
-        : itemNetTotal;
-      const itemTax = itemRatePercent > 0 ? itemNetTotal - itemTaxable : 0;
+        ? itemTotal / (1 + itemRatePercent / 100)
+        : itemTotal;
+      const itemTax = itemTotal - itemTaxable;
       const itemRate = quantity > 0 ? itemTaxable / quantity : itemTaxable;
       const itemOutOfGujarat = invoice.outOfGujarat === true;
       const itemValues = {
