@@ -17,6 +17,7 @@ export function Billing() {
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
   const [invoiceDefaults, setInvoiceDefaults] = useState({});
+  const [categoryTaxRates, setCategoryTaxRates] = useState({});
   const [paymentBill, setPaymentBill] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState("Paid");
   const [partialAmount, setPartialAmount] = useState("");
@@ -55,6 +56,7 @@ export function Billing() {
     setCustomers(customerData);
     setProducts(productData);
     setInvoiceDefaults(settings.invoiceDefaults || {});
+    setCategoryTaxRates(settings.categoryTaxRates || {});
   });
 
   useEffect(() => {
@@ -64,7 +66,10 @@ export function Billing() {
         () => window.db.getAppSettings(),
         "Failed to load invoice defaults",
       );
-      if (!cancelled && settings) setInvoiceDefaults(settings.invoiceDefaults || {});
+      if (!cancelled && settings) {
+        setInvoiceDefaults(settings.invoiceDefaults || {});
+        setCategoryTaxRates(settings.categoryTaxRates || {});
+      }
     }
     loadInvoiceDefaults();
     return () => { cancelled = true; };
@@ -293,6 +298,7 @@ export function Billing() {
               isNew={isNewBill}
               products={products}
               usageMap={usageMap}
+              categoryTaxRates={categoryTaxRates}
               onClose={closeDialog}
               onSaved={handleSaved}
               customers={customers}

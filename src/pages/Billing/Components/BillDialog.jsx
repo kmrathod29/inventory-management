@@ -10,6 +10,7 @@ import { ExpenseInvoiceEditor } from "../../Finances/Components/ExpenseInvoiceEd
 import { validateInvoiceDraft } from "../../Finances/Components/expenseInvoiceUtils";
 import { getBusinessDateISO } from "../../../utils/regional";
 import { formatCurrency } from "../../../utils/regional";
+import { ProductCombobox } from "./ProductCombobox";
 
 function normalizeProduct(p) {
   return {
@@ -22,12 +23,6 @@ function normalizeProduct(p) {
   };
 }
 
-function computeStatus(totalPurchased, amountPaid) {
-  if (amountPaid >= totalPurchased && totalPurchased > 0) return "Paid";
-  if (amountPaid > 0) return "Partial";
-  return "Due";
-}
-
 export function BillDialog({
   bill,
   products,
@@ -35,6 +30,7 @@ export function BillDialog({
   isNew,
   onClose,
   customers,
+  categoryTaxRates = {},
   onSaved,
   asPage = false,
   startEditing = false,
@@ -56,7 +52,9 @@ export function BillDialog({
     buyerAddress: bill.address || "",
     buyerTpin: "",
     paymentMode: bill.paymentMethod || "Cash",
-    discount: "",
+    discount: bill.invoiceData?.discount ?? "",
+    discountValue: bill.invoiceData?.discountValue ?? bill.invoiceData?.discount ?? "",
+    discountPercent: bill.invoiceData?.discountPercent ?? "",
     vatPercent: bill.invoiceDefaults?.vatPercent ?? "13",
     amountInWords: "",
     ...(bill.invoiceData || {}),
@@ -68,6 +66,7 @@ export function BillDialog({
 
   const [showPanel, setShowPanel] = useState(false);
   const [panelInitial, setPanelInitial] = useState(null); // { item, editIndex }
+  const [productQuery, setProductQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [activity, setActivity] = useState([]);
 
@@ -78,12 +77,28 @@ export function BillDialog({
   const locked = !isEditing;
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
+  useEffect(() => {
+    if (!isNew) return;
+    let cancelled = false;
+    window.db.getNextInvoiceNumber().then((number) => {
+      if (!cancelled && number) {
+        setInvoice((current) => ({ ...current, invoiceNumber: number }));
+      }
+    }).catch(() => {
+      showToast("Failed to generate the invoice number.", "error");
+    });
+    return () => { cancelled = true; };
+  }, [isNew, invoice.invoiceNumber, showToast]);
+
   const totalPurchased = form.products.reduce(
     (sum, p) =>
       sum + (parseFloat(p.quantity) || 0) * (parseFloat(p.priceAtSale) || 0),
     0,
   );
-  const vatDiscount = Math.max(0, Number(invoice.discount) || 0);
+  const vatDiscount = Math.min(
+    totalPurchased,
+    Math.max(0, Number(invoice.discountValue ?? invoice.discount) || 0),
+  );
   const vatPercent = Number(invoice.vatPercent ?? 13);
   const vatInclusiveTotal = Math.max(0, totalPurchased - vatDiscount);
   const vatTaxableAmount = form.billType === "vat"
@@ -99,9 +114,9 @@ export function BillDialog({
   const billTotal = form.billType === "vat"
     ? vatTaxableAmount + vatAmount
     : Math.max(0, totalPurchased - vatDiscount);
-  const amountPaidNum = parseFloat(form.amountPaid) || 0;
-  const amountDue = Math.max(0, billTotal - amountPaidNum);
-  const status = computeStatus(billTotal, amountPaidNum);
+  const discountPercent = totalPurchased > 0 ? (vatDiscount / totalPurchased) * 100 : 0;
+  const amountDue = billTotal;
+  const status = "Due";
 
   // Clamp the selected row into range as items change (derived — no effect).
   const maxItemIndex = Math.max(0, form.products.length - 1);
@@ -139,6 +154,75 @@ export function BillDialog({
       }),
     }));
   }
+  function handleSetQty(index, value) {
+    setForm((f) => ({
+      ...f,
+      products: f.products.map((p, i) =>
+        i === index ? { ...p, quantity: value } : p,
+      ),
+    }));
+  }
+  function handleQuickAddProduct(product) {
+    const variant = product.variants?.[0];
+    const base = product.bases?.[0];
+    const price = variant?.sales ?? variant?.mp ?? 0;
+    handleAddItem({
+      productName: product.name,
+      image: product.images || "",
+      category: product.category || product.bases?.[0]?.name || "General",
+      base: base?.name ?? "",
+      bucketSize: variant?.bucket_size != null ? String(variant.bucket_size) : "",
+      quantity: "1",
+      priceAtSale: String(price),
+      purchaseDate: form.date,
+    });
+    setProductQuery("");
+  }
+  function setDiscountValue(value) {
+    const numericValue = Math.min(totalPurchased, Math.max(0, Number(value) || 0));
+    setInvoice((current) => ({
+      ...current,
+      discountValue: value,
+      discount: numericValue,
+      discountPercent: totalPurchased > 0 ? (numericValue / totalPurchased) * 100 : 0,
+    }));
+  }
+  function setDiscountPercent(value) {
+    const numericPercent = Math.min(100, Math.max(0, Number(value) || 0));
+    const numericValue = totalPurchased * numericPercent / 100;
+    setInvoice((current) => ({
+      ...current,
+      discountPercent: value,
+      discountValue: numericValue,
+      discount: numericValue,
+    }));
+  }
+  function setGrandTotal(value) {
+    const grandTotal = Math.min(totalPurchased, Math.max(0, Number(value) || 0));
+    setDiscountValue(totalPurchased - grandTotal);
+  }
+  function clearForm() {
+    setForm((current) => ({
+      ...current,
+      name: "",
+      phone: "",
+      address: "",
+      notes: "",
+      products: [],
+      customerId: undefined,
+    }));
+    setInvoice((current) => ({
+      ...current,
+      buyerName: "",
+      buyerAddress: "",
+      buyerGstin: "",
+      discount: "",
+      discountValue: "",
+      discountPercent: "",
+      grandTotal: "",
+    }));
+    setProductQuery("");
+  }
   function handleEditRow(i) {
     if (!isEditing) return;
     setPanelInitial({ item: { ...form.products[i] }, editIndex: i });
@@ -164,12 +248,7 @@ export function BillDialog({
     setPanelInitial({ item: { ...form.products[idx] }, editIndex: null });
     setShowPanel(true);
   }
-  function openAddPanel() {
-    setPanelInitial(null);
-    setShowPanel(true);
-  }
-
-  async function handleSave() {
+  async function handleSave({ keepOpen = false } = {}) {
     if (isSaving) return false;
 
     if (form.billType === "vat") {
@@ -205,23 +284,24 @@ export function BillDialog({
       showToast("Please add at least one product.", "error");
       return false;
     }
-    if (amountPaidNum > billTotal) {
-      showToast("Amount paid cannot exceed the bill total.", "error");
-      return false;
-    }
-
     const submittedItems = form.billType === "vat"
       ? form.products.map((item) => ({
           ...item,
           priceAtSale: item.priceAtSale ?? item.costPrice,
         }))
       : form.products;
+    const getCategoryTaxRate = (item) => {
+      const product = products.find((entry) => entry.name === item.productName);
+      const category = item.category || product?.category || product?.bases?.[0]?.name || "General";
+      return Number(categoryTaxRates[category] ?? invoice.vatPercent ?? 0) || 0;
+    };
     const invoiceItems = submittedItems.map((item) => {
       const rowTotal = (Number(item.quantity) || 0) * (Number(item.priceAtSale) || 0);
+      const itemVatPercent = getCategoryTaxRate(item);
       const discountShare = totalPurchased > 0 ? vatDiscount * rowTotal / totalPurchased : 0;
       const rowInclusiveTotal = Math.max(0, rowTotal - discountShare);
-      const rowTaxable = form.billType === "vat"
-        ? rowInclusiveTotal / (1 + vatPercent / 100)
+      const rowTaxable = itemVatPercent > 0
+        ? rowInclusiveTotal / (1 + itemVatPercent / 100)
         : rowInclusiveTotal;
       const rowTax = rowInclusiveTotal - rowTaxable;
       return {
@@ -231,11 +311,13 @@ export function BillDialog({
           ? rowTaxable / Number(item.quantity)
           : 0,
         tax: rowTax,
-        cgstPercent: outOfGujarat ? 0 : vatPercent / 2,
+        category: item.category,
+        taxRate: itemVatPercent,
+        cgstPercent: outOfGujarat ? 0 : itemVatPercent / 2,
         cgstAmount: outOfGujarat ? 0 : rowTax / 2,
-        sgstPercent: outOfGujarat ? 0 : vatPercent / 2,
+        sgstPercent: outOfGujarat ? 0 : itemVatPercent / 2,
         sgstAmount: outOfGujarat ? 0 : rowTax / 2,
-        igstPercent: outOfGujarat ? vatPercent : 0,
+        igstPercent: outOfGujarat ? itemVatPercent : 0,
         igstAmount: outOfGujarat ? rowTax : 0,
       };
     });
@@ -244,6 +326,10 @@ export function BillDialog({
       invoiceNumber: invoice.invoiceNumber || "",
       buyerGstin: invoice.buyerGstin || "",
       discount: vatDiscount,
+      discountValue: vatDiscount,
+      discountPercent,
+      billType: form.billType,
+      categoryTaxRates,
       subtotal: totalPurchased,
       grandTotal: billTotal,
       ...(form.billType === "vat" ? { tax: vatAmount, taxableAmount: vatTaxableAmount, vatPercent } : {}),
@@ -255,7 +341,7 @@ export function BillDialog({
       date: form.date,
       paymentMethod: form.paymentMethod,
       totalPurchased: billTotal,
-      amountPaid: amountPaidNum,
+      amountPaid: 0,
       amountDue,
       status,
       billType: form.billType,
@@ -273,7 +359,7 @@ export function BillDialog({
       customerName,
       customerAddress: form.address || "",
       customerPhone,
-      amountPaid: amountPaidNum,
+      amountPaid: 0,
       amountDue,
       products: invoiceItems,
     };
@@ -298,7 +384,7 @@ export function BillDialog({
       }
 
       setIsEditing(false);
-      onSaved?.();
+      if (!keepOpen) onSaved?.();
       showToast("Bill saved successfully.", "success");
       return true;
     } catch (error) {
@@ -311,15 +397,18 @@ export function BillDialog({
 
   const handlePrint = () => window.print();
 
-  async function saveAndGenerateInvoice() {
-    if (!(await handleSave())) return;
+  async function saveAndPrint() {
+    if (!(await handleSave({ keepOpen: true }))) return;
     try {
-      const files = await window.db.generateInvoiceFiles(savedInvoiceRef.current);
-      if (files) {
-        showToast(`Invoice PDF saved. DOCX copy created beside it.`, "success");
-      }
+      const files = await window.db.previewInvoice(savedInvoiceRef.current);
+      if (!files) return;
+      showToast("Invoice preview opened. Print it from the preview window.", "success");
+      onSaved?.();
     } catch (error) {
-      showToast(error?.message || "Bill saved, but the invoice files could not be generated.", "error");
+      showToast(
+        error?.message || "Bill was saved, but the invoice PDF could not be created.",
+        "error",
+      );
     }
   }
 
@@ -490,25 +579,8 @@ export function BillDialog({
           }
           extraControls={
             <div className="invoice-billing-payments">
-              <label htmlFor="vat-amount-paid">Amount paid</label>
-              <input
-                id="vat-amount-paid"
-                className="invoice-nav-field"
-                type="number"
-                min="0"
-                step="any"
-                value={form.amountPaid ?? ""}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, amountPaid: event.target.value }))
-                }
-              />
-              <span>Amount due</span>
-              <strong>
-                {Math.max(0, billTotal - amountPaidNum).toLocaleString("en-IN", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </strong>
+            <span>Grand total</span>
+            <strong>{billTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
             </div>
           }
         />
@@ -549,10 +621,11 @@ export function BillDialog({
               <h1>{isNew ? "New Bill" : "Edit Bill"}</h1>
               <p>{isNew ? "Create a new sales invoice" : "Update this sales invoice"}</p>
             </div>
-            <div className="offline-status">
-              <span className="offline-dot" aria-hidden="true" />
-              <span><strong>Offline</strong><small>Data stored locally</small></span>
-            </div>
+            {isEditing && (
+              <button type="button" className="invoice-clear-button" onClick={clearForm} title="Clear form">
+                <i className="ti ti-eraser" aria-hidden="true" /> Clear
+              </button>
+            )}
           </header>
 
           <section className="invoice-meta-card">
@@ -602,23 +675,27 @@ export function BillDialog({
             <section className="invoice-products-card">
               <div className="invoice-section-heading">
                 <h2>Add Products</h2>
-                <button className="invoice-add-product" type="button" onClick={openAddPanel} disabled={locked}>
-                  <i className="ti ti-plus" aria-hidden="true" /> Add New Product
-                </button>
+                <span className="invoice-product-hint">Click the product name or + to add it</span>
               </div>
-              <button className="invoice-product-search" type="button" onClick={openAddPanel} disabled={locked}>
-                <i className="ti ti-search" aria-hidden="true" />
-                <span>Search product by name, brand, or SKU...</span>
-              </button>
+              <ProductCombobox
+                products={products}
+                usageMap={usageMap}
+                query={productQuery}
+                onQueryChange={setProductQuery}
+                onSelect={handleQuickAddProduct}
+                disabled={locked}
+                placeholder="Search product by name, brand, or SKU..."
+              />
               <BillItemsTable
                 items={form.products}
                 isEditing={isEditing}
                 selectedIndex={selectedRow}
-                billDate={form.date}
                 setSelectedIndex={setSelectedIndex}
                 onEdit={handleEditRow}
                 onDelete={handleRemoveProduct}
                 onChangeQty={handleChangeQty}
+                onSetQty={handleSetQty}
+                products={products}
               />
               {form.products.length === 0 && <p className="invoice-empty-products">No products added yet. Use the search field to add the first product.</p>}
             </section>
@@ -626,24 +703,28 @@ export function BillDialog({
             <aside className="invoice-summary-card">
               <h2>Bill Summary</h2>
               <div className="invoice-summary-line"><span>Subtotal</span><strong>{formatCurrency(totalPurchased)}</strong></div>
-              <div className="invoice-summary-line invoice-discount-line">
-                <label htmlFor="bill-discount">Discount</label>
-                <NumericMathInput id="bill-discount" className="invoice-discount-input" value={invoice.discount ?? ""} onChange={(value) => setInvoice((current) => ({ ...current, discount: value }))} disabled={locked} placeholder="0.00" />
+              <div className="invoice-discount-fields">
+                <label htmlFor="bill-discount-value">Discount value</label>
+                <div className="invoice-input-with-prefix">
+                  <span aria-hidden="true">₹</span>
+                  <NumericMathInput id="bill-discount-value" className="invoice-discount-input" value={invoice.discountValue ?? ""} onChange={setDiscountValue} disabled={locked} placeholder="0.00" />
+                </div>
+                <label htmlFor="bill-discount-percent">Discount %</label>
+                <div className="invoice-input-with-prefix">
+                  <span aria-hidden="true">%</span>
+                  <NumericMathInput id="bill-discount-percent" className="invoice-discount-input" value={invoice.discountPercent ?? ""} onChange={setDiscountPercent} disabled={locked} placeholder="0" />
+                </div>
               </div>
-              <div className="invoice-grand-total"><span>Grand Total</span><strong>{formatCurrency(billTotal)}</strong></div>
-              <div className="invoice-payment-line">
-                <label htmlFor="bill-amount-paid">Amount Paid</label>
-                <NumericMathInput id="bill-amount-paid" className="invoice-discount-input" value={form.amountPaid ?? ""} onChange={(value) => setForm((current) => ({ ...current, amountPaid: value }))} disabled={locked} placeholder="0.00" />
+              <div className="invoice-grand-total">
+                <label htmlFor="bill-grand-total">Grand Total</label>
+                <NumericMathInput id="bill-grand-total" className="invoice-discount-input" value={billTotal} onChange={setGrandTotal} disabled={locked} placeholder="0.00" />
               </div>
-              <button className="invoice-save-button" type="button" onClick={handleSave} disabled={isSaving || locked}>
+              <button className="invoice-save-button" type="button" onClick={saveAndPrint} disabled={isSaving || locked}>
                 <i className="ti ti-save" aria-hidden="true" />
-                <span><strong>{isSaving ? "Saving..." : "Save Changes"}</strong><small>Save bill and deduct stock</small></span>
+                <span><strong>{isSaving ? "Saving..." : "Save and Print"}</strong><small>Save bill and print invoice</small></span>
               </button>
-              <button className="invoice-secondary-button" type="button" onClick={saveAndGenerateInvoice}>
-                <i className="ti ti-file-description" aria-hidden="true" /><span><strong>Save PDF</strong><small>Save bill and generate PDF</small></span>
-              </button>
-              <button className="invoice-cancel-button" type="button" onClick={onClose}>
-                <i className="ti ti-circle-x" aria-hidden="true" /><span><strong>Cancel</strong><small>Clear current bill</small></span>
+              <button className="invoice-secondary-button" type="button" onClick={handleSave} disabled={isSaving || locked}>
+                <i className="ti ti-file-description" aria-hidden="true" /><span><strong>Save</strong><small>Save bill and deduct stock</small></span>
               </button>
             </aside>
           </div>
@@ -868,25 +949,26 @@ export function BillDialog({
               )}
             </div>
 
-            <button
-              className="product-dropzone"
+            <ProductCombobox
+              products={products}
+              usageMap={usageMap}
+              query={productQuery}
+              onQueryChange={setProductQuery}
+              onSelect={handleQuickAddProduct}
               disabled={locked}
-              type="button"
-              onClick={openAddPanel}
-            >
-              <span className="dropzone-icon">+</span>
-              <span>Add Product</span>
-            </button>
+              placeholder="Search product to add..."
+            />
 
             <BillItemsTable
               items={form.products}
               isEditing={isEditing}
               selectedIndex={selectedRow}
-              billDate={form.date}
               setSelectedIndex={setSelectedIndex}
               onEdit={handleEditRow}
               onDelete={handleRemoveProduct}
               onChangeQty={handleChangeQty}
+              onSetQty={handleSetQty}
+              products={products}
             />
           </section>
 
@@ -913,19 +995,6 @@ export function BillDialog({
               <div className="payment-summary-metric">
                 <span className="payment-summary-label">Grand Total</span>
                 <strong className="payment-summary-value">{formatCurrency(billTotal)}</strong>
-              </div>
-              <div className="payment-summary-metric payment-summary-paid">
-                <label className="payment-summary-label" htmlFor="bill-amount-paid">
-                  Amount Paid
-                </label>
-                <NumericMathInput
-                  id="bill-amount-paid"
-                  className="payment-summary-input"
-                  value={form.amountPaid ?? ""}
-                  onChange={(v) => setForm((f) => ({ ...f, amountPaid: v }))}
-                  disabled={locked}
-                  placeholder="0 (supports 500+120)"
-                />
               </div>
               <div className="payment-summary-metric payment-summary-due">
                 <span className="payment-summary-label">Amount Due</span>

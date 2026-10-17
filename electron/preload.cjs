@@ -159,6 +159,7 @@ contextBridge.exposeInMainWorld("db", {
   openDataDirectory: () => invoke("settings:openDataDirectory"),
   changeDataDirectory: () => invoke("settings:changeDataDirectory"),
   generateInvoiceFiles: (invoice) => invoke("invoice:generateFiles", invoice),
+  previewInvoice: (invoice) => invoke("invoice:preview", invoice),
 });
 
 contextBridge.exposeInMainWorld("app", {

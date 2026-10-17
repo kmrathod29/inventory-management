@@ -14,6 +14,7 @@
     "prebuild:win": "electron-rebuild -f -w better-sqlite3",
     "build:linux": "vite build && electron-builder --linux AppImage --publish never",
     "prebuild:linux": "electron-rebuild -f -w better-sqlite3",
+    "pretest": "npm rebuild better-sqlite3",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "node --test"

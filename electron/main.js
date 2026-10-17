@@ -117,6 +117,59 @@ function invoiceMoney(value) {
   })}`;
 }
 
+function invoiceNumber(value) {
+  return (Number(value) || 0).toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+const numberWords = [
+  "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+  "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen",
+  "Seventeen", "Eighteen", "Nineteen",
+];
+const tensWords = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+function wordsBelowThousand(value) {
+  const number = Math.floor(value);
+  if (number < 20) return numberWords[number];
+  if (number < 100) {
+    return `${tensWords[Math.floor(number / 10)]}${number % 10 ? ` ${numberWords[number % 10]}` : ""}`;
+  }
+  return `${numberWords[Math.floor(number / 100)]} Hundred${number % 100 ? ` ${wordsBelowThousand(number % 100)}` : ""}`;
+}
+
+function indianNumberWords(value) {
+  const number = Math.max(0, Math.round(Number(value) || 0));
+  if (number === 0) return "Zero";
+  const groups = [
+    [10000000, "Crore"],
+    [100000, "Lakh"],
+    [1000, "Thousand"],
+    [1, ""],
+  ];
+  let remaining = number;
+  const parts = [];
+  for (const [unit, label] of groups) {
+    if (remaining < unit) continue;
+    const count = Math.floor(remaining / unit);
+    remaining %= unit;
+    parts.push(`${wordsBelowThousand(count)}${label ? ` ${label}` : ""}`);
+  }
+  return parts.join(" ");
+}
+
+function invoiceAmountInWords(value) {
+  const amount = Math.max(0, Number(value) || 0);
+  const rupees = Math.floor(amount);
+  const paise = Math.round((amount - rupees) * 100);
+  const rupeeText = `${indianNumberWords(rupees)} Rupees`;
+  return paise > 0
+    ? `${rupeeText} and ${indianNumberWords(paise)} Paise Only`
+    : `${rupeeText} Only`;
+}
+
 function findInvoiceTemplate() {
   const candidates = [
     path.join(app.getAppPath(), "Invoice.docx"),
@@ -133,10 +186,36 @@ function fillInvoiceTemplate(invoice) {
   const zip = new AdmZip(findInvoiceTemplate());
   let documentXml = zip.readAsText("word/document.xml");
   const items = Array.isArray(invoice.products) ? invoice.products : [];
-  const subtotal = Number(invoice.subtotal) || items.reduce(
-    (sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.priceAtSale) || 0),
+  const subtotal = items.reduce(
+    (sum, item) => sum + (Number(item.priceAtSale) || 0),
     0,
   );
+  const discount = Number(invoice.discount) || 0;
+  const discountPercent = Number(invoice.discountPercent)
+    || (subtotal > 0 ? discount / subtotal * 100 : 0);
+  const grandTotal = Math.max(0, subtotal - discount);
+  const categoryTaxRates = invoice.categoryTaxRates || {};
+  const productTaxRate = (item) => {
+    const category = item.category || "General";
+    return Number(item.taxRate ?? categoryTaxRates[category] ?? invoice.vatPercent ?? 0) || 0;
+  };
+  const taxableSubtotal = Math.max(0, subtotal - discount);
+  const taxTotals = items.reduce((totals, item) => {
+    const itemTotal = Number(item.priceAtSale) || 0;
+    const rate = productTaxRate(item);
+    const discountShare = subtotal > 0 ? discount * itemTotal / subtotal : 0;
+    const netTotal = Math.max(0, itemTotal - discountShare);
+    const tax = rate > 0 ? netTotal - netTotal / (1 + rate / 100) : 0;
+    if (invoice.outOfGujarat === true) totals.igst += tax;
+    else {
+      totals.cgst += tax / 2;
+      totals.sgst += tax / 2;
+    }
+    totals.tax += tax;
+    return totals;
+  }, { tax: 0, cgst: 0, sgst: 0, igst: 0 });
+  const amountInWords = invoice.amountInWords?.trim()
+    || invoiceAmountInWords(grandTotal);
   const replacements = {
     "{{SHOP_NAME}}": invoice.shopName,
     "{{SHOP_TAGLINE}}": invoice.shopTagline,
@@ -153,16 +232,17 @@ function fillInvoiceTemplate(invoice) {
     "{{CUSTOMER_GSTIN}}": invoice.buyerGstin,
     "{{TOTAL_QUANTITY}}": items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0),
     "{{SUBTOTAL}}": invoiceMoney(subtotal),
-    "{{DISCOUNT}}": invoiceMoney(invoice.discount),
-    "{{TAXABLE_AMOUNT}}": invoiceMoney(invoice.taxableAmount ?? subtotal - (Number(invoice.discount) || 0)),
-    "{{CGST_TOTAL}}": invoiceMoney(invoice.cgstTotal),
-    "{{SGST_TOTAL}}": invoiceMoney(invoice.sgstTotal),
-    "{{IGST_TOTAL}}": invoiceMoney(invoice.igstTotal ?? invoice.tax),
-    "{{TOTAL_TAX}}": invoiceMoney(invoice.tax),
-    "{{GRAND_TOTAL}}": invoiceMoney(invoice.grandTotal),
+    "{{DISCOUNT}}": invoiceMoney(discount),
+    "{{DISCOUNT_P}}": `${discountPercent.toFixed(2)}%`,
+    "{{TAXABLE_AMOUNT}}": invoiceMoney(taxableSubtotal - taxTotals.tax),
+    "{{CGST_TOTAL}}": invoiceMoney(taxTotals.cgst),
+    "{{SGST_TOTAL}}": invoiceMoney(taxTotals.sgst),
+    "{{IGST_TOTAL}}": invoiceMoney(taxTotals.igst),
+    "{{TOTAL_TAX}}": invoiceMoney(taxTotals.tax),
+    "{{GRAND_TOTAL}}": invoiceMoney(grandTotal),
     "{{AMOUNT_PAID}}": invoiceMoney(invoice.amountPaid),
     "{{AMOUNT_DUE}}": invoiceMoney(invoice.amountDue),
-    "{{AMOUNT_IN_WORDS}}": invoice.amountInWords,
+    "{{AMOUNT_IN_WORDS}}": amountInWords,
     "{{BANK_NAME}}": invoice.bankName,
     "{{BANK_BRANCH}}": invoice.bankBranch,
     "{{BANK_AC}}": invoice.bankAccountNumber,
@@ -175,40 +255,66 @@ function fillInvoiceTemplate(invoice) {
     .replace(/\{\{\s*S\s*GST_TOTAL\s*\}\}/g, "{{SGST_TOTAL}}")
     .replace(/\{\{\s*I\s*GST_TOTAL\s*\}\}/g, "{{IGST_TOTAL}}");
 
-  const itemRowMatch = documentXml.match(/<w:tr\b[^>]*>[\s\S]*?\{\{ITEM_NO\}\}[\s\S]*?<\/w:tr>/);
-  if (itemRowMatch) {
-    const itemRow = itemRowMatch[0];
+  const tableMatch = documentXml.match(/<w:tbl\b[\s\S]*?<\/w:tbl>/);
+  const itemRowMatch = tableMatch?.[0].match(/<w:tr\b[^>]*>[\s\S]*?\{\{ITEM_NO\}\}[\s\S]*?<\/w:tr>/);
+  if (tableMatch && itemRowMatch) {
+    const tableXml = tableMatch[0];
+    const tableRows = [...tableXml.matchAll(/<w:tr\b[^>]*>[\s\S]*?<\/w:tr>/g)].map((match) => match[0]);
+    const itemRowIndex = tableRows.findIndex((row) => row.includes("{{ITEM_NO}}"));
+    const itemRow = tableRows[itemRowIndex];
+    let itemSlotEnd = itemRowIndex + 1;
+    while (
+      itemSlotEnd < tableRows.length
+      && !tableRows[itemSlotEnd].includes("{{TOTAL_QUANTITY}}")
+      && !tableRows[itemSlotEnd].includes("{{TAXABLE_AMOUNT}}")
+    ) {
+      itemSlotEnd += 1;
+    }
+    const itemSlots = tableRows.slice(itemRowIndex, itemSlotEnd);
     const rows = items.length ? items : [{}];
     const generatedRows = rows.map((item, index) => {
-      const itemTaxable = (Number(item.quantity) || 0) * (Number(item.priceAtSale) || 0);
-      const itemTax = itemTaxable * (Number(invoice.vatPercent) || 0) / 100;
+      const quantity = Number(item.quantity) || 0;
+      const itemTotal = Number(item.priceAtSale) || 0;
+      const discountShare = subtotal > 0 ? discount * itemTotal / subtotal : 0;
+      const itemNetTotal = Math.max(0, itemTotal - discountShare);
+      const itemRatePercent = productTaxRate(item);
+      const itemTaxable = itemRatePercent > 0
+        ? itemNetTotal / (1 + itemRatePercent / 100)
+        : itemNetTotal;
+      const itemTax = itemRatePercent > 0 ? itemNetTotal - itemTaxable : 0;
+      const itemRate = quantity > 0 ? itemTaxable / quantity : itemTaxable;
       const itemOutOfGujarat = invoice.outOfGujarat === true;
       const itemValues = {
         "{{ITEM_NO}}": index + 1,
         "{{ITEM_NAME}}": item.productName,
         "{{ITEM_HSN}}": item.hsCode,
         "{{ITEM_QTY}}": item.quantity,
-        "{{ITEM_RATE}}": invoiceMoney(
-          item.taxableRate
-          ?? (Number(item.quantity) > 0
-            ? (item.taxableValue ?? itemTaxable) / Number(item.quantity)
-            : item.priceAtSale),
-        ),
-        "{{ITEM_TAXABLE_VALUE}}": invoiceMoney(item.taxableValue ?? itemTaxable),
-        "{{ITEM_CGST_PERCENT}}": item.cgstPercent ?? (itemOutOfGujarat ? "0" : (Number(invoice.vatPercent) || 0) / 2),
-        "{{ITEM_CGST_AMOUNT}}": invoiceMoney(item.cgstAmount ?? (itemOutOfGujarat ? 0 : itemTax / 2)),
-        "{{ITEM_SGST_PERCENT}}": item.sgstPercent ?? (itemOutOfGujarat ? "0" : (Number(invoice.vatPercent) || 0) / 2),
-        "{{ITEM_SGST_AMOUNT}}": invoiceMoney(item.sgstAmount ?? (itemOutOfGujarat ? 0 : itemTax / 2)),
-        "{{ITEM_IGST_PERCENT}}": item.igstPercent ?? (itemOutOfGujarat ? invoice.vatPercent : "0"),
-        "{{ITEM_IGST_AMOUNT}}": invoiceMoney(item.igstAmount ?? (itemOutOfGujarat ? itemTax : 0)),
-        "{{ITEM_TOTAL}}": invoiceMoney(itemTaxable + itemTax),
+        "{{ITEM_RATE}}": invoiceNumber(itemRate),
+        "{{ITEM_TAXABLE_VALUE}}": invoiceNumber(itemTaxable),
+        "{{ITEM_CGST_PERCENT}}": itemOutOfGujarat ? "0" : itemRatePercent / 2,
+        "{{ITEM_CGST_AMOUNT}}": invoiceNumber(itemOutOfGujarat ? 0 : itemTax / 2),
+        "{{ITEM_SGST_PERCENT}}": itemOutOfGujarat ? "0" : itemRatePercent / 2,
+        "{{ITEM_SGST_AMOUNT}}": invoiceNumber(itemOutOfGujarat ? 0 : itemTax / 2),
+        "{{ITEM_IGST_PERCENT}}": itemOutOfGujarat ? itemRatePercent : "0",
+        "{{ITEM_IGST_AMOUNT}}": invoiceNumber(itemOutOfGujarat ? itemTax : 0),
+        "{{ITEM_TOTAL}}": invoiceNumber(itemTotal),
       };
-      return Object.entries(itemValues).reduce(
+      const generatedRow = Object.entries(itemValues).reduce(
         (row, [from, to]) => row.split(from).join(escapeXml(to)),
         itemRow,
       );
-    }).join("");
-    documentXml = documentXml.replace(itemRow, generatedRows);
+      // Word paragraph and revision identifiers must not be duplicated when
+      // one template row is expanded into multiple invoice rows.
+      return generatedRow
+        .replace(/\s+w14:(?:paraId|textId)="[^"]*"/g, "")
+        .replace(/\s+w:(?:rsidR|rsidRPr|rsidRDefault|rsidTr)="[^"]*"/g, "");
+    });
+    const blankRows = itemSlots.slice(generatedRows.length);
+    const replacementRows = generatedRows.length >= itemSlots.length
+      ? generatedRows
+      : [...generatedRows, ...blankRows];
+    const originalRows = itemSlots.join("");
+    documentXml = documentXml.replace(originalRows, replacementRows.join(""));
   }
 
   for (const [from, to] of Object.entries(replacements)) {
@@ -578,6 +684,20 @@ app.whenReady().then(() => {
     fillInvoiceTemplate(invoice || {}).writeZip(docxPath);
     await convertDocxToPdf(docxPath, pdfPath);
     await shell.openPath(pdfPath);
+    return { pdfPath, docxPath };
+  });
+  ipcMain.handle("invoice:preview", async (_, invoice) => {
+    const fileName = `Invoice-${invoice?.invoiceNumber || "preview"}-${Date.now()}`;
+    const tempDirectory = app.getPath("temp");
+    const pdfPath = path.join(tempDirectory, `${fileName}.pdf`);
+    const docxPath = path.join(tempDirectory, `${fileName}.docx`);
+
+    fillInvoiceTemplate(invoice || {}).writeZip(docxPath);
+    await convertDocxToPdf(docxPath, pdfPath);
+    const openError = await shell.openPath(pdfPath);
+    if (openError) {
+      throw new Error(`Could not open the invoice preview: ${openError}`);
+    }
     return { pdfPath, docxPath };
   });
   ipcMain.handle("dialog:pickExcelFile", async () => {

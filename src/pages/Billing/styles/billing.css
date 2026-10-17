@@ -1223,9 +1223,8 @@ kbd {
 .combobox-option {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
-  padding: 8px 10px;
+  padding: 9px 10px;
   border-radius: 6px;
   cursor: pointer;
   color: var(--color-primary);
@@ -1243,10 +1242,174 @@ kbd {
   white-space: nowrap;
 }
 
+.product-search-image,
+.bill-product-thumbnail {
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 7px;
+  border: 1px solid var(--border-color);
+  background: var(--background-secondary);
+}
+
+.bill-product-thumbnail {
+  width: 52px;
+  height: 52px;
+}
+
+.combobox-option-details {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.combobox-option-stock {
+  font-size: 0.72rem;
+  opacity: 0.72;
+}
+
+.combobox-option-price {
+  flex: 0 0 auto;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 .combobox-option-meta {
   flex-shrink: 0;
   font-size: 0.72rem;
   opacity: 0.75;
+}
+
+.combobox-add-button {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.combobox-add-button:hover {
+  background: currentColor;
+  color: var(--background-primary);
+}
+
+.invoice-products-card .product-combobox,
+.bill-regular-page-shell .product-combobox {
+  margin: 10px 0 14px;
+}
+
+.invoice-products-card .combobox-input,
+.bill-regular-page-shell .combobox-input {
+  min-height: 42px;
+  padding: 0 14px 0 40px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background:
+    linear-gradient(90deg, transparent 0 14px, var(--card) 14px),
+    var(--card);
+  box-shadow: 0 2px 8px rgba(20, 35, 55, 0.05);
+}
+
+.bill-quantity-input {
+  width: 64px;
+  box-sizing: border-box;
+  padding: 5px 7px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  background: var(--background-secondary);
+  color: var(--color-primary);
+}
+
+.invoice-product-hint {
+  color: var(--color-secondary);
+  font-size: 0.8rem;
+}
+
+.invoice-clear-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--card);
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.invoice-clear-button:hover {
+  background: var(--accent);
+}
+
+.invoice-discount-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.invoice-discount-fields label,
+.invoice-grand-total label {
+  color: var(--muted-foreground);
+  font-size: 0.85rem;
+}
+
+.invoice-input-with-prefix {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--card);
+  color: var(--muted-foreground);
+  overflow: hidden;
+}
+
+.invoice-input-with-prefix > span {
+  padding-left: 10px;
+  font-weight: 700;
+}
+
+.invoice-input-with-prefix .invoice-discount-input {
+  border: 0;
+  box-shadow: none;
+}
+
+.invoice-grand-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px -12px;
+  padding: 16px 12px;
+  border: 2px solid var(--button-primary);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--button-primary) 10%, var(--card));
+}
+
+.invoice-grand-total label {
+  color: var(--foreground);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.invoice-grand-total .invoice-discount-input {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.invoice-grand-total .invoice-discount-input {
+  max-width: 150px;
+  font-weight: 700;
 }
 
 .combobox-footer,

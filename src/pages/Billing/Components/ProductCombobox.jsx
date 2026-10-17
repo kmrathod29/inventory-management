@@ -1,7 +1,29 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { normalize, rankProducts } from "../../../utils/fuzzySearch";
+import { rankProducts } from "../../../utils/fuzzySearch";
+import { useResolvedImage } from "../../../hooks/resolvedImage";
 
 const RENDER_CAP = 60; // max options rendered at once (searches all, shows top N)
+
+function ProductSearchImage({ product }) {
+  const image = useResolvedImage(product.images);
+  return <img className="product-search-image" src={image} alt="" />;
+}
+
+function getProductPrice(product) {
+  return product.variants?.[0]?.sales ?? product.variants?.[0]?.mp ?? 0;
+}
+
+function getProductStock(product) {
+  return (product.bases ?? []).reduce(
+    (total, base) =>
+      total +
+      (product.variants ?? []).reduce(
+        (baseTotal, variant) => baseTotal + Number(base.stockMap?.[variant.id] ?? 0),
+        0,
+      ),
+    0,
+  );
+}
 
 // VS Code command-palette style product search. Instant fuzzy/partial filtering,
 // arrow navigation, Enter selects, Esc closes the list. Mouse fully supported.
@@ -103,8 +125,6 @@ export function ProductCombobox({
       {open && shown.length > 0 && (
         <ul className="combobox-listbox" role="listbox">
           {shown.map((product, i) => {
-            const usage = usageMap?.get(normalize(product.name));
-            const freq = usage?.frequency ?? 0;
             return (
               <li
                 key={product.id}
@@ -117,10 +137,31 @@ export function ProductCombobox({
                 onMouseEnter={() => setActiveIndex(i)}
                 onClick={() => choose(product)}
               >
-                <span className="combobox-option-name">{product.name}</span>
-                {freq > 0 && (
-                  <span className="combobox-option-meta">{freq} sold</span>
-                )}
+                <ProductSearchImage product={product} />
+                <span className="combobox-option-details">
+                  <strong className="combobox-option-name">{product.name}</strong>
+                  <span className="combobox-option-stock">
+                    Stock: {getProductStock(product)}
+                  </span>
+                </span>
+                <span className="combobox-option-price">
+                  {Number(getProductPrice(product)).toLocaleString("en-IN", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
+                <button
+                  type="button"
+                  className="combobox-add-button"
+                  aria-label={`Add ${product.name}`}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    choose(product);
+                  }}
+                >
+                  +
+                </button>
               </li>
             );
           })}

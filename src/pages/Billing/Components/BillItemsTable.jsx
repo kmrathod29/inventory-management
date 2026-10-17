@@ -1,6 +1,11 @@
 import { useRef } from "react";
-import { formatDate, getBusinessDateISO } from "../../../utils/regional";
+import { useResolvedImage } from "../../../hooks/resolvedImage";
 import { formatCurrency } from "../../../utils/regional";
+
+function ProductThumbnail({ src, alt }) {
+  const image = useResolvedImage(src);
+  return <img className="bill-product-thumbnail" src={image} alt={alt} />;
+}
 
 // The current bill's line items with keyboard navigation (roving tabindex).
 //   Up/Down  select row      Enter  edit      Delete  remove
@@ -13,7 +18,8 @@ export function BillItemsTable({
   onEdit,
   onDelete,
   onChangeQty,
-  billDate,
+  onSetQty,
+  products = [],
 }) {
   const rowRefs = useRef([]);
 
@@ -72,11 +78,9 @@ export function BillItemsTable({
     <table className="bill-products-table">
       <thead>
         <tr>
-          <th></th>
-          <th>Date</th>
-          <th>Product</th>
-          <th>Base</th>
-          <th>Size</th>
+          <th>Sr No.</th>
+          <th>Image</th>
+          <th>Product Name</th>
           <th>Qty</th>
           <th>Price</th>
           <th>Subtotal</th>
@@ -85,8 +89,6 @@ export function BillItemsTable({
       </thead>
       <tbody>
         {items.map((p, i) => {
-          const purchaseDate = p.purchaseDate || p.date || billDate || getBusinessDateISO();
-          // Use a unique key combining index and product data to prevent React key warnings
           const uniqueKey = `bill-item-${i}-${p.productName}-${p.base}`;
 
           return (
@@ -101,12 +103,28 @@ export function BillItemsTable({
             >
               <td>{i + 1}</td>
               <td>
-                {formatDate(purchaseDate, "DD MMM YYYY")}
+                <ProductThumbnail
+                  src={p.image || products.find((product) => product.name === p.productName)?.images}
+                  alt=""
+                />
               </td>
               <td>{p.productName}</td>
-              <td>{p.base || "—"}</td>
-              <td>{p.bucketSize || "—"}</td>
-              <td>{p.quantity}</td>
+              <td>
+                {isEditing ? (
+                  <input
+                    className="bill-quantity-input"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={p.quantity}
+                    aria-label={`Quantity for ${p.productName}`}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => onSetQty?.(i, e.target.value)}
+                  />
+                ) : (
+                  p.quantity
+                )}
+              </td>
               <td>{formatCurrency(p.priceAtSale)}</td>
               <td>
                 {formatCurrency((p.quantity || 0) * (p.priceAtSale || 0))}

@@ -612,7 +612,7 @@ function serializeInvoiceData(invoiceData) {
 }
 
 function storedInvoiceNumbers(db, excludeExpenseId) {
-  return db.prepare(`
+  const expenseNumbers = db.prepare(`
     SELECT id, invoice_data FROM expenses
     WHERE type = 'Import' AND invoice_data IS NOT NULL
   `).all()
@@ -626,6 +626,21 @@ function storedInvoiceNumbers(db, excludeExpenseId) {
     })
     .filter((value) => typeof value === "string" && value.trim())
     .map((value) => value.trim());
+  const billNumbers = db.prepare(`
+    SELECT id, invoice_data FROM bills
+    WHERE invoice_data IS NOT NULL
+  `).all()
+    .filter((row) => row.id !== Number(excludeExpenseId))
+    .map((row) => {
+      try {
+        return JSON.parse(row.invoice_data)?.invoiceNumber;
+      } catch (error) {
+        throw new Error(`Invoice details for bill ${row.id} are corrupted.`, { cause: error });
+      }
+    })
+    .filter((value) => typeof value === "string" && value.trim())
+    .map((value) => value.trim());
+  return [...expenseNumbers, ...billNumbers];
 }
 
 export function isInvoiceNumberAvailable(db, invoiceNumber, excludeExpenseId) {
@@ -638,8 +653,8 @@ export function isInvoiceNumberAvailable(db, invoiceNumber, excludeExpenseId) {
 export function getNextInvoiceNumber(db, previousNumber = "") {
   const preferred = String(previousNumber ?? "").trim();
   const match = /^(.*?)(\d+)$/.exec(preferred);
-  const prefix = match?.[1] ?? "";
-  const width = match?.[2]?.length ?? 1;
+  const prefix = match ? match[1] : "INV-";
+  const width = match?.[2]?.length ?? 5;
   const previousSequence = match ? Number(match[2]) : 0;
   const matchingSequences = storedInvoiceNumbers(db)
     .map((value) => {
