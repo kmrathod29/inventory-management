@@ -39,6 +39,31 @@ function getExpenses() {
   }));
 }
 
+// One bounded, parameterized read path for the Reports dashboard. Dates are ISO
+// business dates and BETWEEN keeps both selected calendar days inclusive.
+function getReportData(startDate, endDate) {
+  const validRange = (value) => value === null || /^\d{4}-\d{2}-\d{2}$/.test(value);
+  if (!validRange(startDate) || !validRange(endDate) || (startDate && endDate && startDate > endDate)) {
+    throw new Error("Invalid report date range.");
+  }
+  const bills = ctx.db.prepare(`
+    SELECT b.*, c.name AS customer_name
+    FROM bills b LEFT JOIN customers c ON c.id = b.customer_id
+    WHERE (? IS NULL OR b.date >= ?) AND (? IS NULL OR b.date <= ?)
+    ORDER BY b.date DESC, b.id DESC
+  `).all(startDate, startDate, endDate, endDate);
+  const billIds = bills.map((bill) => bill.id);
+  const items = billIds.length
+    ? ctx.db.prepare(`SELECT bi.*, p.category AS current_category FROM bill_items bi LEFT JOIN products p ON p.name = bi.product_name WHERE bi.bill_id IN (${billIds.map(() => "?").join(",")}) ORDER BY bi.id`).all(...billIds)
+    : [];
+  // Collections are selected by payment date, independently of the invoice date.
+  const activities = ctx.db.prepare(`SELECT ba.*, b.customer_id, c.name AS customer_name, b.bill_number, b.date AS invoice_date FROM bill_activity ba JOIN bills b ON b.id = ba.bill_id LEFT JOIN customers c ON c.id = b.customer_id WHERE (? IS NULL OR ba.date >= ?) AND (? IS NULL OR ba.date <= ?) ORDER BY ba.date, ba.id`).all(startDate, startDate, endDate, endDate);
+  const expenses = ctx.db.prepare(`SELECT id, date, label, amount, type FROM expenses WHERE (? IS NULL OR date >= ?) AND (? IS NULL OR date <= ?) ORDER BY date DESC, id DESC`).all(startDate, startDate, endDate, endDate);
+  const stock = ctx.db.prepare(`SELECT p.id, p.name, COALESCE(p.category, 'General') AS category, COALESCE(SUM(bs.stock), 0) AS quantity FROM products p LEFT JOIN bases b ON b.product_id = p.id LEFT JOIN base_stock bs ON bs.base_id = b.id GROUP BY p.id ORDER BY p.name`).all();
+  const currentOutstanding = Number(ctx.db.prepare(`SELECT COALESCE(SUM(MAX(amount_due, 0)), 0) AS total FROM bills WHERE amount_due > 0`).get().total || 0);
+  return { bills, items, activities, expenses, stock, currentOutstanding };
+}
+
 function deleteExpense(id) {
   deleteExpenseAndRestoreStock(ctx.db, id, reverseImportItemFromStock);
 }
@@ -352,6 +377,7 @@ function getExpenseDetails(expenseId) {
   return {
     addExpense,
     getExpenses,
+    getReportData,
     deleteExpense,
     getSales,
     getNetPosition,
