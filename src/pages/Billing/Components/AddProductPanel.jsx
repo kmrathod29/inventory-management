@@ -37,7 +37,7 @@ export const AddProductPanel = forwardRef(function AddProductPanel(
   const [selectedProduct, setSelectedProduct] = useState(() =>
     initial?.item
       ? (products.find(
-          (p) => normalize(p.name) === normalize(initial.item.productName),
+        (p) => p.sku_code === initial.item.skuCode || normalize(p.name) === normalize(initial.item.productName),
         ) ?? null)
       : null,
   );
@@ -147,6 +147,7 @@ export const AddProductPanel = forwardRef(function AddProductPanel(
     }
     const item = {
       productName: form.productName.trim(),
+      skuCode: selectedProduct?.sku_code || form.skuCode || "",
       base: form.base,
       bucketSize: form.bucketSize,
       quantity: commitMath(form.quantity),

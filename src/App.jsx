@@ -11,6 +11,7 @@ import "./index.css";
 
 import { useState, useEffect } from "react";
 import { Billing } from "./pages/Billing/billing";
+import { CustomersPage } from "./pages/Customers/customers";
 import { useToast } from "./hooks/ToastContext";
 
 function App() {
@@ -61,6 +62,7 @@ function App() {
             <Route path="/finances" element={<Navigate to="/reports" replace />} />
             <Route path="/analytics" element={<Navigate to="/reports" replace />} />
             <Route path="/inventory" element={<InventoryPage />} />
+            <Route path="/customers" element={<CustomersPage />} />
             <Route
               path="/settings"
               element={

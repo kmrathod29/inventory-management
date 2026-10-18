@@ -1,6 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { validateProduct } from "./validation.js";
 
+function nextProductSku(db) {
+  const rows = db.prepare("SELECT sku_code FROM products WHERE sku_code LIKE 'SKU%'").all();
+  const nextNumber = rows.reduce((max, row) => Math.max(max, Number(String(row.sku_code || "").slice(3)) || 0), 0) + 1;
+  return `SKU${nextNumber}`;
+}
+
 export function saveInventoryProduct(db, product) {
   const validatedProduct = validateProduct(product);
   const existingProduct = db
@@ -9,13 +15,16 @@ export function saveInventoryProduct(db, product) {
 
   return db.transaction(() => {
     const productId = existingProduct?.id || validatedProduct.id || randomUUID();
+    const skuCode = existingProduct?.sku_code || validatedProduct.skuCode || nextProductSku(db);
 
     if (!existingProduct) {
-      db.prepare("INSERT INTO products (id, name, images, category) VALUES (?, ?, ?, ?)").run(
+      db.prepare("INSERT INTO products (id, name, images, category, low_stock_threshold, sku_code) VALUES (?, ?, ?, ?, ?, ?)").run(
         productId,
         validatedProduct.name,
         validatedProduct.images,
         validatedProduct.category,
+        validatedProduct.lowStockThreshold,
+        skuCode,
       );
     }
 

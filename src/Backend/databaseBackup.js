@@ -4,7 +4,7 @@ import path from "node:path";
 import { migrateDatabase } from "./migrations.js";
 
 const requiredColumns = {
-  products: ["id", "name", "images"],
+  products: ["id", "name", "images", "low_stock_threshold", "sku_code"],
   variants: ["id", "product_id", "bucket_size", "landing", "sales", "mp"],
   bases: ["id", "product_id", "name"],
   base_stock: ["base_id", "variant_id", "stock"],
@@ -13,7 +13,7 @@ const requiredColumns = {
   expense_items: ["id", "expense_id", "product_name", "base", "bucket_size", "quantity", "cost_price"],
   bills: ["id", "customer_id", "date", "payment_method", "total_purchased", "amount_paid", "amount_due", "status", "bill_type", "pan_number", "bill_number", "invoice_data"],
   bill_activity: ["id", "bill_id", "type", "date", "amount", "payment_method", "note", "created_at"],
-  bill_items: ["id", "bill_id", "product_name", "base", "bucket_size", "quantity", "price_at_sale", "cost_price"],
+  bill_items: ["id", "bill_id", "product_name", "product_sku_code", "base", "bucket_size", "quantity", "price_at_sale", "cost_price"],
 };
 const legacyIdentityColumns = {
   products: ["id", "name"],

@@ -15,6 +15,7 @@ import { ProductCombobox } from "./ProductCombobox";
 function normalizeProduct(p) {
   return {
     productName: p.productName ?? p.product_name ?? "",
+    skuCode: p.skuCode ?? p.product_sku_code ?? "",
     hsCode: p.hsCode ?? p.hs_code ?? "",
     base: p.base ?? "",
     bucketSize: p.bucketSize ?? p.bucket_size ?? "",
@@ -168,6 +169,7 @@ export function BillDialog({
     const price = variant?.sales ?? variant?.mp ?? 0;
     handleAddItem({
       productName: product.name,
+      skuCode: product.sku_code || "",
       image: product.images || "",
       category: product.category || product.bases?.[0]?.name || "General",
       base: base?.name ?? "",

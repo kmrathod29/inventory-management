@@ -35,6 +35,11 @@ export function validateProduct(product) {
   const name = normalizeText(product.name);
   assert(name.length > 0, "Product name is required.");
   const category = normalizeText(product.category, "General");
+  const lowStockThreshold = parseRequiredNumber(
+    product.lowStockThreshold ?? product.low_stock_threshold ?? 10,
+    "Low stock alert",
+    { min: 0 },
+  );
 
   const variants = Array.isArray(product.variants) ? product.variants : [];
   const bases = Array.isArray(product.bases) ? product.bases : [];
@@ -80,8 +85,10 @@ export function validateProduct(product) {
   return {
     ...product,
     id: normalizeText(product.id, ""),
+    skuCode: normalizeText(product.skuCode ?? product.sku_code, ""),
     name,
     category,
+    lowStockThreshold,
     images: product.images ?? "",
     variants: nextVariants,
     bases: nextBases,
@@ -138,6 +145,7 @@ export function validateBillPayload(customerId, bill) {
     return {
       ...item,
       productName,
+      skuCode: normalizeText(item?.skuCode ?? item?.product_sku_code, ""),
       base,
       bucketSize,
       quantity,

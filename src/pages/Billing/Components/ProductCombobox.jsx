@@ -141,7 +141,7 @@ export function ProductCombobox({
                 <span className="combobox-option-details">
                   <strong className="combobox-option-name">{product.name}</strong>
                   <span className="combobox-option-stock">
-                    Stock: {getProductStock(product)}
+                    {product.sku_code || "No SKU"} · Stock: {getProductStock(product)}
                   </span>
                 </span>
                 <span className="combobox-option-price">

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 
-export function BillingTaxSection({ settings, busy, onInvoiceDefaultsSave, onCategoryTaxRatesSave }) {
+export function BillingTaxSection({ settings, busy, onSave }) {
   const [values, setValues] = useState(() => settings?.invoiceDefaults || {});
   const [categoryRates, setCategoryRates] = useState(() => settings?.categoryTaxRates || {});
   const [categories, setCategories] = useState([]);
+  const [newCategory, setNewCategory] = useState("");
 
   const fields = [
     ["shopTagline", "Shop Tagline"],
@@ -35,11 +36,11 @@ export function BillingTaxSection({ settings, busy, onInvoiceDefaultsSave, onCat
   }, [settings?.categoryTaxRates]);
 
   function addCategory() {
-    const category = window.prompt("Enter product category name");
-    if (!category?.trim()) return;
-    const name = category.trim();
+    const name = newCategory.trim();
+    if (!name) return;
     setCategoryRates((current) => ({ ...current, [name]: current[name] ?? values.vatPercent ?? "13" }));
     setCategories((current) => current.includes(name) ? current : [...current, name].sort());
+    setNewCategory("");
   }
 
   function removeCategory(category) {
@@ -89,10 +90,13 @@ export function BillingTaxSection({ settings, busy, onInvoiceDefaultsSave, onCat
           </div>
         ))}
       </div>
-      <button className="settings-action" type="button" onClick={addCategory} disabled={!settings || Boolean(busy)}>
+      <div className="category-tax-add-row">
+        <input value={newCategory} onChange={(event) => setNewCategory(event.target.value)} placeholder="New category name" disabled={!settings || Boolean(busy)} onKeyDown={(event) => { if (event.key === "Enter") addCategory(); }} />
+        <button className="settings-action" type="button" onClick={addCategory} disabled={!settings || Boolean(busy) || !newCategory.trim()}>
         <i className="ti ti-plus" aria-hidden="true" />
         <span>Add Category</span>
-      </button>
+        </button>
+      </div>
 
       <div className="settings-divider" />
 
@@ -133,20 +137,11 @@ export function BillingTaxSection({ settings, busy, onInvoiceDefaultsSave, onCat
         <button
           className="settings-action settings-action-primary"
           type="button"
-          onClick={() => onInvoiceDefaultsSave(values)}
+          onClick={() => onSave(values, categoryRates)}
           disabled={!settings || Boolean(busy)}
         >
           <i className="ti ti-device-floppy" aria-hidden="true" />
-          <span>{busy === "invoice-defaults" || busy === "category-tax-rates" ? "Saving..." : "Save Billing Settings"}</span>
-        </button>
-        <button
-          className="settings-action settings-action-primary"
-          type="button"
-          onClick={() => onCategoryTaxRatesSave(categoryRates)}
-          disabled={!settings || Boolean(busy)}
-        >
-          <i className="ti ti-device-floppy" aria-hidden="true" />
-          <span>Save Tax Rates</span>
+          <span>{busy === "billing-settings" ? "Saving..." : "Save Billing Settings"}</span>
         </button>
       </div>
     </div>

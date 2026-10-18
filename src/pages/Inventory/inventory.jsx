@@ -50,11 +50,12 @@ export function InventoryPage() {
   const summaries = useMemo(() => products.map((product) => ({
     category: product.category || product.bases?.[0]?.name || "General",
     stock: (product.bases || []).reduce((total, base) => total + (base.stocks || []).reduce((sum, value) => sum + Number(value || 0), 0), 0),
+    threshold: Number(product.low_stock_threshold ?? product.lowStockThreshold ?? 10),
   })), [products]);
   const categories = ["All Categories", ...new Set(summaries.map((product) => product.category))];
   const totalProducts = products.length;
-  const inStock = summaries.filter((product) => product.stock >= 10).length;
-  const lowStock = summaries.filter((product) => product.stock > 0 && product.stock < 10).length;
+  const inStock = summaries.filter((product) => product.stock >= product.threshold).length;
+  const lowStock = summaries.filter((product) => product.stock > 0 && product.stock < product.threshold).length;
   const outOfStock = summaries.filter((product) => product.stock <= 0).length;
 
   function openAddProduct() {

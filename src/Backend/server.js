@@ -54,7 +54,7 @@ const services = [
 // Keep the historical named exports as a compatibility facade for Electron and the renderer.
 export const {
   getAppSettings, setDefaultProfilePassword, createProfile, switchProfile,
-  updateDefaultPaymentMethod, updateInvoiceDefaults, updateCategoryTaxRates, updateInventoryAddItemMode,
+  updateDefaultPaymentMethod, updateInvoiceDefaults, updateCategoryTaxRates, updateBillingSettings, updateInventoryAddItemMode,
   updateAppearanceSettings, setLocalDataDirectory,
 } = services[0];
 export const { backupDatabase, exportDatabase, createPortableDatabaseBackup, restoreDatabase, restorePortableDatabase } = services[1];

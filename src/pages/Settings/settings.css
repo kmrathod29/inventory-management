@@ -264,6 +264,24 @@
   background: color-mix(in srgb, var(--danger) 10%, transparent);
 }
 
+.category-tax-add-row {
+  display: flex;
+  gap: 10px;
+  max-width: 560px;
+}
+
+.category-tax-add-row input {
+  min-width: 0;
+  flex: 1;
+  min-height: 36px;
+  padding: 6px 9px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  background: var(--background-secondary);
+  color: var(--color-primary);
+  font: inherit;
+}
+
 .shop-details-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

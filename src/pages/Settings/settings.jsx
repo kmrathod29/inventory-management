@@ -169,14 +169,14 @@ export function SettingsPage({
 
   }
 
-  async function handleCategoryTaxRatesSave(categoryTaxRates) {
-    setBusy("category-tax-rates");
+  async function handleBillingSettingsSave(invoiceDefaults, categoryTaxRates) {
+    setBusy("billing-settings");
     try {
-      const updatedSettings = await window.db.updateCategoryTaxRates(categoryTaxRates);
+      const updatedSettings = await window.db.updateBillingSettings(invoiceDefaults, categoryTaxRates);
       setSettings(updatedSettings);
-      showToast("Category tax rates updated.", "success");
+      showToast("Billing and tax settings updated.", "success");
     } catch (error) {
-      showToast(error.message || "Could not update category tax rates.", "error");
+      showToast(error.message || "Could not update billing and tax settings.", "error");
     } finally {
       setBusy("");
     }
@@ -358,8 +358,7 @@ export function SettingsPage({
             <BillingTaxSection
               settings={settings}
               busy={busy}
-              onInvoiceDefaultsSave={handleInvoiceDefaultsSave}
-              onCategoryTaxRatesSave={handleCategoryTaxRatesSave}
+              onSave={handleBillingSettingsSave}
             />
           )}
           {activeSection === "backup" && (

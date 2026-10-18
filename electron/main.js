@@ -63,6 +63,7 @@ import {
   updateDefaultPaymentMethod,
   updateInvoiceDefaults,
   updateCategoryTaxRates,
+  updateBillingSettings,
   updateInventoryAddItemMode,
   updateAppearanceSettings,
   deleteProducts,
@@ -638,6 +639,9 @@ app.whenReady().then(() => {
   );
   ipcMain.handle("settings:updateCategoryTaxRates", (_, categoryTaxRates) =>
     updateCategoryTaxRates(categoryTaxRates),
+  );
+  ipcMain.handle("settings:updateBillingSettings", (_, invoiceDefaults, categoryTaxRates) =>
+    updateBillingSettings(invoiceDefaults, categoryTaxRates),
   );
   ipcMain.handle("settings:updateInventoryAddItemMode", (_, mode) =>
     updateInventoryAddItemMode(mode),

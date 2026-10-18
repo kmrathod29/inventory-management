@@ -13,6 +13,7 @@ export function AddConsole({ product, setProduct, onClose, onSaved }) {
   const [landing, setLanding] = useState(String(product?.variants?.[0]?.landing ?? ""));
   const [selling, setSelling] = useState(String(product?.variants?.[0]?.sales ?? ""));
   const [stock, setStock] = useState(String(product?.bases?.reduce((total, base) => total + (base.stocks || []).reduce((sum, value) => sum + Number(value || 0), 0), 0) ?? ""));
+  const [lowStockThreshold, setLowStockThreshold] = useState(String(product?.low_stock_threshold ?? product?.lowStockThreshold ?? 10));
   const [isSaving, setIsSaving] = useState(false);
   const resolvedImage = useResolvedImage(image);
 
@@ -36,8 +37,9 @@ export function AddConsole({ product, setProduct, onClose, onSaved }) {
     event.preventDefault();
     if (isSaving) return;
     const values = [landing, selling, stock].map(Number);
-    if (!name.trim() || !category.trim() || values.some((value) => !Number.isFinite(value) || value < 0)) {
-      showToast("Enter product name, category, valid prices, and stock quantity.", "error");
+    const threshold = Number(lowStockThreshold);
+    if (!name.trim() || !category.trim() || values.some((value) => !Number.isFinite(value) || value < 0) || !Number.isFinite(threshold) || threshold < 0) {
+      showToast("Enter product name, category, valid prices, stock quantity, and alert threshold.", "error");
       return;
     }
     setIsSaving(true);
@@ -45,6 +47,7 @@ export function AddConsole({ product, setProduct, onClose, onSaved }) {
         id: product.id,
         name: name.trim(),
         category: category.trim(),
+        lowStockThreshold: threshold,
         images: image,
         variants: product.variants.map((variant, index) => ({
           ...variant,
@@ -58,6 +61,7 @@ export function AddConsole({ product, setProduct, onClose, onSaved }) {
       }) : () => window.db.saveInventoryProduct({
         name: name.trim(),
         category: category.trim(),
+        lowStockThreshold: threshold,
         images: image,
         variants: [{ bucket_size: 1, landing: values[0], sales: values[1], mp: values[1] }],
         bases: [{ name: category.trim(), stocks: [values[2]] }],
@@ -80,6 +84,7 @@ export function AddConsole({ product, setProduct, onClose, onSaved }) {
     setLanding("");
     setSelling("");
     setStock("");
+    setLowStockThreshold("10");
   }
 
   return (
@@ -106,7 +111,8 @@ export function AddConsole({ product, setProduct, onClose, onSaved }) {
         </div>
         <label className="inventory-add-field">Landing Price (₹)<input type="number" min="0" step="any" value={landing} onChange={(event) => setLanding(event.target.value)} placeholder="0.00" required /></label>
         <label className="inventory-add-field">Selling Price (₹)<input type="number" min="0" step="any" value={selling} onChange={(event) => setSelling(event.target.value)} placeholder="0.00" required /></label>
-        <label className="inventory-add-field">Stock Quantity<input type="number" min="0" step="any" value={stock} onChange={(event) => setStock(event.target.value)} placeholder="0" required /><small>0 = Out of Stock, below 10 = Low Stock.</small></label>
+        <label className="inventory-add-field">Stock Quantity<input type="number" min="0" step="any" value={stock} onChange={(event) => setStock(event.target.value)} placeholder="0" required /><small>0 = Out of Stock.</small></label>
+        <label className="inventory-add-field">Low Stock Alert At<input type="number" min="0" step="any" value={lowStockThreshold} onChange={(event) => setLowStockThreshold(event.target.value)} placeholder="10" required /><small>Show a low-stock warning when stock falls below this number.</small></label>
       </div>
       <div className="inventory-add-form-actions">
         <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>

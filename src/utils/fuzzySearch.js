@@ -56,9 +56,10 @@ export function rankProducts(products, query, usageMap) {
   for (const p of products) {
     let matchScore = 0;
     if (q !== "") {
-      const s = fuzzyScore(q, p.name);
-      if (s === null) continue; // drop non-matches
-      matchScore = s;
+      const nameScore = fuzzyScore(q, p.name);
+      const skuScore = fuzzyScore(q, p.sku_code);
+      if (nameScore === null && skuScore === null) continue; // drop non-matches
+      matchScore = Math.max(nameScore ?? -Infinity, skuScore ?? -Infinity);
     }
     const usage = usageMap?.get(normalize(p.name));
     scored.push({

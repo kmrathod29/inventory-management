@@ -11,6 +11,7 @@ const navLinks = [
     path: "/",
   },
   { id: "inventory", label: "Inventory", icon: "ti-box", path: "/inventory" },
+  { id: "customers", label: "Customers", icon: "ti-users", path: "/customers" },
   { id: "history", label: "History", icon: "ti-history", path: "/billing" },
   { id: "new-bills", label: "New Bills", icon: "ti-file-invoice", path: "/billing/new" },
   { id: "reports", label: "Reports", icon: "ti-chart-bar", path: "/reports" },

@@ -178,6 +178,35 @@ const migrations = [
       `);
     },
   },
+  {
+    version: 7,
+    up(db) {
+      const tableExists = db.prepare(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'products'",
+      ).get();
+      if (!tableExists) return;
+      const productColumns = db.prepare("PRAGMA table_info(products)").all();
+      if (!productColumns.some((column) => column.name === "low_stock_threshold")) {
+        db.exec("ALTER TABLE products ADD COLUMN low_stock_threshold REAL NOT NULL DEFAULT 10");
+      }
+    },
+  },
+  {
+    version: 8,
+    up(db) {
+      const productColumns = db.prepare("PRAGMA table_info(products)").all();
+      if (!productColumns.some((column) => column.name === "sku_code")) {
+        db.exec("ALTER TABLE products ADD COLUMN sku_code TEXT");
+      }
+      const billItemColumns = db.prepare("PRAGMA table_info(bill_items)").all();
+      if (!billItemColumns.some((column) => column.name === "product_sku_code")) {
+        db.exec("ALTER TABLE bill_items ADD COLUMN product_sku_code TEXT");
+      }
+      const products = db.prepare("SELECT id FROM products WHERE sku_code IS NULL OR TRIM(sku_code) = '' ORDER BY rowid").all();
+      const updateSku = db.prepare("UPDATE products SET sku_code = ? WHERE id = ?");
+      products.forEach((product, index) => updateSku.run(`SKU${index + 1}`, product.id));
+    },
+  },
 ];
 
 export function migrateDatabase(db) {

@@ -6,9 +6,19 @@ import {
   validateProduct,
 } from "./validation.js";
 
+function nextProductSku(db) {
+  const rows = db.prepare("SELECT sku_code FROM products WHERE sku_code LIKE 'SKU%' ").all();
+  const nextNumber = rows.reduce((max, row) => {
+    const number = Number(String(row.sku_code || "").slice(3));
+    return Number.isInteger(number) ? Math.max(max, number) : max;
+  }, 0) + 1;
+  return `SKU${nextNumber}`;
+}
+
 export function addInventoryProduct(db, product) {
   const validatedProduct = validateProduct(product);
   const productId = validatedProduct.id || randomUUID();
+  const skuCode = validatedProduct.skuCode || nextProductSku(db);
   const hasDuplicate = db
     .prepare("SELECT 1 FROM products WHERE TRIM(name) = TRIM(?) COLLATE NOCASE")
     .get(validatedProduct.name);
@@ -18,11 +28,13 @@ export function addInventoryProduct(db, product) {
   }
 
   const run = db.transaction(() => {
-    db.prepare("INSERT INTO products (id, name, images, category) VALUES (?, ?, ?, ?)").run(
+    db.prepare("INSERT INTO products (id, name, images, category, low_stock_threshold, sku_code) VALUES (?, ?, ?, ?, ?, ?)").run(
       productId,
       validatedProduct.name,
       validatedProduct.images,
       validatedProduct.category,
+      validatedProduct.lowStockThreshold,
+      skuCode,
     );
 
     for (const variant of validatedProduct.variants) {
@@ -74,7 +86,7 @@ export function updateInventoryProduct(db, id, product) {
     throw new Error("Product id is required.");
   }
 
-  const existingProduct = db.prepare("SELECT id FROM products WHERE id = ?").get(id);
+  const existingProduct = db.prepare("SELECT id, sku_code FROM products WHERE id = ?").get(id);
   if (!existingProduct) {
     throw new Error("Product not found.");
   }
@@ -91,10 +103,12 @@ export function updateInventoryProduct(db, id, product) {
   }
 
   const run = db.transaction(() => {
-    db.prepare("UPDATE products SET name = ?, images = ?, category = ? WHERE id = ?").run(
+    db.prepare("UPDATE products SET name = ?, images = ?, category = ?, low_stock_threshold = ?, sku_code = ? WHERE id = ?").run(
       normalizedName,
       validatedProduct.images,
       validatedProduct.category,
+      validatedProduct.lowStockThreshold,
+      existingProduct.sku_code || validatedProduct.skuCode || nextProductSku(db),
       id,
     );
 
@@ -425,14 +439,14 @@ export function getInventoryStockHistory(db, productId) {
   return db.prepare(`SELECT id, action, quantity, previous_stock, new_stock, created_at FROM inventory_stock_history WHERE product_id = ? ORDER BY created_at DESC, id DESC`).all(productId);
 }
 
-export function adjustStock(db, productName, baseName, bucketSize, deltaQty) {
+export function adjustStock(db, productName, baseName, bucketSize, deltaQty, productSkuCode = "") {
   const pName = productName ? String(productName).trim() : "";
   const bName = baseName ? String(baseName).trim() : "";
   const bSize = parseFloat(bucketSize) || 0;
 
-  const product = db
-    .prepare("SELECT * FROM products WHERE TRIM(name) = TRIM(?) COLLATE NOCASE")
-    .get(pName);
+  const product = productSkuCode
+    ? db.prepare("SELECT * FROM products WHERE sku_code = ?").get(productSkuCode)
+    : db.prepare("SELECT * FROM products WHERE TRIM(name) = TRIM(?) COLLATE NOCASE").get(pName);
   if (!product) return;
 
   const variant = db
@@ -515,18 +529,19 @@ export function addBill(db, customerId, bill) {
     for (const item of normalizedBill.products) {
       const costPrice = getLandingPrice(db, item.productName, item.bucketSize);
       db.prepare(`
-        INSERT INTO bill_items (bill_id, product_name, base, bucket_size, quantity, price_at_sale, cost_price)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO bill_items (bill_id, product_name, product_sku_code, base, bucket_size, quantity, price_at_sale, cost_price)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         billId,
         item.productName,
+        item.skuCode,
         item.base,
         item.bucketSize,
         item.quantity,
         item.priceAtSale,
         costPrice,
       );
-      adjustStock(db, item.productName, item.base, item.bucketSize, -item.quantity);
+      adjustStock(db, item.productName, item.base, item.bucketSize, -item.quantity, item.skuCode);
     }
 
     if (normalizedBill.amountPaid > 0) {

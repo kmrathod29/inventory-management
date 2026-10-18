@@ -41,6 +41,7 @@ const DATA_MUTATION_CHANNELS = new Set([
   "settings:updateDefaultPaymentMethod",
   "settings:updateInvoiceDefaults",
   "settings:updateCategoryTaxRates",
+  "settings:updateBillingSettings",
   "settings:updateInventoryAddItemMode",
   "settings:updateAppearance",
   "settings:changeDataDirectory",
@@ -151,6 +152,8 @@ contextBridge.exposeInMainWorld("db", {
     invoke("settings:updateInvoiceDefaults", invoiceDefaults),
   updateCategoryTaxRates: (categoryTaxRates) =>
     invoke("settings:updateCategoryTaxRates", categoryTaxRates),
+  updateBillingSettings: (invoiceDefaults, categoryTaxRates) =>
+    invoke("settings:updateBillingSettings", invoiceDefaults, categoryTaxRates),
   updateInventoryAddItemMode: (mode) =>
     invoke("settings:updateInventoryAddItemMode", mode),
   updateAppearanceSettings: (theme, mode) =>

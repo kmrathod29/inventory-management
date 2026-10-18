@@ -60,7 +60,7 @@ function rowsFor(db, sql, params = []) {
 function selectedRows(db, selections) {
   const rows = {};
   if (selections.products) {
-    rows.products = rowsFor(db, "SELECT id, name, images FROM products ORDER BY name COLLATE NOCASE");
+    rows.products = rowsFor(db, "SELECT id, sku_code, name, images, category, low_stock_threshold FROM products ORDER BY name COLLATE NOCASE");
     rows.variants = rowsFor(db, `
       SELECT id, product_id, bucket_size, landing, sales, mp
       FROM variants ORDER BY product_id, bucket_size
@@ -84,7 +84,7 @@ function selectedRows(db, selections) {
       FROM bills ORDER BY date, id
     `);
     rows.billItems = rowsFor(db, `
-      SELECT id, bill_id, product_name, base, bucket_size, quantity, price_at_sale, cost_price
+      SELECT id, bill_id, product_name, product_sku_code, base, bucket_size, quantity, price_at_sale, cost_price
       FROM bill_items ORDER BY bill_id, id
     `);
     rows.billActivity = rowsFor(db, `

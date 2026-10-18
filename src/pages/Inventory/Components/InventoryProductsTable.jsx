@@ -18,7 +18,8 @@ function productSummary(product) {
   const variant = variants[0] || {};
   const category = product.category || bases[0]?.name || "General";
   const unit = variant.bucket_size ? String(variant.bucket_size) : "Unit";
-  const status = stock <= 0 ? "Out of Stock" : stock < 10 ? "Low Stock" : "In Stock";
+  const lowStockThreshold = Number(product.low_stock_threshold ?? product.lowStockThreshold ?? 10);
+  const status = stock <= 0 ? "Out of Stock" : stock < lowStockThreshold ? "Low Stock" : "In Stock";
   return {
     ...product,
     stock,
@@ -144,7 +145,7 @@ export function InventoryProductsTable({ products, onRefresh, search, category, 
               <tr key={product.id}>
                 <td><input type="checkbox" checked={selected.has(product.id)} onChange={() => toggleSelected(product.id)} aria-label={`Select ${product.name}`} /></td>
                 <td><span className="inventory-product-image"><ProductImage product={product} /></span></td>
-                <td><strong>{product.name}</strong><small>SKU: {product.id.slice(0, 7).toUpperCase()}</small></td>
+                <td><strong>{product.name}</strong><small>SKU: {product.sku_code || product.id.slice(0, 7).toUpperCase()}</small></td>
                 <td>{product.category}</td>
                 <td><span className="inventory-unit-badge">{product.unit}</span></td>
                 <td>{formatCurrency(product.selling)}</td>

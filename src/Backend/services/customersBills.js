@@ -126,7 +126,7 @@ function deleteBill(billId) {
       .prepare(`SELECT * FROM bill_items WHERE bill_id = ?`)
       .all(billId);
     for (const item of items) {
-      adjustInventoryStock(ctx.db, item.product_name, item.base, item.bucket_size, item.quantity);
+      adjustInventoryStock(ctx.db, item.product_name, item.base, item.bucket_size, item.quantity, item.product_sku_code);
     }
 
     ctx.db.prepare(`DELETE FROM bill_items WHERE bill_id = ?`).run(billId);
@@ -202,12 +202,13 @@ function editBill(billId, bill) {
 
       ctx.db.prepare(
         `
-      INSERT INTO bill_items (bill_id, product_name, base, bucket_size, quantity, price_at_sale, cost_price)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO bill_items (bill_id, product_name, product_sku_code, base, bucket_size, quantity, price_at_sale, cost_price)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `,
       ).run(
         billId,
         item.productName,
+        item.skuCode,
         item.base,
         item.bucketSize,
         item.quantity,
@@ -215,7 +216,7 @@ function editBill(billId, bill) {
         costPrice,
       );
 
-      adjustInventoryStock(ctx.db, item.productName, item.base, item.bucketSize, -item.quantity);
+      adjustInventoryStock(ctx.db, item.productName, item.base, item.bucketSize, -item.quantity, item.skuCode);
     }
 
     if (Math.abs(totalDelta) > 0.01) {

@@ -54,12 +54,12 @@ function getReportData(startDate, endDate) {
   `).all(startDate, startDate, endDate, endDate);
   const billIds = bills.map((bill) => bill.id);
   const items = billIds.length
-    ? ctx.db.prepare(`SELECT bi.*, p.category AS current_category FROM bill_items bi LEFT JOIN products p ON p.name = bi.product_name WHERE bi.bill_id IN (${billIds.map(() => "?").join(",")}) ORDER BY bi.id`).all(...billIds)
+    ? ctx.db.prepare(`SELECT bi.*, p.category AS current_category, COALESCE(p.name, bi.product_name) AS current_product_name, p.sku_code FROM bill_items bi LEFT JOIN products p ON (p.sku_code = bi.product_sku_code OR (bi.product_sku_code IS NULL AND p.name = bi.product_name)) WHERE bi.bill_id IN (${billIds.map(() => "?").join(",")}) ORDER BY bi.id`).all(...billIds)
     : [];
   // Collections are selected by payment date, independently of the invoice date.
   const activities = ctx.db.prepare(`SELECT ba.*, b.customer_id, c.name AS customer_name, b.bill_number, b.date AS invoice_date FROM bill_activity ba JOIN bills b ON b.id = ba.bill_id LEFT JOIN customers c ON c.id = b.customer_id WHERE (? IS NULL OR ba.date >= ?) AND (? IS NULL OR ba.date <= ?) ORDER BY ba.date, ba.id`).all(startDate, startDate, endDate, endDate);
   const expenses = ctx.db.prepare(`SELECT id, date, label, amount, type FROM expenses WHERE (? IS NULL OR date >= ?) AND (? IS NULL OR date <= ?) ORDER BY date DESC, id DESC`).all(startDate, startDate, endDate, endDate);
-  const stock = ctx.db.prepare(`SELECT p.id, p.name, COALESCE(p.category, 'General') AS category, COALESCE(SUM(bs.stock), 0) AS quantity FROM products p LEFT JOIN bases b ON b.product_id = p.id LEFT JOIN base_stock bs ON bs.base_id = b.id GROUP BY p.id ORDER BY p.name`).all();
+  const stock = ctx.db.prepare(`SELECT p.id, p.name, COALESCE(p.category, 'General') AS category, p.low_stock_threshold AS low_stock_threshold, COALESCE(SUM(bs.stock), 0) AS quantity FROM products p LEFT JOIN bases b ON b.product_id = p.id LEFT JOIN base_stock bs ON bs.base_id = b.id GROUP BY p.id ORDER BY p.name`).all();
   const currentOutstanding = Number(ctx.db.prepare(`SELECT COALESCE(SUM(MAX(amount_due, 0)), 0) AS total FROM bills WHERE amount_due > 0`).get().total || 0);
   return { bills, items, activities, expenses, stock, currentOutstanding };
 }
@@ -248,17 +248,21 @@ function getTopProducts(period, limit = 5) {
       .all(bill.id);
 
     for (const item of items) {
-      if (!productStats[item.product_name]) {
-        productStats[item.product_name] = { units: 0, revenue: 0 };
+      const product = item.product_sku_code
+        ? ctx.db.prepare("SELECT name, sku_code FROM products WHERE sku_code = ?").get(item.product_sku_code)
+        : null;
+      const productKey = item.product_sku_code || item.product_name;
+      if (!productStats[productKey]) {
+        productStats[productKey] = { name: product?.name || item.product_name, units: 0, revenue: 0 };
       }
-      productStats[item.product_name].units += item.quantity;
-      productStats[item.product_name].revenue += item.price_at_sale * item.quantity;
+      productStats[productKey].units += item.quantity;
+      productStats[productKey].revenue += item.price_at_sale * item.quantity;
     }
   }
 
   const topProducts = Object.entries(productStats)
-    .map(([name, stats]) => ({
-      name,
+    .map(([, stats]) => ({
+      name: stats.name,
       units: stats.units,
       revenue: stats.revenue,
     }))
