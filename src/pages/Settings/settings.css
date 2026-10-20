@@ -860,3 +860,8 @@
     padding: 22px 18px;
   }
 }
+
+.settings-status.is-online .settings-status-dot {
+  background: #1a9c51;
+  box-shadow: 0 0 0 5px color-mix(in srgb, #1a9c51 10%, transparent);
+}

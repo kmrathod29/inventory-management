@@ -19,12 +19,12 @@ export function AddConsole({ product, setProduct, onClose, onSaved }) {
 
   useEffect(() => {
     let cancelled = false;
-    window.db.getProducts().then((products) => {
+    window.db.getAppSettings().then((settings) => {
       if (cancelled) return;
-      setCategories([...new Set(products.map((product) => product.category || product.bases?.[0]?.name || "General"))].sort());
+      setCategories([...new Set([product?.category, ...Object.keys(settings?.categoryTaxRates || {})].filter(Boolean))].sort());
     }).catch(() => {});
     return () => { cancelled = true; };
-  }, []);
+  }, [product?.category]);
 
   async function handlePickImage() {
     const filePath = await handleAsync(() => window.db.pickImage(), "Failed to pick image");
@@ -98,9 +98,11 @@ export function AddConsole({ product, setProduct, onClose, onSaved }) {
         </label>
         <label className="inventory-add-field">
           Category
-          <input list="inventory-category-options" value={category} onChange={(event) => setCategory(event.target.value)} placeholder="Select or type a category" required />
-          <datalist id="inventory-category-options">{categories.map((item) => <option key={item} value={item} />)}</datalist>
-          <small>New categories are saved and available next time.</small>
+          <select value={category} onChange={(event) => setCategory(event.target.value)} required>
+            <option value="" disabled>Select a category</option>
+            {categories.map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
+          <small>Manage categories in Settings → Billing & Tax.</small>
         </label>
         <div className="inventory-add-field">
           Image <span className="inventory-optional">(Optional)</span>

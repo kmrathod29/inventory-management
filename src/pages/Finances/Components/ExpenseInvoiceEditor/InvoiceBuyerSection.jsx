@@ -35,6 +35,7 @@ export function InvoiceBuyerSection({
       <section className="invoice-buyer invoice-buyer-edit">
         {invoiceField("buyerName", "Buyer’s Name", "Full name or company")}
         {invoiceField("buyerAddress", "Address", "City / Area")}
+        {invoiceField("buyerPan", "Buyer PAN", "Optional PAN")}
         <div className="invoice-buyer-split">
           {invoiceField("buyerTpin", "Buyer’s TPIN No.", "Buyer TPIN")}
           <div className="invoice-edit-field">

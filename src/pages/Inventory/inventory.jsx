@@ -5,12 +5,15 @@ import { AddStockDialog } from "./Components/AddStockDialog";
 import { useMemo, useRef, useState, useEffect } from "react";
 import { useErrorHandler } from "../../hooks/useErrorHandler";
 import { useDataChanged } from "../../hooks/useDataChanged";
+import { useNetworkStatus } from "../../hooks/useNetworkStatus";
 
 export function InventoryPage() {
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All Categories");
+  const [configuredCategories, setConfiguredCategories] = useState([]);
   const [status, setStatus] = useState("All Status");
+  const isOnline = useNetworkStatus();
   const addDialogRef = useRef(null);
   const [showStockDialog, setShowStockDialog] = useState(false);
   const { handleAsync } = useErrorHandler();
@@ -41,6 +44,14 @@ export function InventoryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    window.db.getAppSettings().then((settings) => {
+      if (!cancelled) setConfiguredCategories(Object.keys(settings?.categoryTaxRates || {}));
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
   useDataChanged(fetchProducts);
 
   function handleSearchChange(value) {
@@ -52,7 +63,7 @@ export function InventoryPage() {
     stock: (product.bases || []).reduce((total, base) => total + (base.stocks || []).reduce((sum, value) => sum + Number(value || 0), 0), 0),
     threshold: Number(product.low_stock_threshold ?? product.lowStockThreshold ?? 10),
   })), [products]);
-  const categories = ["All Categories", ...new Set(summaries.map((product) => product.category))];
+  const categories = ["All Categories", ...new Set([...configuredCategories, ...summaries.map((product) => product.category)])];
   const totalProducts = products.length;
   const inStock = summaries.filter((product) => product.stock >= product.threshold).length;
   const lowStock = summaries.filter((product) => product.stock > 0 && product.stock < product.threshold).length;
@@ -70,7 +81,7 @@ export function InventoryPage() {
           <p>Manage products, prices and available stock</p>
         </div>
         <button type="button" className="inventory-add-stock-button" onClick={() => setShowStockDialog(true)}><i className="ti ti-plus" /> Add Stock</button>
-        <div className="inventory-offline-status"><span /> <strong>Offline</strong><small>Data stored locally</small></div>
+        <div className={`inventory-offline-status${isOnline ? " is-online" : ""}`}><span /> <strong>{isOnline ? "Online" : "Offline"}</strong><small>{isOnline ? "Network connected" : "Data stored locally"}</small></div>
       </header>
 
       <main className="inventory-content">

@@ -51,6 +51,7 @@ export function BillDialog({
     ...(bill.invoiceDefaults || {}),
     buyerName: bill.name || "",
     buyerAddress: bill.address || "",
+    buyerPan: bill.pan || bill.panNumber || bill.invoiceData?.buyerPan || bill.invoiceData?.customerPan || "",
     buyerTpin: "",
     paymentMode: bill.paymentMethod || "Cash",
     discount: bill.invoiceData?.discount ?? "",
@@ -116,8 +117,9 @@ export function BillDialog({
     ? vatTaxableAmount + vatAmount
     : Math.max(0, totalPurchased - vatDiscount);
   const discountPercent = totalPurchased > 0 ? (vatDiscount / totalPurchased) * 100 : 0;
-  const amountDue = billTotal;
-  const status = "Due";
+  const amountPaid = isNew ? billTotal : Math.max(0, Number(form.amountPaid || 0));
+  const amountDue = isNew ? 0 : Math.max(0, billTotal - amountPaid);
+  const status = amountDue <= 0 ? "Paid" : amountPaid > 0 ? "Partial" : "Due";
 
   // Clamp the selected row into range as items change (derived — no effect).
   const maxItemIndex = Math.max(0, form.products.length - 1);
@@ -209,6 +211,7 @@ export function BillDialog({
       name: "",
       phone: "",
       address: "",
+      pan: "",
       notes: "",
       products: [],
       customerId: undefined,
@@ -217,6 +220,7 @@ export function BillDialog({
       ...current,
       buyerName: "",
       buyerAddress: "",
+      buyerPan: "",
       buyerGstin: "",
       discount: "",
       discountValue: "",
@@ -293,7 +297,8 @@ export function BillDialog({
         }))
       : form.products;
     const getCategoryTaxRate = (item) => {
-      const product = products.find((entry) => entry.name === item.productName);
+      const product = products.find((entry) => entry.sku_code && entry.sku_code === item.skuCode)
+        || products.find((entry) => entry.name === item.productName);
       const category = item.category || product?.category || product?.bases?.[0]?.name || "General";
       return Number(categoryTaxRates[category] ?? invoice.vatPercent ?? 0) || 0;
     };
@@ -325,6 +330,7 @@ export function BillDialog({
       ...invoice,
       invoiceNumber: invoice.invoiceNumber || "",
       buyerGstin: invoice.buyerGstin || "",
+      buyerPan: invoice.buyerPan || form.pan || form.panNumber || "",
       discount: vatDiscount,
       discountValue: vatDiscount,
       discountPercent,
@@ -341,11 +347,11 @@ export function BillDialog({
       date: form.date,
       paymentMethod: form.paymentMethod,
       totalPurchased: billTotal,
-      amountPaid: 0,
+      amountPaid,
       amountDue,
       status,
       billType: form.billType,
-      panNumber: form.panNumber || "",
+      panNumber: form.panNumber || form.pan || invoice.buyerPan || "",
       billNumber: form.billNumber || "",
       invoiceData: finalInvoice,
       products: submittedItems.map((item) => ({
@@ -358,8 +364,9 @@ export function BillDialog({
       date: form.date,
       customerName,
       customerAddress: form.address || "",
+      customerPan: form.pan || form.panNumber || invoice.buyerPan || "",
       customerPhone,
-      amountPaid: 0,
+      amountPaid,
       amountDue,
       products: invoiceItems,
     };
@@ -370,6 +377,7 @@ export function BillDialog({
         name: customerName,
         phone: customerPhone,
         address: form.address,
+        pan: form.pan,
         notes: form.notes,
       };
 
@@ -410,6 +418,49 @@ export function BillDialog({
         "error",
       );
     }
+  }
+
+  function shareOnWhatsApp() {
+    const digits = String(form.phone || "").replace(/\D/g, "");
+    if (digits.length < 10) {
+      showToast("Enter a valid customer mobile number before sharing on WhatsApp.", "error");
+      return;
+    }
+    const phone = digits.length === 10 ? `91${digits}` : digits;
+    const date = String(form.date || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const formattedDate = date ? `${date[3]}-${date[2]}-${date[1]}` : formatDate(form.date);
+    const productDetails = form.products.length
+      ? form.products.map((product) => {
+        const quantity = Number(product.quantity || 0);
+        const price = Number(product.priceAtSale || 0);
+        const unit = product.base || "units";
+        return `${product.productName || "Product"} — ${quantity} ${unit} × ${formatCurrency(price)} = ${formatCurrency(quantity * price)}`;
+      }).join("\n")
+      : "No products added";
+    const message = [
+      "🧾 *DIPALI TRADERS*",
+      "━━━━━━━━━━━━━━━━━━",
+      "",
+      `Hello *${form.name.trim() || "Customer"}*,`,
+      "",
+      "Here are the details of your bill:",
+      "",
+      `📋 *Bill No.:* ${invoice.invoiceNumber || form.billNumber || "—"}`,
+      `📅 *Date:* ${formattedDate}`,
+      "",
+      "*PRODUCT DETAILS*",
+      productDetails,
+      "",
+      "━━━━━━━━━━━━━━━━━━",
+      `*Subtotal:* ${formatCurrency(totalPurchased)}`,
+      `*Discount:* ${formatCurrency(vatDiscount)}`,
+      `💰 *TOTAL AMOUNT: ${formatCurrency(billTotal)}*`,
+      "━━━━━━━━━━━━━━━━━━",
+      "",
+      "Thank you for your business!",
+      "*Dipali Traders*",
+    ].join("\n");
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
   }
 
   // ── global keyboard shortcuts (single document-level handler) ──────
@@ -505,6 +556,7 @@ export function BillDialog({
       ...formCurrent,
       name: next.buyerName ?? formCurrent.name,
       address: next.buyerAddress ?? formCurrent.address,
+      pan: next.buyerPan ?? formCurrent.pan,
       paymentMethod: next.paymentMode ?? formCurrent.paymentMethod,
     }));
   }
@@ -601,16 +653,16 @@ export function BillDialog({
         name: customer.name,
         phone: customer.phone || "",
         address: customer.address || "",
+        pan: customer.pan || "",
         notes: customer.notes || "",
       }));
-      const customerBill = customer.bills?.at(-1);
-      if (customerBill?.invoice_data) {
-        try {
-          setInvoice((current) => ({ ...current, ...JSON.parse(customerBill.invoice_data) }));
-        } catch {
-          // Ignore malformed historical invoice metadata for the new draft.
-        }
-      }
+      setInvoice((current) => ({
+        ...current,
+        buyerName: customer.name,
+        buyerPhone: customer.phone || "",
+        buyerAddress: customer.address || "",
+        buyerPan: customer.pan || current.buyerPan || "",
+      }));
     }
 
     return (
@@ -668,6 +720,14 @@ export function BillDialog({
                 <label htmlFor="customer-gstin">Customer GSTIN <span>(Optional)</span></label>
                 <input id="customer-gstin" value={invoice.buyerGstin || ""} onChange={(event) => setInvoice((current) => ({ ...current, buyerGstin: event.target.value.toUpperCase() }))} disabled={locked} placeholder="Enter GSTIN" />
               </div>
+              <div className="invoice-field">
+                <label htmlFor="customer-address">Customer Address <span>(Optional)</span></label>
+                <input id="customer-address" value={form.address || ""} onChange={set("address")} disabled={locked} placeholder="Street, city" />
+              </div>
+              <div className="invoice-field">
+                <label htmlFor="customer-pan">Customer PAN <span>(Optional)</span></label>
+                <input id="customer-pan" value={form.pan || ""} onChange={(event) => { set("pan")(event); setInvoice((current) => ({ ...current, buyerPan: event.target.value.toUpperCase() })); }} disabled={locked} placeholder="Enter PAN" />
+              </div>
             </div>
           </section>
 
@@ -722,6 +782,10 @@ export function BillDialog({
               <button className="invoice-save-button" type="button" onClick={saveAndPrint} disabled={isSaving || locked}>
                 <i className="ti ti-save" aria-hidden="true" />
                 <span><strong>{isSaving ? "Saving..." : "Save and Print"}</strong><small>Save bill and print invoice</small></span>
+              </button>
+              <button className="invoice-whatsapp-button" type="button" onClick={shareOnWhatsApp} disabled={locked}>
+                <i className="ti ti-brand-whatsapp" aria-hidden="true" />
+                <span><strong>Send on WhatsApp</strong><small>Open the invoice message for this customer</small></span>
               </button>
               <button className="invoice-secondary-button" type="button" onClick={handleSave} disabled={isSaving || locked}>
                 <i className="ti ti-file-description" aria-hidden="true" /><span><strong>Save</strong><small>Save bill and deduct stock</small></span>
@@ -810,9 +874,11 @@ export function BillDialog({
                       id="bill-pan-number"
                       type="text"
                       value={form.panNumber || ""}
-                      onChange={(event) =>
-                        setForm((current) => ({ ...current, panNumber: event.target.value }))
-                      }
+                      onChange={(event) => {
+                        const val = event.target.value.toUpperCase();
+                        setForm((current) => ({ ...current, panNumber: val, pan: val }));
+                        setInvoice((current) => ({ ...current, buyerPan: val }));
+                      }}
                       disabled={locked}
                       placeholder="PAN number"
                     />
@@ -876,10 +942,21 @@ export function BillDialog({
                       placeholder="Optional GSTIN"
                     />
                   </div>
+                  <div className="field">
+                    <label htmlFor="customer-pan">Customer PAN</label>
+                    <input
+                      id="customer-pan"
+                      type="text"
+                      value={form.pan || ""}
+                      onChange={(event) => { set("pan")(event); setInvoice((current) => ({ ...current, buyerPan: event.target.value.toUpperCase() })); }}
+                      disabled={locked}
+                      placeholder="Optional PAN"
+                    />
+                  </div>
                 </>
               )}
               <div className="field field-full">
-                <label>Address</label>
+                <label>Customer Address <span>(Optional)</span></label>
                 <input
                   type="text"
                   value={form.address}
@@ -1033,6 +1110,9 @@ export function BillDialog({
           </button>
           <button className="btn-secondary" onClick={handlePrint}>
             Print Bill
+          </button>
+          <button className="btn-whatsapp" type="button" onClick={shareOnWhatsApp}>
+            <i className="ti ti-brand-whatsapp" aria-hidden="true" /> WhatsApp
           </button>
           {isEditing ? (
             <button className="btn-primary bill-action-primary" onClick={handleSave} disabled={isSaving}>

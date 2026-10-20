@@ -67,6 +67,20 @@ test("editing unchanged invoice items preserves stock", () => {
   } finally { db.close(); }
 });
 
+test("editing a bill after a product rename restores stock using its SKU", () => {
+  const { db, service, billId } = setup();
+  try {
+    const teaSku = db.prepare("SELECT sku_code FROM products WHERE id = ?").get("stock-tea").sku_code;
+    db.prepare("UPDATE bill_items SET product_sku_code = ? WHERE bill_id = ? AND product_name = ?").run(teaSku, billId, "Tea");
+    db.prepare("UPDATE products SET name = ? WHERE id = ?").run("Green Tea", "stock-tea");
+    service.editBill(billId, bill([
+      { productName: "Green Tea", skuCode: teaSku, quantity: 10, priceAtSale: 12 },
+      { productName: "Coffee", quantity: 2, priceAtSale: 15 },
+    ]));
+    assert.equal(stock(db, "Green Tea"), 20);
+  } finally { db.close(); }
+});
+
 test("editing increased or decreased quantities reconciles only the difference", () => {
   const { db, service, billId } = setup();
   try {

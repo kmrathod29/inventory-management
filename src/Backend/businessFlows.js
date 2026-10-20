@@ -463,8 +463,10 @@ export function adjustStock(db, productName, baseName, bucketSize, deltaQty, pro
     .run(deltaQty, base.id, variant.id);
 }
 
-function getLandingPrice(db, productName, bucketSize) {
-  const product = db.prepare("SELECT * FROM products WHERE name = ?").get(productName);
+function getLandingPrice(db, productName, bucketSize, productSkuCode = "") {
+  const product = productSkuCode
+    ? db.prepare("SELECT * FROM products WHERE sku_code = ?").get(productSkuCode)
+    : db.prepare("SELECT * FROM products WHERE TRIM(name) = TRIM(?) COLLATE NOCASE").get(productName);
   if (!product) return 0;
 
   const variant = db
@@ -527,7 +529,7 @@ export function addBill(db, customerId, bill) {
     });
 
     for (const item of normalizedBill.products) {
-      const costPrice = getLandingPrice(db, item.productName, item.bucketSize);
+      const costPrice = getLandingPrice(db, item.productName, item.bucketSize, item.skuCode);
       db.prepare(`
         INSERT INTO bill_items (bill_id, product_name, product_sku_code, base, bucket_size, quantity, price_at_sale, cost_price)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -573,10 +575,11 @@ function applyImportItemToStock(db, item) {
   let productId;
   if (!product) {
     productId = randomUUID();
-    db.prepare("INSERT INTO products (id, name, images) VALUES (?, ?, ?)").run(
+    db.prepare("INSERT INTO products (id, name, images, sku_code) VALUES (?, ?, ?, ?)").run(
       productId,
       productName,
       "",
+      nextProductSku(db),
     );
   } else {
     productId = product.id;

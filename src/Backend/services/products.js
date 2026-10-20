@@ -354,8 +354,8 @@ function importProductsFromExcel(filePath) {
       if (!productRow) {
         productId = randomUUID();
         ctx.db.prepare(
-          `INSERT INTO products (id, name, images) VALUES (?, ?, ?)`,
-        ).run(productId, name, "");
+          `INSERT INTO products (id, name, images, sku_code) VALUES (?, ?, ?, ?)`,
+        ).run(productId, name, "", `SKU${ctx.db.prepare("SELECT COALESCE(MAX(CAST(SUBSTR(sku_code, 4) AS INTEGER)), 0) + 1 AS next FROM products WHERE sku_code GLOB 'SKU[0-9]*'").get().next}`);
       } else {
         productId = productRow.id;
       }

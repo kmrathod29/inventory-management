@@ -111,6 +111,24 @@
   color: var(--sidebar-primary-foreground);
 }
 
+.nav-link-new-bill {
+  margin: 7px 0 9px;
+  border: 1px solid #dc2626;
+  background: linear-gradient(135deg, #ef4444, #c81e1e);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 6px 16px rgba(200, 30, 30, .32);
+}
+
+.nav-link-new-bill:hover,
+.nav-link-new-bill.active {
+  border-color: #f87171;
+  background: linear-gradient(135deg, #f87171, #dc2626);
+  color: #fff;
+}
+
+.nav-link-new-bill i { color: #fff; }
+
 .link-label {
   opacity: 1;
   transition: opacity 0.12s ease;

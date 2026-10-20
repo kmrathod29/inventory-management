@@ -31,7 +31,7 @@ test("creates a consistent backup containing the active database data", async (t
     try {
       assert.equal(backupDb.prepare("SELECT name FROM products WHERE id = ?").get("p1").name, "Tea");
       assert.equal(backupDb.pragma("integrity_check", { simple: true }), "ok");
-      assert.equal(backupDb.pragma("user_version", { simple: true }), 4);
+      assert.equal(backupDb.pragma("user_version", { simple: true }), 10);
     } finally {
       backupDb.close();
     }
@@ -64,8 +64,8 @@ test("stages, validates, and migrates a legacy StockWise backup", async (t) => {
   const result = await stageDatabaseRestore(sourcePath, stagingPath);
   const stagedDb = new Database(stagingPath, { readonly: true, fileMustExist: true });
   try {
-    assert.equal(result.schemaVersion, 4);
-    assert.equal(stagedDb.pragma("user_version", { simple: true }), 4);
+    assert.equal(result.schemaVersion, 10);
+    assert.equal(stagedDb.pragma("user_version", { simple: true }), 10);
     assert.deepEqual(
       stagedDb.prepare("SELECT product_name, quantity, price_at_sale, cost_price FROM bill_items").get(),
       { product_name: "Tea", quantity: 2, price_at_sale: 12.5, cost_price: 0 },

@@ -75,7 +75,7 @@ function selectedRows(db, selections) {
 
   const includeBills = selections.customers || selections.bills;
   if (selections.customers) {
-    rows.customers = rowsFor(db, "SELECT id, name, phone, address, notes FROM customers ORDER BY name COLLATE NOCASE");
+    rows.customers = rowsFor(db, "SELECT id, name, phone, address, pan, notes FROM customers ORDER BY name COLLATE NOCASE");
   }
   if (includeBills) {
     rows.bills = rowsFor(db, `
@@ -181,7 +181,7 @@ async function createIntroductionPdf(selections, exportDate, appVersion) {
 async function createBillsPdf(db) {
   const bills = rowsFor(db, `
     SELECT b.*, c.name AS customer_name, c.phone AS customer_phone,
-           c.address AS customer_address
+           c.address AS customer_address, c.pan AS customer_pan
     FROM bills b
     LEFT JOIN customers c ON c.id = b.customer_id
     ORDER BY b.date, b.id

@@ -907,23 +907,33 @@ select::-webkit-scrollbar {
 .invoice-grand-total { padding-top: 20px; padding-bottom: 20px; color: #182230; font-weight: 700; }
 .invoice-grand-total strong { color: #d91c21; font-size: 20px; }
 .invoice-save-button,
+.invoice-whatsapp-button,
 .invoice-secondary-button,
 .invoice-cancel-button { display: flex; align-items: center; gap: 12px; width: 100%; margin-top: 12px; padding: 12px 14px; border-radius: 7px; text-align: left; cursor: pointer; }
 .invoice-save-button i,
+.invoice-whatsapp-button i,
 .invoice-secondary-button i,
 .invoice-cancel-button i { font-size: 21px; }
 .invoice-save-button span,
+.invoice-whatsapp-button span,
 .invoice-secondary-button span,
 .invoice-cancel-button span { display: grid; gap: 3px; }
 .invoice-save-button strong,
+.invoice-whatsapp-button strong,
 .invoice-secondary-button strong,
 .invoice-cancel-button strong { font-size: 14px; }
 .invoice-save-button small,
+.invoice-whatsapp-button small,
 .invoice-secondary-button small,
 .invoice-cancel-button small { font-size: 11px; }
 .invoice-save-button { border: 1px solid #d71920; background: #db1d23; color: #fff; }
 .invoice-save-button:hover { background: #bd151b; }
 .invoice-save-button small { color: #ffe5e5; }
+.invoice-whatsapp-button { display: flex; align-items: center; gap: 12px; width: 100%; margin-top: 12px; padding: 12px 14px; border: 1px solid #16873e; border-radius: 7px; background: #1fa855; color: #fff; text-align: left; cursor: pointer; }
+.invoice-whatsapp-button:hover { background: #16873e; }
+.invoice-whatsapp-button small { color: #dff8e8; }
+.btn-whatsapp { display: inline-flex; align-items: center; gap: 7px; border: 1px solid #16873e; background: #1fa855; color: #fff; }
+.btn-whatsapp:hover { background: #16873e; color: #fff; }
 .invoice-secondary-button { border: 1px solid #d8e0e9; background: #f7f9fb; color: #1e2a3a; }
 .invoice-secondary-button small,
 .invoice-cancel-button small { color: #7a8695; }

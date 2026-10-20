@@ -60,6 +60,7 @@
 .inventory-add-stock-button:hover { background: #bd151b; }
 .inventory-offline-status { display: grid; grid-template-columns: 12px auto; column-gap: 9px; align-items: center; min-width: 132px; color: #252d39; font-size: 14px; }
 .inventory-offline-status span { grid-row: 1 / span 2; width: 12px; height: 12px; border-radius: 50%; background: #d8191f; }
+.inventory-offline-status.is-online span { background: #1a9c51; }
 .inventory-offline-status small { color: #718096; font-size: 11px; }
 
 .inventory-content { padding: 16px 22px 24px; }

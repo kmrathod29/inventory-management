@@ -7,6 +7,7 @@ import { BackupRestoreSection } from "./Components/BackupRestoreSection";
 import { BillingTaxSection } from "./Components/BillingTaxSection";
 import { ProfilesSection } from "./Components/ProfilesSection";
 import { ShopDetailsSection } from "./Components/ShopDetailsSection";
+import { useNetworkStatus } from "../../hooks/useNetworkStatus";
 import "./settings.css";
 
 function fileName(filePath) {
@@ -39,6 +40,7 @@ export function SettingsPage({
   const profileDialog = useRef(null);
   const showToast = useToast();
   const { confirm, ConfirmDialogComponent } = useConfirm();
+  const isOnline = useNetworkStatus();
 
   useEffect(() => {
     const dialog = profileDialog.current;
@@ -124,6 +126,26 @@ export function SettingsPage({
     } catch (error) {
       showToast(
         error.message || "Could not create the portable backup.",
+        "error",
+      );
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function handleUploadToDrive() {
+    setBusy("drive-upload");
+    try {
+      const result = await window.db.createPortableBackup();
+      if (result) {
+        showToast(
+          `Backup saved to ${fileName(result.filePath)}. Google Drive will upload it when the selected folder syncs.`,
+          "success",
+        );
+      }
+    } catch (error) {
+      showToast(
+        error.message || "Could not prepare the Google Drive backup.",
         "error",
       );
     } finally {
@@ -316,11 +338,11 @@ export function SettingsPage({
           <h1>Settings</h1>
           <p>Manage your shop and application preferences</p>
         </div>
-        <div className="settings-status" aria-label="Application status">
+        <div className={`settings-status${isOnline ? " is-online" : ""}`} aria-label={`Application status: ${isOnline ? "online" : "offline"}`}>
           <span className="settings-status-dot" />
           <div>
-            <strong>Offline</strong>
-            <span>Data stored locally</span>
+            <strong>{isOnline ? "Online" : "Offline"}</strong>
+            <span>{isOnline ? "Network connected" : "Data stored locally"}</span>
           </div>
         </div>
       </header>
@@ -370,6 +392,7 @@ export function SettingsPage({
               onCreateBackup={handleCreateBackup}
               onRestoreBackup={handleRestoreBackup}
               onCreatePortableBackup={handleCreatePortableBackup}
+              onUploadToDrive={handleUploadToDrive}
               onRestorePortableBackup={handleRestorePortableBackup}
             />
           )}

@@ -61,7 +61,7 @@ export function CustomersPage() {
   const summaries = useMemo(() => customers.map((customer) => customerSummary(customer, products)), [customers, products]);
   const filtered = summaries.filter((customer) => {
     const query = search.trim().toLocaleLowerCase();
-    return !query || [customer.name, customer.phone, customer.address].some((value) => String(value || "").toLocaleLowerCase().includes(query));
+    return !query || [customer.name, customer.phone, customer.address, customer.pan].some((value) => String(value || "").toLocaleLowerCase().includes(query));
   });
 
   return (
@@ -106,7 +106,7 @@ function CustomerProfile({ customer, onClose }) {
       <section className="customer-profile" role="dialog" aria-modal="true" aria-labelledby="customer-profile-title" onMouseDown={(event) => event.stopPropagation()}>
         <button type="button" className="customer-modal-close" onClick={onClose} aria-label="Close customer profile"><i className="ti ti-x" /></button>
         <header className="customer-profile-header"><CustomerAvatar name={customer.name} /><div><p className="customers-kicker">CUSTOMER PROFILE</p><h2 id="customer-profile-title">{customer.name}</h2><p>{customer.phone || "Phone not added"}</p></div></header>
-        <div className="customer-details"><span><small>Address</small><strong>{customer.address || "Not added"}</strong></span><span><small>Notes</small><strong>{customer.notes || "No notes yet"}</strong></span></div>
+        <div className="customer-details"><span><small>Address</small><strong>{customer.address || "Not added"}</strong></span><span><small>PAN</small><strong>{customer.pan || "Not added"}</strong></span><span><small>Notes</small><strong>{customer.notes || "No notes yet"}</strong></span></div>
         <div className="customer-profile-stats"><div><small>Total purchased</small><strong>{formatCurrency(customer.totalPurchased)}</strong><i className="ti ti-chart-donut" /></div><div><small>Total bills</small><strong>{customer.totalBills}</strong><i className="ti ti-receipt" /></div></div>
         <div className="customer-products-heading"><div><p className="customers-kicker">PURCHASE HISTORY</p><h3>Products purchased</h3></div><span>{customer.products.length} products</span></div>
         <div className="customer-product-grid">

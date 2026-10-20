@@ -6,6 +6,7 @@ export function BackupRestoreSection({
   onCreateBackup,
   onRestoreBackup,
   onCreatePortableBackup,
+  onUploadToDrive,
   onRestorePortableBackup,
 }) {
   return (
@@ -62,6 +63,19 @@ export function BackupRestoreSection({
           <button className="settings-action" type="button" onClick={onRestorePortableBackup} disabled={Boolean(busy)}>
             <i className="ti ti-package-import" aria-hidden="true" />
             <span>{busy === "portable-restore" ? "Restoring..." : "Restore Portable Backup"}</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="settings-portable-backup">
+        <div>
+          <strong>Upload to Google Drive</strong>
+          <p>Create a full portable backup in your Google Drive synced folder. Choose the folder each time you want to upload; no automatic uploads are made.</p>
+        </div>
+        <div className="settings-action-row">
+          <button className="settings-action settings-action-primary" type="button" onClick={onUploadToDrive} disabled={Boolean(busy)}>
+            <i className="ti ti-cloud-upload" aria-hidden="true" />
+            <span>{busy === "drive-upload" ? "Preparing Upload..." : "Upload to Google Drive"}</span>
           </button>
         </div>
       </div>

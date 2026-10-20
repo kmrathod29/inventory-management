@@ -16,13 +16,14 @@ function addCustomer(customer) {
   const result = ctx.db
     .prepare(
       `
-    INSERT INTO customers (name, phone, address, notes) VALUES (?, ?, ?, ?)
+    INSERT INTO customers (name, phone, address, pan, notes) VALUES (?, ?, ?, ?, ?)
   `,
     )
     .run(
       validatedCustomer.name,
       validatedCustomer.phone,
       validatedCustomer.address,
+      validatedCustomer.pan,
       validatedCustomer.notes,
     );
 
@@ -60,7 +61,7 @@ function getCustomers() {
 
   for (const customer of customers) {
     const bills = ctx.db
-      .prepare(`SELECT * FROM bills WHERE customer_id = ?`)
+      .prepare(`SELECT * FROM bills WHERE customer_id = ? ORDER BY date DESC, id DESC`)
       .all(customer.id);
 
     for (const bill of bills) {
@@ -144,12 +145,13 @@ function editCustomer(id, customer) {
 
   ctx.db.prepare(
     `
-    UPDATE customers SET name = ?, phone = ?, address = ?, notes = ? WHERE id = ?
+    UPDATE customers SET name = ?, phone = ?, address = ?, pan = ?, notes = ? WHERE id = ?
   `,
   ).run(
     validatedCustomer.name,
     validatedCustomer.phone,
     validatedCustomer.address,
+    validatedCustomer.pan,
     validatedCustomer.notes,
     id,
   );
@@ -166,7 +168,7 @@ function editBill(billId, bill) {
   const run = ctx.db.transaction(() => {
     const oldItems = ctx.db.prepare(`SELECT * FROM bill_items WHERE bill_id = ?`).all(billId);
     for (const item of oldItems) {
-      adjustInventoryStock(ctx.db, item.product_name, item.base, item.bucket_size, item.quantity);
+      adjustInventoryStock(ctx.db, item.product_name, item.base, item.bucket_size, item.quantity, item.product_sku_code);
     }
 
     const previousTotal = Number(billRecord.total_purchased || 0);
@@ -198,7 +200,7 @@ function editBill(billId, bill) {
     ctx.db.prepare(`DELETE FROM bill_items WHERE bill_id = ?`).run(billId);
 
     for (const item of normalizedBill.products) {
-      const costPrice = getLandingPrice(item.productName, item.bucketSize);
+      const costPrice = getLandingPrice(item.productName, item.bucketSize, item.skuCode);
 
       ctx.db.prepare(
         `
@@ -290,10 +292,10 @@ function updateBillPayment(billId, amountPaid, status) {
   });
   run();
 }
-function getLandingPrice(productName, bucketSize) {
-  const product = ctx.db
-    .prepare(`SELECT * FROM products WHERE name = ?`)
-    .get(productName);
+function getLandingPrice(productName, bucketSize, productSkuCode = "") {
+  const product = productSkuCode
+    ? ctx.db.prepare("SELECT * FROM products WHERE sku_code = ?").get(productSkuCode)
+    : ctx.db.prepare("SELECT * FROM products WHERE TRIM(name) = TRIM(?) COLLATE NOCASE").get(productName);
   if (!product) return 0;
 
   const variant = ctx.db

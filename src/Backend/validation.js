@@ -108,6 +108,7 @@ export function validateCustomer(customer) {
     name,
     phone: normalizeText(customer.phone, ""),
     address: normalizeText(customer.address, ""),
+    pan: normalizeText(customer.pan, ""),
     notes: normalizeText(customer.notes, ""),
   };
 }

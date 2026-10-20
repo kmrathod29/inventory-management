@@ -10,10 +10,10 @@ const navLinks = [
     icon: "ti-layout-dashboard",
     path: "/",
   },
+  { id: "new-bills", label: "New Bills", icon: "ti-file-invoice", path: "/billing/new" },
   { id: "inventory", label: "Inventory", icon: "ti-box", path: "/inventory" },
   { id: "customers", label: "Customers", icon: "ti-users", path: "/customers" },
   { id: "history", label: "History", icon: "ti-history", path: "/billing" },
-  { id: "new-bills", label: "New Bills", icon: "ti-file-invoice", path: "/billing/new" },
   { id: "reports", label: "Reports", icon: "ti-chart-bar", path: "/reports" },
 ];
 
@@ -35,7 +35,7 @@ export function SideBar() {
             <Link
               key={link.id}
               to={link.path}
-              className={`nav-link ${location.pathname === link.path ? "active" : ""}`}
+              className={`nav-link ${link.id === "new-bills" ? "nav-link-new-bill" : ""} ${location.pathname === link.path ? "active" : ""}`}
             >
               <i className={`ti ${link.icon}`}></i>
               <span className="link-label">{link.label}</span>

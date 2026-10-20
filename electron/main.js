@@ -226,9 +226,10 @@ function fillInvoiceTemplate(invoice) {
     "{{SHOP_PAN}}": invoice.shopPan,
     "{{INVOICE_NUMBER}}": invoice.invoiceNumber,
     "{{INVOICE_DATE}}": invoice.date,
-    "{{CUSTOMER_NAME}}": invoice.customerName,
-    "{{CUSTOMER_ADDRESS}}": invoice.customerAddress,
-    "{{CUSTOMER_PHONE}}": invoice.customerPhone,
+    "{{CUSTOMER_NAME}}": invoice.customerName ?? invoice.buyerName,
+    "{{CUSTOMER_ADDRESS}}": invoice.customerAddress ?? invoice.buyerAddress,
+    "{{CUSTOMER_PAN}}": invoice.customerPan ?? invoice.buyerPan ?? invoice.pan ?? invoice.panNumber ?? "",
+    "{{CUSTOMER_PHONE}}": invoice.customerPhone ?? invoice.buyerPhone,
     "{{CUSTOMER_GSTIN}}": invoice.buyerGstin,
     "{{TOTAL_QUANTITY}}": items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0),
     "{{SUBTOTAL}}": invoiceMoney(subtotal),
@@ -251,6 +252,7 @@ function fillInvoiceTemplate(invoice) {
   };
 
   documentXml = documentXml
+    .replace(/\{[^{}]*\{[^{}]*\}[^{}]*\}/g, (match) => match.replace(/<[^>]+>/g, "").replace(/\s+/g, ""))
     .replace(/\{\{INVOICE_NUMBER\}/g, "{{INVOICE_NUMBER}}")
     .replace(/\{\{\s*S\s*GST_TOTAL\s*\}\}/g, "{{SGST_TOTAL}}")
     .replace(/\{\{\s*I\s*GST_TOTAL\s*\}\}/g, "{{IGST_TOTAL}}");

@@ -59,7 +59,7 @@ function getReportData(startDate, endDate) {
   // Collections are selected by payment date, independently of the invoice date.
   const activities = ctx.db.prepare(`SELECT ba.*, b.customer_id, c.name AS customer_name, b.bill_number, b.date AS invoice_date FROM bill_activity ba JOIN bills b ON b.id = ba.bill_id LEFT JOIN customers c ON c.id = b.customer_id WHERE (? IS NULL OR ba.date >= ?) AND (? IS NULL OR ba.date <= ?) ORDER BY ba.date, ba.id`).all(startDate, startDate, endDate, endDate);
   const expenses = ctx.db.prepare(`SELECT id, date, label, amount, type FROM expenses WHERE (? IS NULL OR date >= ?) AND (? IS NULL OR date <= ?) ORDER BY date DESC, id DESC`).all(startDate, startDate, endDate, endDate);
-  const stock = ctx.db.prepare(`SELECT p.id, p.name, COALESCE(p.category, 'General') AS category, p.low_stock_threshold AS low_stock_threshold, COALESCE(SUM(bs.stock), 0) AS quantity FROM products p LEFT JOIN bases b ON b.product_id = p.id LEFT JOIN base_stock bs ON bs.base_id = b.id GROUP BY p.id ORDER BY p.name`).all();
+  const stock = ctx.db.prepare(`SELECT p.id, p.name, COALESCE(p.category, 'General') AS category, p.low_stock_threshold AS low_stock_threshold, COALESCE(SUM(bs.stock), 0) AS quantity, COALESCE(SUM(bs.stock * COALESCE(v.landing, 0)), 0) AS value FROM products p LEFT JOIN bases b ON b.product_id = p.id LEFT JOIN base_stock bs ON bs.base_id = b.id LEFT JOIN variants v ON v.id = bs.variant_id GROUP BY p.id ORDER BY p.name`).all();
   const currentOutstanding = Number(ctx.db.prepare(`SELECT COALESCE(SUM(MAX(amount_due, 0)), 0) AS total FROM bills WHERE amount_due > 0`).get().total || 0);
   return { bills, items, activities, expenses, stock, currentOutstanding };
 }
@@ -109,6 +109,7 @@ function getSales() {
         name: customer.name,
         phone: customer.phone,
         address: customer.address,
+        pan: customer.pan,
         date: bill.date,
         paymentMethod: bill.payment_method,
         totalPurchased: bill.total_purchased,
@@ -173,8 +174,14 @@ function getNetPosition(period) {
     );
     totalDue += bill.amount_due;
     for (const i of items) {
-      productTotals[i.product_name] =
-        (productTotals[i.product_name] || 0) + i.quantity;
+      const product = i.product_sku_code
+        ? ctx.db.prepare("SELECT name FROM products WHERE sku_code = ?").get(i.product_sku_code)
+        : null;
+      const productKey = i.product_sku_code || i.product_name;
+      if (!productTotals[productKey]) {
+        productTotals[productKey] = { name: product?.name || i.product_name, quantity: 0 };
+      }
+      productTotals[productKey].quantity += i.quantity;
     }
   }
 
@@ -187,10 +194,10 @@ function getNetPosition(period) {
 
   let topCategory = "-";
   let topQty = 0;
-  for (const [name, qty] of Object.entries(productTotals)) {
-    if (qty > topQty) {
-      topQty = qty;
-      topCategory = name;
+  for (const product of Object.values(productTotals)) {
+    if (product.quantity > topQty) {
+      topQty = product.quantity;
+      topCategory = product.name;
     }
   }
 

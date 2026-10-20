@@ -104,7 +104,7 @@ export function BillItemsTable({
               <td>{i + 1}</td>
               <td>
                 <ProductThumbnail
-                  src={p.image || products.find((product) => product.name === p.productName)?.images}
+                  src={p.image || products.find((product) => product.sku_code && product.sku_code === p.skuCode)?.images || products.find((product) => product.name === p.productName)?.images}
                   alt=""
                 />
               </td>

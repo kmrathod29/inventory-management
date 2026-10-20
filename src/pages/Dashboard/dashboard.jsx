@@ -1,10 +1,11 @@
 import "./Styles/dashboard.css";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useErrorHandler } from "../../hooks/useErrorHandler";
 import { useDataChanged } from "../../hooks/useDataChanged";
 import { formatCurrency, formatDate, getBusinessDateISO } from "../../utils/regional";
 import { useConfirm } from "../../hooks/useConfirm";
+import { useNetworkStatus } from "../../hooks/useNetworkStatus";
 
 function stockTotal(product) {
   return (product.bases || []).reduce(
@@ -21,6 +22,8 @@ export function DashboardPage() {
   const [sales, setSales] = useState([]);
   const [search, setSearch] = useState("");
   const [openActions, setOpenActions] = useState(null);
+  const searchInputRef = useRef(null);
+  const isOnline = useNetworkStatus();
 
   async function loadDashboard() {
     const [productData, salesData] = await Promise.all([
@@ -42,6 +45,17 @@ export function DashboardPage() {
   }, []);
   useDataChanged(loadDashboard);
 
+  useEffect(() => {
+    const focusSearch = (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", focusSearch);
+    return () => document.removeEventListener("keydown", focusSearch);
+  }, []);
+
   const today = getBusinessDateISO();
   const todaySales = sales.filter((sale) => sale.customer.date === today);
   const todaySalesTotal = todaySales.reduce((total, sale) => total + Number(sale.sellingPrice || 0), 0);
@@ -62,8 +76,8 @@ export function DashboardPage() {
     <div className="dashboard-page">
       <header className="dashboard-topbar">
         <h2>Dashboard</h2>
-        <div className="dashboard-global-search"><i className="ti ti-search" aria-hidden="true" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search products, customers, invoices..." /><kbd>Ctrl + K</kbd></div>
-        <div className="dashboard-offline"><span /> Offline <b>•</b> Data stored locally</div>
+        <div className="dashboard-global-search"><i className="ti ti-search" aria-hidden="true" /><input ref={searchInputRef} value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search products, customers, invoices..." /><kbd>Ctrl + K</kbd></div>
+        <div className={`dashboard-offline${isOnline ? " is-online" : ""}`}><span /> {isOnline ? "Online" : "Offline"} <b>•</b> {isOnline ? "Network connected" : "Data stored locally"}</div>
       </header>
       <main className="dashboard-content">
         <div className="dashboard-heading"><div><h1>Dashboard</h1><p>{formatDate(today, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p></div></div>
