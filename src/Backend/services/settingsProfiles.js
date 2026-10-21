@@ -169,11 +169,12 @@ function updateCategoryTaxRates(categoryTaxRates) {
   return getAppSettings();
 }
 
-function updateBillingSettings(invoiceDefaults, categoryTaxRates) {
+function updateBillingSettings(invoiceDefaults, categoryTaxRates, categoryHsnCodes) {
   const nextConfig = saveAppConfig(ctx.appConfigPath, {
     ...ctx.appConfig,
     invoiceDefaults,
     categoryTaxRates,
+    categoryHsnCodes,
   });
   ctx.appConfig = nextConfig;
   return getAppSettings();

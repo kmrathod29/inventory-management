@@ -13,6 +13,9 @@ export function defaultInvoiceDefaults() {
     shopName: "",
     shopTagline: "",
     shopAddress: "",
+    shopAddressLine1: "",
+    shopAddressLine2: "",
+    shopAddressLine3: "",
     shopTelephone: "",
     shopEmail: "",
     shopGstin: "",
@@ -33,6 +36,7 @@ export function defaultAppConfig() {
   return {
     defaultPaymentMethod: DEFAULT_PAYMENT_METHOD,
     categoryTaxRates: {},
+    categoryHsnCodes: {},
     dataDirectory: null,
     invoiceDefaults: defaultInvoiceDefaults(),
     inventoryAddItemMode: null,
@@ -68,6 +72,19 @@ function validateAppConfig(config) {
     normalizedCategoryTaxRates[normalizedCategory] = String(numericRate);
   }
 
+  const categoryHsnCodes = config.categoryHsnCodes ?? {};
+  if (!categoryHsnCodes || typeof categoryHsnCodes !== "object" || Array.isArray(categoryHsnCodes)) {
+    throw new Error("Category HSN codes must be an object.");
+  }
+  const normalizedCategoryHsnCodes = {};
+  for (const [category, hsnCode] of Object.entries(categoryHsnCodes)) {
+    const normalizedCategory = category.trim();
+    if (!normalizedCategory || typeof hsnCode !== "string") {
+      throw new Error("Category HSN codes must have non-empty category names and text values.");
+    }
+    normalizedCategoryHsnCodes[normalizedCategory] = hsnCode.trim();
+  }
+
   const dataDirectory = config.dataDirectory ?? null;
   if (
     dataDirectory !== null &&
@@ -83,7 +100,7 @@ function validateAppConfig(config) {
 
   const defaults = defaultInvoiceDefaults();
   for (const key of Object.keys(defaults)) {
-    const value = invoiceDefaults[key] ?? defaults[key];
+    const value = invoiceDefaults[key] ?? (key === "shopAddressLine1" ? invoiceDefaults.shopAddress ?? defaults[key] : defaults[key]);
     if (key === "outOfGujarat") {
       if (typeof value !== "boolean") {
         throw new Error('Invoice default "outOfGujarat" must be true or false.');
@@ -131,6 +148,7 @@ function validateAppConfig(config) {
   return {
     defaultPaymentMethod,
     categoryTaxRates: normalizedCategoryTaxRates,
+    categoryHsnCodes: normalizedCategoryHsnCodes,
     dataDirectory,
     invoiceDefaults: defaults,
     inventoryAddItemMode,

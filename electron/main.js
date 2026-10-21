@@ -199,7 +199,8 @@ function fillInvoiceTemplate(invoice) {
   const categoryTaxRates = invoice.categoryTaxRates || {};
   const productTaxRate = (item) => {
     const category = item.category || "General";
-    return Number(item.taxRate ?? categoryTaxRates[category] ?? invoice.vatPercent ?? 0) || 0;
+    const categoryKey = Object.keys(categoryTaxRates).find((key) => key.trim().toLocaleLowerCase() === String(category).trim().toLocaleLowerCase());
+    return Number(item.taxRate ?? categoryTaxRates[categoryKey] ?? invoice.vatPercent ?? 0) || 0;
   };
   const taxableSubtotal = subtotal;
   const taxTotals = items.reduce((totals, item) => {
@@ -219,7 +220,10 @@ function fillInvoiceTemplate(invoice) {
   const replacements = {
     "{{SHOP_NAME}}": invoice.shopName,
     "{{SHOP_TAGLINE}}": invoice.shopTagline,
-    "{{SHOP_ADDRESS}}": invoice.shopAddress,
+    "{{SHOP_ADDRESS}}": [invoice.shopAddressLine1 || invoice.shopAddress, invoice.shopAddressLine2, invoice.shopAddressLine3].filter(Boolean).join(", "),
+    "{{AD_LINE1}}": invoice.shopAddressLine1 || invoice.shopAddress,
+    "{{AD_LINE2}}": invoice.shopAddressLine2,
+    "{{AD_LINE3}}": invoice.shopAddressLine3,
     "{{SHOP_PHONE}}": invoice.shopTelephone,
     "{{SHOP_EMAIL}}": invoice.shopEmail,
     "{{SHOP_GSTIN}}": invoice.tpinNumber || invoice.shopGstin,
@@ -642,8 +646,8 @@ app.whenReady().then(() => {
   ipcMain.handle("settings:updateCategoryTaxRates", (_, categoryTaxRates) =>
     updateCategoryTaxRates(categoryTaxRates),
   );
-  ipcMain.handle("settings:updateBillingSettings", (_, invoiceDefaults, categoryTaxRates) =>
-    updateBillingSettings(invoiceDefaults, categoryTaxRates),
+  ipcMain.handle("settings:updateBillingSettings", (_, invoiceDefaults, categoryTaxRates, categoryHsnCodes) =>
+    updateBillingSettings(invoiceDefaults, categoryTaxRates, categoryHsnCodes),
   );
   ipcMain.handle("settings:updateInventoryAddItemMode", (_, mode) =>
     updateInventoryAddItemMode(mode),

@@ -1,10 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { formatDate } from "../../../utils/regional";
 import { formatCurrency } from "../../../utils/regional";
 export function BillTable({ filtered, statusMeta, openExisting, onDelete, onPayment }) {
   const [sortKey, setSortKey] = useState("date");
   const [sortOrder, setSortOrder] = useState(false);
   const [openActions, setOpenActions] = useState(null);
+
+  useEffect(() => {
+    const closeActions = (event) => {
+      if (!(event.target instanceof Element) || !event.target.closest(".action-menu")) {
+        setOpenActions(null);
+      }
+    };
+    document.addEventListener("pointerdown", closeActions);
+    return () => document.removeEventListener("pointerdown", closeActions);
+  }, []);
 
   const sortedFiltered = [...filtered].sort((a, b) => {
     if (sortKey === "date") {

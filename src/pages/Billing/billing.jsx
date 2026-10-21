@@ -18,6 +18,7 @@ export function Billing() {
   const [products, setProducts] = useState([]);
   const [invoiceDefaults, setInvoiceDefaults] = useState({});
   const [categoryTaxRates, setCategoryTaxRates] = useState({});
+  const [categoryHsnCodes, setCategoryHsnCodes] = useState({});
   const [paymentBill, setPaymentBill] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState("Paid");
   const [partialAmount, setPartialAmount] = useState("");
@@ -57,6 +58,7 @@ export function Billing() {
     setProducts(productData);
     setInvoiceDefaults(settings.invoiceDefaults || {});
     setCategoryTaxRates(settings.categoryTaxRates || {});
+    setCategoryHsnCodes(settings.categoryHsnCodes || {});
   });
 
   useEffect(() => {
@@ -69,6 +71,7 @@ export function Billing() {
       if (!cancelled && settings) {
         setInvoiceDefaults(settings.invoiceDefaults || {});
         setCategoryTaxRates(settings.categoryTaxRates || {});
+        setCategoryHsnCodes(settings.categoryHsnCodes || {});
       }
     }
     loadInvoiceDefaults();
@@ -300,6 +303,7 @@ export function Billing() {
               products={products}
               usageMap={usageMap}
               categoryTaxRates={categoryTaxRates}
+              categoryHsnCodes={categoryHsnCodes}
               onClose={closeDialog}
               onSaved={handleSaved}
               customers={customers}

@@ -152,8 +152,8 @@ contextBridge.exposeInMainWorld("db", {
     invoke("settings:updateInvoiceDefaults", invoiceDefaults),
   updateCategoryTaxRates: (categoryTaxRates) =>
     invoke("settings:updateCategoryTaxRates", categoryTaxRates),
-  updateBillingSettings: (invoiceDefaults, categoryTaxRates) =>
-    invoke("settings:updateBillingSettings", invoiceDefaults, categoryTaxRates),
+  updateBillingSettings: (invoiceDefaults, categoryTaxRates, categoryHsnCodes) =>
+    invoke("settings:updateBillingSettings", invoiceDefaults, categoryTaxRates, categoryHsnCodes),
   updateInventoryAddItemMode: (mode) =>
     invoke("settings:updateInventoryAddItemMode", mode),
   updateAppearanceSettings: (theme, mode) =>

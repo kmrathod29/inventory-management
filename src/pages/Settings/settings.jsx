@@ -191,10 +191,10 @@ export function SettingsPage({
 
   }
 
-  async function handleBillingSettingsSave(invoiceDefaults, categoryTaxRates) {
+  async function handleBillingSettingsSave(invoiceDefaults, categoryTaxRates, categoryHsnCodes) {
     setBusy("billing-settings");
     try {
-      const updatedSettings = await window.db.updateBillingSettings(invoiceDefaults, categoryTaxRates);
+      const updatedSettings = await window.db.updateBillingSettings(invoiceDefaults, categoryTaxRates, categoryHsnCodes);
       setSettings(updatedSettings);
       showToast("Billing and tax settings updated.", "success");
     } catch (error) {

@@ -6,6 +6,9 @@ export function ShopDetailsSection({ settings, busy, onSave }) {
     shopTelephone: "",
     shopEmail: "",
     shopAddress: "",
+    shopAddressLine1: "",
+    shopAddressLine2: "",
+    shopAddressLine3: "",
     shopGstin: "",
   }));
   useEffect(() => {
@@ -18,6 +21,9 @@ export function ShopDetailsSection({ settings, busy, onSave }) {
       shopTelephone: d.shopTelephone || "",
       shopEmail: d.shopEmail || "",
       shopAddress: d.shopAddress || "",
+      shopAddressLine1: d.shopAddressLine1 || d.shopAddress || "",
+      shopAddressLine2: d.shopAddressLine2 || "",
+      shopAddressLine3: d.shopAddressLine3 || "",
       shopGstin: d.shopGstin || "",
     });
   }, [settings]);
@@ -35,6 +41,9 @@ export function ShopDetailsSection({ settings, busy, onSave }) {
       shopTelephone: d.shopTelephone || "",
       shopEmail: d.shopEmail || "",
       shopAddress: d.shopAddress || "",
+      shopAddressLine1: d.shopAddressLine1 || d.shopAddress || "",
+      shopAddressLine2: d.shopAddressLine2 || "",
+      shopAddressLine3: d.shopAddressLine3 || "",
       shopGstin: d.shopGstin || "",
     });
   }
@@ -47,6 +56,9 @@ export function ShopDetailsSection({ settings, busy, onSave }) {
       shopTelephone: values.shopTelephone,
       shopEmail: values.shopEmail,
       shopAddress: values.shopAddress,
+      shopAddressLine1: values.shopAddressLine1,
+      shopAddressLine2: values.shopAddressLine2,
+      shopAddressLine3: values.shopAddressLine3,
       shopGstin: values.shopGstin,
     };
     onSave(merged);
@@ -105,18 +117,16 @@ export function ShopDetailsSection({ settings, busy, onSave }) {
           </div>
 
           <div className="settings-field">
-            <label htmlFor="shop-address">
-              Address <span className="required">*</span>
-            </label>
-            <textarea
-              id="shop-address"
-              name="shopAddress"
-              value={values.shopAddress}
-              onChange={handleChange}
-              placeholder="Enter full shop address"
-              rows={4}
-              disabled={!settings || Boolean(busy)}
-            />
+            <label htmlFor="shop-address-line-1">Address Line 1 <span className="required">*</span></label>
+            <input id="shop-address-line-1" name="shopAddressLine1" value={values.shopAddressLine1} onChange={handleChange} placeholder="Building, shop or street" disabled={!settings || Boolean(busy)} />
+          </div>
+          <div className="settings-field">
+            <label htmlFor="shop-address-line-2">Address Line 2 <span className="optional">(optional)</span></label>
+            <input id="shop-address-line-2" name="shopAddressLine2" value={values.shopAddressLine2} onChange={handleChange} placeholder="Area or locality" disabled={!settings || Boolean(busy)} />
+          </div>
+          <div className="settings-field">
+            <label htmlFor="shop-address-line-3">Address Line 3 <span className="optional">(optional)</span></label>
+            <input id="shop-address-line-3" name="shopAddressLine3" value={values.shopAddressLine3} onChange={handleChange} placeholder="City, state and PIN code" disabled={!settings || Boolean(busy)} />
           </div>
 
           <div className="shop-details-row">

@@ -6,7 +6,9 @@ export function InvoiceDefaultsSection({ settings, busy, onSave }) {
   const fields = [
     ["shopName", "Shop name"],
     ["shopTagline", "Shop tagline"],
-    ["shopAddress", "Shop address"],
+    ["shopAddressLine1", "Address line 1"],
+    ["shopAddressLine2", "Address line 2"],
+    ["shopAddressLine3", "Address line 3"],
     ["shopTelephone", "Shop phone"],
     ["shopEmail", "Shop email"],
     ["shopGstin", "Shop GSTIN"],

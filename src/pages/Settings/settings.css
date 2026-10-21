@@ -860,6 +860,7 @@
     padding: 22px 18px;
   }
 }
+.category-tax-row input[placeholder="HSN code"] { width: 116px; }
 
 .settings-status.is-online .settings-status-dot {
   background: #1a9c51;

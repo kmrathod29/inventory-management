@@ -822,10 +822,13 @@ select::-webkit-scrollbar {
   display: grid;
   gap: 2px;
 }
+.offline-status.is-online { background: #e5f7eb; }
+.offline-status.is-online .offline-dot { background: #1a9c51; }
 
 .offline-status strong { font-size: 14px; }
 .offline-status small { color: #707b8a; font-size: 11px; }
 .offline-dot { width: 12px; height: 12px; border-radius: 50%; background: #d8171d; }
+.invoice-header-actions { display: flex; align-items: center; gap: 10px; }
 
 .invoice-meta-card,
 .invoice-products-card,
@@ -951,6 +954,7 @@ select::-webkit-scrollbar {
 @media (max-width: 600px) {
   .invoice-card { padding: 0 12px 20px; }
   .invoice-screen-header { align-items: flex-start; flex-direction: column; padding-inline: 2px; }
+  .invoice-header-actions { width: 100%; justify-content: space-between; }
   .invoice-meta-row,
   .invoice-customer-row { grid-template-columns: 1fr; gap: 14px; }
   .invoice-customer-field { grid-column: auto; }

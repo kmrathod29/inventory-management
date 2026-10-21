@@ -38,7 +38,9 @@ export function ExpenseInvoiceView({ details, items, invoiceDefaults, onClose, o
         <header className="invoice-heading">
           <p className="invoice-eyebrow">TAX INVOICE</p>
           <h1>{displayText(seller.shopName)}</h1>
-          <p>{displayText(seller.shopAddress)}</p>
+          <p>{displayText(seller.shopAddressLine1 || seller.shopAddress)}</p>
+          {seller.shopAddressLine2 && <p>{seller.shopAddressLine2}</p>}
+          {seller.shopAddressLine3 && <p>{seller.shopAddressLine3}</p>}
           <p>Tel: {displayText(seller.shopTelephone)}</p>
         </header>
         <section className="invoice-meta" aria-label="Invoice information">

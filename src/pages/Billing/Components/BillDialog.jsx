@@ -11,6 +11,7 @@ import { validateInvoiceDraft } from "../../Finances/Components/expenseInvoiceUt
 import { getBusinessDateISO } from "../../../utils/regional";
 import { formatCurrency } from "../../../utils/regional";
 import { ProductCombobox } from "./ProductCombobox";
+import { useNetworkStatus } from "../../../hooks/useNetworkStatus";
 
 function normalizeProduct(p) {
   return {
@@ -32,11 +33,13 @@ export function BillDialog({
   onClose,
   customers,
   categoryTaxRates = {},
+  categoryHsnCodes = {},
   onSaved,
   asPage = false,
   startEditing = false,
 }) {
   const showToast = useToast();
+  const isOnline = useNetworkStatus();
   const { confirm, ConfirmDialogComponent } = useConfirm();
 
   const [form, setForm] = useState({
@@ -127,9 +130,10 @@ export function BillDialog({
 
   // ── line-item mutations ───────────────────────────────────────────
   function handleAddItem(item) {
+    const category = item.category || products.find((product) => product.sku_code === item.skuCode)?.category || "General";
     setForm((f) => ({
       ...f,
-      products: [...f.products, { ...item, purchaseDate: item.purchaseDate || f.date || getBusinessDateISO() }],
+      products: [...f.products, { ...item, category, hsCode: item.hsCode || categoryHsnCodes[category] || "", purchaseDate: item.purchaseDate || f.date || getBusinessDateISO() }],
     }));
   }
   function handleReplaceItem(index, item) {
@@ -174,6 +178,7 @@ export function BillDialog({
       skuCode: product.sku_code || "",
       image: product.images || "",
       category: product.category || product.bases?.[0]?.name || "General",
+      hsCode: categoryHsnCodes[product.category || product.bases?.[0]?.name || "General"] || "",
       base: base?.name ?? "",
       bucketSize: variant?.bucket_size != null ? String(variant.bucket_size) : "",
       quantity: "1",
@@ -296,14 +301,19 @@ export function BillDialog({
           priceAtSale: item.priceAtSale ?? item.costPrice,
         }))
       : form.products;
-    const getCategoryTaxRate = (item) => {
+    const getItemCategory = (item) => {
       const product = products.find((entry) => entry.sku_code && entry.sku_code === item.skuCode)
         || products.find((entry) => entry.name === item.productName);
-      const category = item.category || product?.category || product?.bases?.[0]?.name || "General";
-      return Number(categoryTaxRates[category] ?? invoice.vatPercent ?? 0) || 0;
+      return item.category || product?.category || product?.bases?.[0]?.name || "General";
+    };
+    const getCategoryTaxRate = (item) => {
+      const category = getItemCategory(item);
+      const categoryKey = Object.keys(categoryTaxRates).find((key) => key.trim().toLocaleLowerCase() === String(category).trim().toLocaleLowerCase());
+      return Number(categoryTaxRates[categoryKey] ?? invoice.vatPercent ?? 0) || 0;
     };
     const invoiceItems = submittedItems.map((item) => {
       const rowTotal = (Number(item.quantity) || 0) * (Number(item.priceAtSale) || 0);
+      const category = getItemCategory(item);
       const itemVatPercent = getCategoryTaxRate(item);
       const rowTaxable = itemVatPercent > 0
         ? rowTotal / (1 + itemVatPercent / 100)
@@ -316,7 +326,8 @@ export function BillDialog({
           ? rowTaxable / Number(item.quantity)
           : 0,
         tax: rowTax,
-        category: item.category,
+        category,
+        hsCode: item.hsCode || categoryHsnCodes[Object.keys(categoryHsnCodes).find((key) => key.trim().toLocaleLowerCase() === String(category).trim().toLocaleLowerCase())] || "",
         taxRate: itemVatPercent,
         cgstPercent: outOfGujarat ? 0 : itemVatPercent / 2,
         cgstAmount: outOfGujarat ? 0 : rowTax / 2,
@@ -336,6 +347,7 @@ export function BillDialog({
       discountPercent,
       billType: form.billType,
       categoryTaxRates,
+      categoryHsnCodes,
       subtotal: totalPurchased,
       grandTotal: billTotal,
       ...(form.billType === "vat" ? { tax: vatAmount, taxableAmount: vatTaxableAmount, vatPercent } : {}),
@@ -421,6 +433,10 @@ export function BillDialog({
   }
 
   function shareOnWhatsApp() {
+    if (!isOnline) {
+      showToast("WhatsApp sharing needs an internet connection. Connect to the internet and try again.", "error");
+      return;
+    }
     const digits = String(form.phone || "").replace(/\D/g, "");
     if (digits.length < 10) {
       showToast("Enter a valid customer mobile number before sharing on WhatsApp.", "error");
@@ -437,7 +453,7 @@ export function BillDialog({
         return `${product.productName || "Product"} — ${quantity} ${unit} × ${formatCurrency(price)} = ${formatCurrency(quantity * price)}`;
       }).join("\n")
       : "No products added";
-    const message = [
+    let message = [
       "🧾 *DIPALI TRADERS*",
       "━━━━━━━━━━━━━━━━━━",
       "",
@@ -460,6 +476,42 @@ export function BillDialog({
       "Thank you for your business!",
       "*Dipali Traders*",
     ].join("\n");
+    const icon = {
+      receipt: String.fromCodePoint(0x1F9FE),
+      clipboard: String.fromCodePoint(0x1F4CB),
+      calendar: String.fromCodePoint(0x1F4C5),
+      money: String.fromCodePoint(0x1F4B0),
+    };
+    const divider = "\u2501".repeat(18);
+    message = `${message.slice(0, 0)}${[
+      `${icon.receipt} *DIPALI TRADERS*`,
+      divider,
+      "",
+      `Hello *${form.name.trim() || "Customer"}*,`,
+      "",
+      "Here are the details of your bill:",
+      "",
+      `${icon.clipboard} *Bill No.:* ${invoice.invoiceNumber || form.billNumber || "\u2014"}`,
+      `${icon.calendar} *Date:* ${formattedDate}`,
+      "",
+      "*PRODUCT DETAILS*",
+      ...(form.products.length
+        ? form.products.map((product) => {
+          const quantity = Number(product.quantity || 0);
+          const price = Number(product.priceAtSale || 0);
+          return `${product.productName || "Product"} \u2014 ${quantity} ${product.base || "units"} \u00d7 ${formatCurrency(price)} = ${formatCurrency(quantity * price)}`;
+        })
+        : ["No products added"]),
+      "",
+      divider,
+      `*Subtotal:* ${formatCurrency(totalPurchased)}`,
+      `*Discount:* ${formatCurrency(vatDiscount)}`,
+      `${icon.money} *TOTAL AMOUNT: ${formatCurrency(billTotal)}*`,
+      divider,
+      "",
+      "Thank you for your business!",
+      "*Dipali Traders*",
+    ].join("\n")}`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
   }
 
@@ -673,11 +725,17 @@ export function BillDialog({
               <h1>{isNew ? "New Bill" : "Edit Bill"}</h1>
               <p>{isNew ? "Create a new sales invoice" : "Update this sales invoice"}</p>
             </div>
-            {isEditing && (
-              <button type="button" className="invoice-clear-button" onClick={clearForm} title="Clear form">
-                <i className="ti ti-eraser" aria-hidden="true" /> Clear
-              </button>
-            )}
+            <div className="invoice-header-actions">
+              <div className={`offline-status${isOnline ? " is-online" : ""}`} aria-label={`Connection status: ${isOnline ? "online" : "offline"}`}>
+                <span className="offline-dot" />
+                <span><strong>{isOnline ? "Online" : "Offline"}</strong><small>{isOnline ? "Network connected" : "Data stored locally"}</small></span>
+              </div>
+              {isEditing && (
+                <button type="button" className="invoice-clear-button" onClick={clearForm} title="Clear form">
+                  <i className="ti ti-eraser" aria-hidden="true" /> Clear
+                </button>
+              )}
+            </div>
           </header>
 
           <section className="invoice-meta-card">
@@ -756,6 +814,7 @@ export function BillDialog({
                 onChangeQty={handleChangeQty}
                 onSetQty={handleSetQty}
                 products={products}
+                categoryHsnCodes={categoryHsnCodes}
               />
               {form.products.length === 0 && <p className="invoice-empty-products">No products added yet. Use the search field to add the first product.</p>}
             </section>
@@ -798,6 +857,7 @@ export function BillDialog({
           <AddProductPanel
             ref={panelRef}
             products={products}
+            categoryHsnCodes={categoryHsnCodes}
             usageMap={usageMap}
             sessionMemory={sessionMemory}
             initial={panelInitial}
@@ -1130,6 +1190,7 @@ export function BillDialog({
         <AddProductPanel
           ref={panelRef}
           products={products}
+          categoryHsnCodes={categoryHsnCodes}
           usageMap={usageMap}
           sessionMemory={sessionMemory}
           initial={panelInitial}

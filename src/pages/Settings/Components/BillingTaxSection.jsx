@@ -3,7 +3,9 @@ import { useEffect, useState } from "react";
 export function BillingTaxSection({ settings, busy, onSave }) {
   const [values, setValues] = useState(() => settings?.invoiceDefaults || {});
   const [categoryRates, setCategoryRates] = useState(() => settings?.categoryTaxRates || {});
+  const [categoryHsnCodes, setCategoryHsnCodes] = useState(() => settings?.categoryHsnCodes || {});
   const [categories, setCategories] = useState([]);
+  const [assignedCategories, setAssignedCategories] = useState(new Set());
   const [newCategory, setNewCategory] = useState("");
 
   const fields = [
@@ -24,10 +26,12 @@ export function BillingTaxSection({ settings, busy, onSave }) {
       setCategories([...new Set([
         ...products.map((product) => product.category || "General"),
         ...Object.keys(settings?.categoryTaxRates || {}),
+        ...Object.keys(settings?.categoryHsnCodes || {}),
       ])].sort());
+      setAssignedCategories(new Set(products.map((product) => product.category || "General")));
     }).catch(() => {});
     return () => { cancelled = true; };
-  }, [settings?.categoryTaxRates]);
+  }, [settings?.categoryTaxRates, settings?.categoryHsnCodes]);
 
   useEffect(() => {
     // Settings load asynchronously; synchronize the editor once the saved values arrive.
@@ -35,16 +39,29 @@ export function BillingTaxSection({ settings, busy, onSave }) {
     if (settings?.categoryTaxRates) setCategoryRates(settings.categoryTaxRates);
   }, [settings?.categoryTaxRates]);
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (settings?.categoryHsnCodes) setCategoryHsnCodes(settings.categoryHsnCodes);
+  }, [settings?.categoryHsnCodes]);
+
   function addCategory() {
     const name = newCategory.trim();
     if (!name) return;
     setCategoryRates((current) => ({ ...current, [name]: current[name] ?? values.vatPercent ?? "13" }));
+    setCategoryHsnCodes((current) => ({ ...current, [name]: current[name] ?? "" }));
     setCategories((current) => current.includes(name) ? current : [...current, name].sort());
     setNewCategory("");
   }
 
   function removeCategory(category) {
+    if (assignedCategories.has(category)) return;
+    setCategories((current) => current.filter((item) => item !== category));
     setCategoryRates((current) => {
+      const next = { ...current };
+      delete next[category];
+      return next;
+    });
+    setCategoryHsnCodes((current) => {
       const next = { ...current };
       delete next[category];
       return next;
@@ -66,7 +83,8 @@ export function BillingTaxSection({ settings, busy, onSave }) {
       <div className="settings-divider" />
 
       <h3 className="settings-sub-heading">Tax by Product Category</h3>
-      <p className="settings-sub-description">Set the tax rate used for each product category.</p>
+      <p className="settings-sub-description">Set the tax rate and HSN code used for each product category.</p>
+      <p className="settings-note">An 18% GST rate is split into 9% CGST and 9% SGST for sales within Gujarat. Categories used by products cannot be deleted.</p>
       <div className="category-tax-list">
         {categories.map((category) => (
           <div className="category-tax-row" key={category}>
@@ -83,7 +101,17 @@ export function BillingTaxSection({ settings, busy, onSave }) {
                 disabled={!settings || Boolean(busy)}
               />
               <span>%</span>
-              <button type="button" onClick={() => removeCategory(category)} disabled={!settings || Boolean(busy)} aria-label={`Remove ${category} tax rate`}>
+              <input
+                id={`category-hsn-${category}`}
+                type="text"
+                inputMode="numeric"
+                value={categoryHsnCodes[category] ?? ""}
+                onChange={(event) => setCategoryHsnCodes((current) => ({ ...current, [category]: event.target.value }))}
+                placeholder="HSN code"
+                aria-label={`${category} HSN code`}
+                disabled={!settings || Boolean(busy)}
+              />
+              <button type="button" onClick={() => removeCategory(category)} disabled={!settings || Boolean(busy) || assignedCategories.has(category)} title={assignedCategories.has(category) ? "This category is assigned to a product" : "Remove category"} aria-label={`Remove ${category} tax rate`}>
                 <i className="ti ti-trash" aria-hidden="true" />
               </button>
             </div>
@@ -137,7 +165,7 @@ export function BillingTaxSection({ settings, busy, onSave }) {
         <button
           className="settings-action settings-action-primary"
           type="button"
-          onClick={() => onSave(values, categoryRates)}
+          onClick={() => onSave(values, categoryRates, categoryHsnCodes)}
           disabled={!settings || Boolean(busy)}
         >
           <i className="ti ti-device-floppy" aria-hidden="true" />

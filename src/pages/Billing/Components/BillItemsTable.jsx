@@ -20,6 +20,7 @@ export function BillItemsTable({
   onChangeQty,
   onSetQty,
   products = [],
+  categoryHsnCodes = {},
 }) {
   const rowRefs = useRef([]);
 
@@ -81,6 +82,7 @@ export function BillItemsTable({
           <th>Sr No.</th>
           <th>Image</th>
           <th>Product Name</th>
+          <th>HSN</th>
           <th>Qty</th>
           <th>Price</th>
           <th>Subtotal</th>
@@ -109,6 +111,7 @@ export function BillItemsTable({
                 />
               </td>
               <td>{p.productName}</td>
+              <td>{p.hsCode || categoryHsnCodes[p.category] || "—"}</td>
               <td>
                 {isEditing ? (
                   <input

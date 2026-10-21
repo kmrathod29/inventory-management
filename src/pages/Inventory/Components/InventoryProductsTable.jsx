@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatCurrency } from "../../../utils/regional";
 import { useResolvedImage } from "../../../hooks/resolvedImage.js";
 import { EditConsole } from "./EditConsole";
@@ -47,6 +47,16 @@ export function InventoryProductsTable({ products, onRefresh, search, category, 
   const [historyProduct, setHistoryProduct] = useState(null);
   const showToast = useToast();
   const { confirm, ConfirmDialogComponent } = useConfirm();
+
+  useEffect(() => {
+    const closeMenu = (event) => {
+      if (!(event.target instanceof Element) || !event.target.closest(".inventory-more-button, .inventory-action-menu")) {
+        setOpenMenu(null);
+      }
+    };
+    document.addEventListener("pointerdown", closeMenu);
+    return () => document.removeEventListener("pointerdown", closeMenu);
+  }, []);
 
   const summaries = useMemo(() => products.map(productSummary), [products]);
   const filtered = useMemo(() => summaries.filter((product) => {

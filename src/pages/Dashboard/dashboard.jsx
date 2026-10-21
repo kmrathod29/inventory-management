@@ -56,6 +56,16 @@ export function DashboardPage() {
     return () => document.removeEventListener("keydown", focusSearch);
   }, []);
 
+  useEffect(() => {
+    const closeActions = (event) => {
+      if (!(event.target instanceof Element) || !event.target.closest(".dashboard-action-menu")) {
+        setOpenActions(null);
+      }
+    };
+    document.addEventListener("pointerdown", closeActions);
+    return () => document.removeEventListener("pointerdown", closeActions);
+  }, []);
+
   const today = getBusinessDateISO();
   const todaySales = sales.filter((sale) => sale.customer.date === today);
   const todaySalesTotal = todaySales.reduce((total, sale) => total + Number(sale.sellingPrice || 0), 0);

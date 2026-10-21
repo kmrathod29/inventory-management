@@ -21,9 +21,11 @@ function invoiceSnapshot({ date, nameOfExpense, invoice, items }) {
 
 function initialInvoice(defaults, invoiceData = {}) {
   return {
-    shopName: "", shopAddress: "", shopTelephone: "", invoiceNumber: "", tpinNumber: "",
+    shopName: "", shopAddress: "", shopAddressLine2: "", shopAddressLine3: "",
+    shopTelephone: "", invoiceNumber: "", tpinNumber: "",
     vatPercent: "13", buyerName: "", buyerAddress: "", buyerTpin: "", paymentMode: "Cash",
     discount: "", amountInWords: "", ...defaults, ...invoiceData,
+    shopAddressLine1: invoiceData.shopAddressLine1 || defaults.shopAddressLine1 || defaults.shopAddress || invoiceData.shopAddress || "",
   };
 }
 

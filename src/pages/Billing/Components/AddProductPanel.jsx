@@ -25,7 +25,7 @@ const blankForm = {
 // fields). Exposes addItem / clearForm / focusSearch via ref so BillDialog's
 // global shortcut handler (Shift+Enter, Ctrl+Backspace) can drive it.
 export const AddProductPanel = forwardRef(function AddProductPanel(
-  { products, usageMap, sessionMemory, initial, onAdd, onReplace, onClose },
+  { products, usageMap, sessionMemory, initial, onAdd, onReplace, onClose, categoryHsnCodes = {} },
   ref,
 ) {
   const showToast = useToast();
@@ -148,6 +148,8 @@ export const AddProductPanel = forwardRef(function AddProductPanel(
     const item = {
       productName: form.productName.trim(),
       skuCode: selectedProduct?.sku_code || form.skuCode || "",
+      category: selectedProduct?.category || selectedProduct?.bases?.[0]?.name || "General",
+      hsCode: categoryHsnCodes[selectedProduct?.category || selectedProduct?.bases?.[0]?.name || "General"] || "",
       base: form.base,
       bucketSize: form.bucketSize,
       quantity: commitMath(form.quantity),
