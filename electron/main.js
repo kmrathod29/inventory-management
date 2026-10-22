@@ -59,6 +59,8 @@ import {
   editCustomerBill,
   updateBillPayment,
   getAppSettings,
+  saveGstinApiKey,
+  lookupGstin,
   setLocalDataDirectory,
   updateDefaultPaymentMethod,
   updateInvoiceDefaults,
@@ -623,6 +625,8 @@ app.whenReady().then(() => {
     exportDatabase(destinationPath, selections, app.getVersion()),
   );
   ipcMain.handle("settings:get", () => getAppSettings());
+  ipcMain.handle("settings:saveGstinApiKey", (_, apiKey) => saveGstinApiKey(apiKey));
+  ipcMain.handle("gstin:lookup", (_, gstin) => lookupGstin(gstin));
   ipcMain.handle("settings:createProfile", (_, username, password) =>
     createProfile(username, password),
   );

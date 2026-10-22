@@ -204,6 +204,21 @@ export function SettingsPage({
     }
   }
 
+  async function handleGstinApiKeySave(apiKey) {
+    setBusy("gstin-api-key");
+    try {
+      const updatedSettings = await window.db.saveGstinApiKey(apiKey);
+      setSettings(updatedSettings);
+      showToast(apiKey.trim() ? "GSTIN API key saved securely." : "GSTIN API key removed.", "success");
+      return true;
+    } catch (error) {
+      showToast(error.message || "Could not save the GSTIN API key.", "error");
+      return false;
+    } finally {
+      setBusy("");
+    }
+  }
+
   async function handleAppearanceThemeChange(event) {
     const selected = event.target.value;
     const mode = selected.endsWith("-dark") ? "dark" : "light";
@@ -381,6 +396,7 @@ export function SettingsPage({
               settings={settings}
               busy={busy}
               onSave={handleBillingSettingsSave}
+              onSaveGstinApiKey={handleGstinApiKeySave}
             />
           )}
           {activeSection === "backup" && (

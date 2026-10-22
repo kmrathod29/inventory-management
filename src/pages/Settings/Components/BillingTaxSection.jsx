@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 
-export function BillingTaxSection({ settings, busy, onSave }) {
+export function BillingTaxSection({ settings, busy, onSave, onSaveGstinApiKey }) {
   const [values, setValues] = useState(() => settings?.invoiceDefaults || {});
+  const [gstinApiKey, setGstinApiKey] = useState("");
   const [categoryRates, setCategoryRates] = useState(() => settings?.categoryTaxRates || {});
   const [categoryHsnCodes, setCategoryHsnCodes] = useState(() => settings?.categoryHsnCodes || {});
   const [categories, setCategories] = useState([]);
@@ -171,6 +172,56 @@ export function BillingTaxSection({ settings, busy, onSave }) {
           <i className="ti ti-device-floppy" aria-hidden="true" />
           <span>{busy === "billing-settings" ? "Saving..." : "Save Billing Settings"}</span>
         </button>
+      </div>
+
+      <div className="settings-divider" />
+
+      <h3 className="settings-sub-heading">GSTIN Lookup</h3>
+      <p className="settings-sub-description">
+        Add your gstinapi.in API key to search GSTINs and fill the customer business name and principal address.
+        The first successful lookup may use one provider credit; its result is saved locally so later searches for the same GSTIN use no credits.
+        The key is encrypted with the device's secure storage and is never sent to the renderer during lookup.
+      </p>
+      <div className="settings-form-grid">
+        <div className="settings-field">
+          <label htmlFor="gstin-api-key">GSTIN API Key</label>
+          <input
+            id="gstin-api-key"
+            type="password"
+            autoComplete="new-password"
+            value={gstinApiKey}
+            onChange={(event) => setGstinApiKey(event.target.value)}
+            placeholder={settings?.gstinApiKeyConfigured ? "Key saved — enter a new key to replace it" : "Enter API key"}
+            disabled={!settings || Boolean(busy)}
+          />
+        </div>
+      </div>
+      <p className="settings-note">
+        {settings?.gstinApiKeyConfigured ? "An API key is configured." : "No API key configured."}
+      </p>
+      <div className="settings-panel-actions">
+        <button
+          className="settings-action settings-action-primary"
+          type="button"
+          onClick={async () => {
+            if (await onSaveGstinApiKey(gstinApiKey)) setGstinApiKey("");
+          }}
+          disabled={!settings || Boolean(busy) || !gstinApiKey.trim()}
+        >
+          <i className="ti ti-device-floppy" aria-hidden="true" />
+          <span>{busy === "gstin-api-key" ? "Saving..." : "Save API Key"}</span>
+        </button>
+        {settings?.gstinApiKeyConfigured && (
+          <button
+            className="settings-action"
+            type="button"
+            onClick={() => onSaveGstinApiKey("")}
+            disabled={Boolean(busy)}
+          >
+            <i className="ti ti-trash" aria-hidden="true" />
+            <span>Remove API Key</span>
+          </button>
+        )}
       </div>
     </div>
   );

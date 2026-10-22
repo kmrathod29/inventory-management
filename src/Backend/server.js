@@ -2,7 +2,7 @@ import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import { app } from "electron";
+import { app, safeStorage } from "electron";
 import { loadAppConfig, resolveDataDirectory } from "./appConfig.js";
 import { migrateDatabase } from "./migrations.js";
 import { createSettingsService } from "./services/settingsProfiles.js";
@@ -40,7 +40,7 @@ const context = {
   set dbPath(value) { dbPath = value; },
   get db() { return db; },
   set db(value) { db = value; },
-  app, appConfigPath, userDataPath, __dirname,
+  app, appConfigPath, userDataPath, __dirname, safeStorage,
   openDatabase,
 };
 
@@ -54,6 +54,7 @@ const services = [
 // Keep the historical named exports as a compatibility facade for Electron and the renderer.
 export const {
   getAppSettings, setDefaultProfilePassword, createProfile, switchProfile,
+  saveGstinApiKey, lookupGstin,
   updateDefaultPaymentMethod, updateInvoiceDefaults, updateCategoryTaxRates, updateBillingSettings, updateInventoryAddItemMode,
   updateAppearanceSettings, setLocalDataDirectory,
 } = services[0];

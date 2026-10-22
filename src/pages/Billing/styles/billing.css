@@ -497,6 +497,43 @@
   grid-column: 1 / -1;
 }
 
+.gstin-lookup-row {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  min-width: 0;
+}
+
+.gstin-lookup-row input,
+.bill-page-card .field .gstin-lookup-row input {
+  flex: 1 1 auto;
+  width: 0;
+  min-width: 0;
+}
+
+.gstin-lookup-button {
+  display: inline-flex;
+  flex: 0 0 40px;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0;
+  border: 1px solid var(--button-primary);
+  border-radius: 7px;
+  background: var(--button-primary);
+  color: #fff;
+  cursor: pointer;
+}
+
+.gstin-lookup-button:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.gstin-lookup-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
 .field label {
   font-size: 0.78rem;
   font-weight: 500;

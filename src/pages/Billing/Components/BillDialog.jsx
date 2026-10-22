@@ -67,6 +67,7 @@ export function BillDialog({
   const [invoiceErrors, setInvoiceErrors] = useState({});
   const [isEditing, setIsEditing] = useState(isNew || startEditing || !asPage);
   const [isSaving, setIsSaving] = useState(false);
+  const [isGstinLookupLoading, setIsGstinLookupLoading] = useState(false);
   const savedInvoiceRef = useRef(null);
 
   const [showPanel, setShowPanel] = useState(false);
@@ -81,6 +82,48 @@ export function BillDialog({
 
   const locked = !isEditing;
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  async function lookupCustomerByGstin() {
+    const gstin = String(invoice.buyerGstin || "").trim().toUpperCase();
+    if (!/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(gstin)) {
+      showToast("Enter a valid 15-character GSTIN before searching.", "error");
+      return;
+    }
+
+    const pan = gstin.slice(2, 12);
+    setForm((current) => ({ ...current, pan, panNumber: current.billType === "pan" ? pan : current.panNumber }));
+    setInvoice((current) => ({ ...current, buyerPan: pan }));
+    setIsGstinLookupLoading(true);
+    try {
+      const customer = await window.db.lookupGstin(gstin);
+      setForm((current) => ({
+        ...current,
+        name: customer.name || current.name,
+        address: customer.address || current.address,
+        pan: customer.pan || pan,
+        panNumber: current.billType === "pan" ? (customer.pan || pan) : current.panNumber,
+      }));
+      setInvoice((current) => ({
+        ...current,
+        buyerName: customer.name || current.buyerName,
+        buyerAddress: customer.address || current.buyerAddress,
+        buyerPan: customer.pan || pan,
+      }));
+      const statusNote = customer.status && customer.status.toLocaleLowerCase() !== "active"
+        ? ` Registration status: ${customer.status}.`
+        : "";
+      showToast(
+        customer.cached
+          ? `Saved GSTIN details filled; no lookup credit used.${statusNote}`
+          : `GSTIN details filled and saved for future use.${statusNote}`,
+        "success",
+      );
+    } catch (error) {
+      showToast(error?.message || "Could not look up this GSTIN.", "error");
+    } finally {
+      setIsGstinLookupLoading(false);
+    }
+  }
 
   useEffect(() => {
     if (!isNew) return;
@@ -776,7 +819,12 @@ export function BillDialog({
               </div>
               <div className="invoice-field">
                 <label htmlFor="customer-gstin">Customer GSTIN <span>(Optional)</span></label>
-                <input id="customer-gstin" value={invoice.buyerGstin || ""} onChange={(event) => setInvoice((current) => ({ ...current, buyerGstin: event.target.value.toUpperCase() }))} disabled={locked} placeholder="Enter GSTIN" />
+                <div className="gstin-lookup-row">
+                  <input id="customer-gstin" value={invoice.buyerGstin || ""} onChange={(event) => setInvoice((current) => ({ ...current, buyerGstin: event.target.value.toUpperCase() }))} disabled={locked} placeholder="Enter GSTIN" />
+                  <button type="button" className="gstin-lookup-button" onClick={lookupCustomerByGstin} disabled={locked || isGstinLookupLoading} title="Search GSTIN" aria-label="Search GSTIN">
+                    <i className={`ti ${isGstinLookupLoading ? "ti-loader-2" : "ti-search"}`} aria-hidden="true" />
+                  </button>
+                </div>
               </div>
               <div className="invoice-field">
                 <label htmlFor="customer-address">Customer Address <span>(Optional)</span></label>
@@ -993,14 +1041,19 @@ export function BillDialog({
                   </div>
                   <div className="field">
                     <label htmlFor="customer-gstin">Customer GSTIN</label>
-                    <input
-                      id="customer-gstin"
-                      type="text"
-                      value={invoice.buyerGstin || ""}
-                      onChange={(event) => setInvoice((current) => ({ ...current, buyerGstin: event.target.value.toUpperCase() }))}
-                      disabled={locked}
-                      placeholder="Optional GSTIN"
-                    />
+                    <div className="gstin-lookup-row">
+                      <input
+                        id="customer-gstin"
+                        type="text"
+                        value={invoice.buyerGstin || ""}
+                        onChange={(event) => setInvoice((current) => ({ ...current, buyerGstin: event.target.value.toUpperCase() }))}
+                        disabled={locked}
+                        placeholder="Optional GSTIN"
+                      />
+                      <button type="button" className="gstin-lookup-button" onClick={lookupCustomerByGstin} disabled={locked || isGstinLookupLoading} title="Search GSTIN" aria-label="Search GSTIN">
+                        <i className={`ti ${isGstinLookupLoading ? "ti-loader-2" : "ti-search"}`} aria-hidden="true" />
+                      </button>
+                    </div>
                   </div>
                   <div className="field">
                     <label htmlFor="customer-pan">Customer PAN</label>

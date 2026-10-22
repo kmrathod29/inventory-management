@@ -140,6 +140,8 @@ contextBridge.exposeInMainWorld("db", {
   getTopProducts: (period) => invoke("db:getTopProducts", period),
   getTopCustomers: (period) => invoke("db:getTopCustomers", period),
   getAppSettings: () => invoke("settings:get"),
+  saveGstinApiKey: (apiKey) => invoke("settings:saveGstinApiKey", apiKey),
+  lookupGstin: (gstin) => invoke("gstin:lookup", gstin),
   createProfile: (username, password) =>
     invoke("settings:createProfile", username, password),
   setDefaultProfilePassword: (password) =>

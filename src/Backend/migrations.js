@@ -254,6 +254,18 @@ const migrations = [
       }
     },
   },
+  {
+    version: 11,
+    up(db) {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS gstin_lookup_cache (
+          gstin TEXT PRIMARY KEY,
+          result_json TEXT NOT NULL,
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+    },
+  },
 ];
 
 export function migrateDatabase(db) {

@@ -42,6 +42,7 @@ export function defaultAppConfig() {
     inventoryAddItemMode: null,
     appearanceTheme: "lara",
     appearanceMode: "dark",
+    gstinApiKeyEncrypted: null,
     profiles: [],
     activeProfileId: "user",
     defaultProfileCredentials: null,
@@ -133,6 +134,11 @@ function validateAppConfig(config) {
     throw new Error('Appearance mode must be "light" or "dark".');
   }
 
+  const gstinApiKeyEncrypted = config.gstinApiKeyEncrypted ?? null;
+  if (gstinApiKeyEncrypted !== null && typeof gstinApiKeyEncrypted !== "string") {
+    throw new Error("The encrypted GSTIN API key must be text or null.");
+  }
+
   const profiles = validateProfiles(config.profiles ?? []);
   const defaultProfileCredentials = config.defaultProfileCredentials == null
     ? null
@@ -154,6 +160,7 @@ function validateAppConfig(config) {
     inventoryAddItemMode,
     appearanceTheme,
     appearanceMode,
+    gstinApiKeyEncrypted,
     profiles,
     activeProfileId,
     defaultProfileCredentials,
