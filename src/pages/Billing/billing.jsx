@@ -321,6 +321,7 @@ export function Billing() {
         }}>
           <div className="payment-dialog" role="dialog" aria-modal="true" aria-labelledby="payment-dialog-title">
           <form onSubmit={savePayment}>
+            <button type="button" className="dialog-close payment-dialog-close" onClick={() => setPaymentBill(null)} aria-label="Close">×</button>
             <h2 id="payment-dialog-title">Update Payment</h2>
             <p>{paymentBill.name} · {formatCurrency(paymentBill.totalPurchased)}</p>
             <div className="payment-dialog-due">

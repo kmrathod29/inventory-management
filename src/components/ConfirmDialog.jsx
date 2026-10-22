@@ -2,6 +2,10 @@ export function ConfirmDialog({ message, onConfirm, onCancel, confirmLabel = "Ye
   return (
     <div className="dialog-overlay" onClick={onCancel}>
       <div className="dialog dialog-small" onClick={(e) => e.stopPropagation()}>
+        <div className="dialog-header">
+          <h2 className="dialog-title">Confirm</h2>
+          <button type="button" className="dialog-close" onClick={onCancel} aria-label="Close">×</button>
+        </div>
         <div className="dialog-body">
           <p>{message}</p>
         </div>

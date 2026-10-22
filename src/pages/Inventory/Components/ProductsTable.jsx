@@ -617,6 +617,13 @@ export function ProductsTable({ products, fetchProducts, editMode }) {
         <div className="dialog-overlay" role="presentation">
           <form className="dialog bulk-update-dialog" onSubmit={handleBulkUpdate}>
             <div className="dialog-body">
+              <button
+                type="button"
+                className="dialog-close bulk-update-close"
+                onClick={() => setBulkUpdateOpen(false)}
+                aria-label="Close"
+                disabled={Boolean(bulkBusy)}
+              >×</button>
               <h2>Update {selectedProductIds.length} products</h2>
               <p>Leave a field blank to keep its current value.</p>
               <label>

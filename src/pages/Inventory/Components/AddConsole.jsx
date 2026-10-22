@@ -89,6 +89,10 @@ export function AddConsole({ product, setProduct, onClose, onSaved }) {
 
   return (
     <form className="inventory-add-form" onSubmit={handleAdd}>
+      <button type="button" className="inventory-add-form-close" onClick={(event) => {
+        if (onClose) onClose();
+        else event.currentTarget.closest("dialog")?.close();
+      }} aria-label="Close">×</button>
       <h2>{product ? "Edit Product" : "Add Product"}</h2>
       <p className="inventory-add-form-subtitle">{product ? "Update product details, prices and stock." : "Add a product with its price and available stock."}</p>
       <div className="inventory-add-form-grid">

@@ -333,15 +333,18 @@
 }
 
 .payment-dialog form {
+  position: relative;
   display: grid;
   gap: 14px;
   padding: 24px;
 }
 
+.payment-dialog-close { position: absolute; top: 14px; right: 14px; }
 .payment-dialog h2,
 .payment-dialog p {
   margin: 0;
 }
+.payment-dialog h2 { padding-right: 34px; }
 
 .payment-dialog-due {
   display: flex;
@@ -932,6 +935,11 @@ select::-webkit-scrollbar {
 .invoice-products-card .bill-products-table { margin-top: 10px; border: 1px solid #e1e7ef; border-radius: 7px; overflow: hidden; }
 .invoice-products-card .bill-products-table th { padding: 11px 10px; background: #f0f4f8; color: #202b3a; font-size: 12px; font-weight: 700; }
 .invoice-products-card .bill-products-table td { padding: 12px 10px; border-bottom: 1px solid #e8edf2; color: #263242; }
+.bill-quantity-control { display: inline-flex; align-items: center; gap: 4px; }
+.bill-quantity-control button { display: grid; place-items: center; width: 28px; height: 30px; padding: 0; border: 1px solid var(--border); border-radius: 5px; background: var(--card); color: var(--foreground); font-size: 18px; line-height: 1; cursor: pointer; }
+.bill-quantity-control button:hover:not(:disabled) { background: var(--accent); }
+.bill-quantity-control button:disabled { cursor: not-allowed; opacity: .45; }
+.bill-quantity-control .bill-quantity-input { width: 56px; }
 .invoice-products-card .bill-products-table tr:last-child td { border-bottom: 0; }
 .invoice-empty-products { margin: 14px 0 0; color: #7b8797; font-size: 13px; text-align: center; }
 
@@ -969,6 +977,9 @@ select::-webkit-scrollbar {
 .invoice-save-button { border: 1px solid #d71920; background: #db1d23; color: #fff; }
 .invoice-save-button:hover { background: #bd151b; }
 .invoice-save-button small { color: #ffe5e5; }
+.invoice-save-button:disabled { cursor: wait; opacity: .82; }
+.invoice-loading-icon { animation: invoice-loading-spin .9s linear infinite; }
+@keyframes invoice-loading-spin { to { transform: rotate(360deg); } }
 .invoice-whatsapp-button { display: flex; align-items: center; gap: 12px; width: 100%; margin-top: 12px; padding: 12px 14px; border: 1px solid #16873e; border-radius: 7px; background: #1fa855; color: #fff; text-align: left; cursor: pointer; }
 .invoice-whatsapp-button:hover { background: #16873e; }
 .invoice-whatsapp-button small { color: #dff8e8; }
@@ -1149,6 +1160,8 @@ select::-webkit-scrollbar {
   gap: 8px;
   margin-top: 8px;
 }
+.product-popup-close { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--color-muted); font-size: 23px; line-height: 1; cursor: pointer; }
+.product-popup-close:hover { background: var(--background-primary); color: var(--color-primary); }
 
 .product-popup input:focus,
 .product-popup select:focus {

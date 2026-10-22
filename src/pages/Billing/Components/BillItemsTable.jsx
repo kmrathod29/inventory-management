@@ -20,7 +20,6 @@ export function BillItemsTable({
   onChangeQty,
   onSetQty,
   products = [],
-  categoryHsnCodes = {},
 }) {
   const rowRefs = useRef([]);
 
@@ -82,7 +81,6 @@ export function BillItemsTable({
           <th>Sr No.</th>
           <th>Image</th>
           <th>Product Name</th>
-          <th>HSN</th>
           <th>Qty</th>
           <th>Price</th>
           <th>Subtotal</th>
@@ -100,7 +98,6 @@ export function BillItemsTable({
               tabIndex={i === selectedIndex ? 0 : -1}
               className={`bill-item-row ${i === selectedIndex ? "selected" : ""}`}
               onClick={() => setSelectedIndex(i)}
-              onDoubleClick={() => isEditing && onEdit(i)}
               onKeyDown={(e) => handleRowKeyDown(e, i)}
             >
               <td>{i + 1}</td>
@@ -111,19 +108,30 @@ export function BillItemsTable({
                 />
               </td>
               <td>{p.productName}</td>
-              <td>{p.hsCode || categoryHsnCodes[p.category] || "—"}</td>
               <td>
                 {isEditing ? (
-                  <input
-                    className="bill-quantity-input"
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={p.quantity}
-                    aria-label={`Quantity for ${p.productName}`}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={(e) => onSetQty?.(i, e.target.value)}
-                  />
+                  <div className="bill-quantity-control" onClick={(event) => event.stopPropagation()}>
+                    <button
+                      type="button"
+                      aria-label={`Decrease quantity for ${p.productName}`}
+                      onClick={() => onChangeQty(i, -1)}
+                      disabled={Number(p.quantity) <= 1}
+                    >−</button>
+                    <input
+                      className="bill-quantity-input"
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={p.quantity}
+                      aria-label={`Quantity for ${p.productName}`}
+                      onChange={(e) => onSetQty?.(i, e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      aria-label={`Increase quantity for ${p.productName}`}
+                      onClick={() => onChangeQty(i, 1)}
+                    >+</button>
+                  </div>
                 ) : (
                   p.quantity
                 )}

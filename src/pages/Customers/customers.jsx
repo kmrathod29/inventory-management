@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDataChanged } from "../../hooks/useDataChanged";
+import { useToast } from "../../hooks/ToastContext";
 import { useResolvedImage } from "../../hooks/resolvedImage.js";
 import { formatCurrency } from "../../utils/regional";
 import "./customers.css";
@@ -44,18 +45,21 @@ export function CustomersPage() {
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
+  const [savingNotes, setSavingNotes] = useState(false);
+  const showToast = useToast();
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     const [customerData, productData] = await Promise.all([window.db.getCustomers(), window.db.getProducts()]);
     setCustomers(customerData || []);
     setProducts(productData || []);
-  }
+    return customerData || [];
+  }, []);
 
   useEffect(() => {
     // Initial data is loaded from the Electron database after mount.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh().catch(() => {});
-  }, []);
+  }, [refresh]);
   useDataChanged(() => { refresh().catch(() => {}); });
 
   const summaries = useMemo(() => customers.map((customer) => customerSummary(customer, products)), [customers, products]);
@@ -95,18 +99,50 @@ export function CustomersPage() {
           </tbody>
         </table>
       </section>
-      {selected && <CustomerProfile customer={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <CustomerProfile
+          key={`${selected.id}:${selected.notes || ""}`}
+          customer={selected}
+          savingNotes={savingNotes}
+          onClose={() => setSelected(null)}
+          onSaveNotes={async (notes) => {
+            setSavingNotes(true);
+            try {
+              await window.db.editCustomer(selected.id, { ...selected, notes });
+              const updatedCustomers = await refresh();
+              setSelected(updatedCustomers.find((customer) => customer.id === selected.id) || null);
+              showToast("Customer notes saved.", "success");
+            } catch (error) {
+              showToast(error?.message || "Could not save customer notes.", "error");
+            } finally {
+              setSavingNotes(false);
+            }
+          }}
+        />
+      )}
     </main>
   );
 }
 
-function CustomerProfile({ customer, onClose }) {
+function CustomerProfile({ customer, onClose, onSaveNotes, savingNotes }) {
+  const [notes, setNotes] = useState(customer.notes || "");
+
   return (
     <div className="customer-modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section className="customer-profile" role="dialog" aria-modal="true" aria-labelledby="customer-profile-title" onMouseDown={(event) => event.stopPropagation()}>
         <button type="button" className="customer-modal-close" onClick={onClose} aria-label="Close customer profile"><i className="ti ti-x" /></button>
         <header className="customer-profile-header"><CustomerAvatar name={customer.name} /><div><p className="customers-kicker">CUSTOMER PROFILE</p><h2 id="customer-profile-title">{customer.name}</h2><p>{customer.phone || "Phone not added"}</p></div></header>
-        <div className="customer-details"><span><small>Address</small><strong>{customer.address || "Not added"}</strong></span><span><small>PAN</small><strong>{customer.pan || "Not added"}</strong></span><span><small>Notes</small><strong>{customer.notes || "No notes yet"}</strong></span></div>
+        <div className="customer-details"><span><small>Address</small><strong>{customer.address || "Not added"}</strong></span><span><small>PAN</small><strong>{customer.pan || "Not added"}</strong></span></div>
+        <label className="customer-notes-editor">
+          <span>Customer notes</span>
+          <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Add notes about this customer..." />
+        </label>
+        <div className="customer-notes-actions">
+          <button type="button" className="customer-notes-save" onClick={() => onSaveNotes(notes)} disabled={savingNotes || notes === (customer.notes || "")}>
+            <i className="ti ti-device-floppy" aria-hidden="true" />
+            <span>{savingNotes ? "Saving..." : "Save Notes"}</span>
+          </button>
+        </div>
         <div className="customer-profile-stats"><div><small>Total purchased</small><strong>{formatCurrency(customer.totalPurchased)}</strong><i className="ti ti-chart-donut" /></div><div><small>Total bills</small><strong>{customer.totalBills}</strong><i className="ti ti-receipt" /></div></div>
         <div className="customer-products-heading"><div><p className="customers-kicker">PURCHASE HISTORY</p><h3>Products purchased</h3></div><span>{customer.products.length} products</span></div>
         <div className="customer-product-grid">

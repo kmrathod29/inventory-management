@@ -143,7 +143,6 @@ export function InventoryProductsTable({ products, onRefresh, search, category, 
               <th>Image</th>
               <th onClick={() => sortBy("name")}>Product Name <span>↕</span></th>
               <th onClick={() => sortBy("category")}>Category <span>↕</span></th>
-              <th onClick={() => sortBy("unit")}>Unit <span>↕</span></th>
               <th onClick={() => sortBy("selling")}>Selling Price (₹) <span>↕</span></th>
               <th onClick={() => sortBy("stock")}>Stock Qty. <span>↕</span></th>
               <th onClick={() => sortBy("status")}>Status <span>↕</span></th>
@@ -157,7 +156,6 @@ export function InventoryProductsTable({ products, onRefresh, search, category, 
                 <td><span className="inventory-product-image"><ProductImage product={product} /></span></td>
                 <td><strong>{product.name}</strong><small>SKU: {product.sku_code || product.id.slice(0, 7).toUpperCase()}</small></td>
                 <td>{product.category}</td>
-                <td><span className="inventory-unit-badge">{product.unit}</span></td>
                 <td>{formatCurrency(product.selling)}</td>
                 <td>{product.stock}</td>
                 <td><span className={`inventory-status inventory-status-${product.status.toLowerCase().replaceAll(" ", "-")}`}>{product.status}</span></td>
@@ -173,7 +171,7 @@ export function InventoryProductsTable({ products, onRefresh, search, category, 
                 </td>
               </tr>
             ))}
-            {visible.length === 0 && <tr><td colSpan="9" className="inventory-empty-row">No products match the current filters.</td></tr>}
+            {visible.length === 0 && <tr><td colSpan="8" className="inventory-empty-row">No products match the current filters.</td></tr>}
           </tbody>
         </table>
       </div>

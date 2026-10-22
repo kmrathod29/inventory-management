@@ -237,6 +237,7 @@ export const AddProductPanel = forwardRef(function AddProductPanel(
           <p className="section-label">
             {isEdit ? "Edit Product" : "Add Product"}
           </p>
+          <button type="button" className="product-popup-close" onClick={onClose} aria-label="Close">×</button>
           <div className="kbd-hint-bar">
             <span>
               <kbd>↑</kbd>

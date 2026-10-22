@@ -67,8 +67,10 @@ export function BillDialog({
   const [invoiceErrors, setInvoiceErrors] = useState({});
   const [isEditing, setIsEditing] = useState(isNew || startEditing || !asPage);
   const [isSaving, setIsSaving] = useState(false);
+  const [printStatus, setPrintStatus] = useState("");
   const [isGstinLookupLoading, setIsGstinLookupLoading] = useState(false);
   const savedInvoiceRef = useRef(null);
+  const printInProgressRef = useRef(false);
 
   const [showPanel, setShowPanel] = useState(false);
   const [panelInitial, setPanelInitial] = useState(null); // { item, editIndex }
@@ -461,8 +463,13 @@ export function BillDialog({
   const handlePrint = () => window.print();
 
   async function saveAndPrint() {
-    if (!(await handleSave({ keepOpen: true }))) return;
+    if (printInProgressRef.current) return;
+    printInProgressRef.current = true;
+    setPrintStatus("saving");
     try {
+      await new Promise((resolve) => window.requestAnimationFrame(resolve));
+      if (!(await handleSave({ keepOpen: true }))) return;
+      setPrintStatus("printing");
       const files = await window.db.previewInvoice(savedInvoiceRef.current);
       if (!files) return;
       showToast("Invoice preview opened. Print it from the preview window.", "success");
@@ -472,6 +479,9 @@ export function BillDialog({
         error?.message || "Bill was saved, but the invoice PDF could not be created.",
         "error",
       );
+    } finally {
+      printInProgressRef.current = false;
+      setPrintStatus("");
     }
   }
 
@@ -886,9 +896,12 @@ export function BillDialog({
                 <label htmlFor="bill-grand-total">Grand Total</label>
                 <NumericMathInput id="bill-grand-total" className="invoice-discount-input" value={billTotal} onChange={setGrandTotal} disabled={locked} placeholder="0.00" />
               </div>
-              <button className="invoice-save-button" type="button" onClick={saveAndPrint} disabled={isSaving || locked}>
-                <i className="ti ti-save" aria-hidden="true" />
-                <span><strong>{isSaving ? "Saving..." : "Save and Print"}</strong><small>Save bill and print invoice</small></span>
+              <button className="invoice-save-button" type="button" onClick={saveAndPrint} disabled={isSaving || Boolean(printStatus) || locked} aria-live="polite">
+                <i className={`ti ${printStatus ? "ti-loader-2 invoice-loading-icon" : "ti-save"}`} aria-hidden="true" />
+                <span>
+                  <strong>{printStatus === "saving" ? "Saving bill..." : printStatus === "printing" ? "Preparing invoice..." : "Save and Print"}</strong>
+                  <small>{printStatus === "printing" ? "Please wait while the invoice is generated" : "Save bill and print invoice"}</small>
+                </span>
               </button>
               <button className="invoice-whatsapp-button" type="button" onClick={shareOnWhatsApp} disabled={locked}>
                 <i className="ti ti-brand-whatsapp" aria-hidden="true" />

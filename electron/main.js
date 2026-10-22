@@ -5,9 +5,12 @@ import path from "path";
 import fs from "node:fs";
 import { Buffer } from "node:buffer";
 import { createRequire } from "node:module";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import { pathToFileURL } from "url";
+import {
+  convertDocxToPdf,
+  stopWordPdfWorker,
+  warmupWordPdfWorker,
+} from "./wordPdfWorker.js";
 import {
   addProduct,
   getProducts,
@@ -83,7 +86,6 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 const AdmZip = require("adm-zip");
-const execFileAsync = promisify(execFile);
 
 const TITLEBAR_HEIGHT = 40;
 const OVERLAY_HEIGHT = TITLEBAR_HEIGHT - 1; // 39, so native buttons don't cover the border
@@ -100,6 +102,7 @@ const iconPath = app.isPackaged
   : path.join(app.getAppPath(), "build", "icon.ico");
 
 function restartApplication() {
+  stopWordPdfWorker();
   for (const window of BrowserWindow.getAllWindows()) window.destroy();
   app.relaunch();
   app.exit(0);
@@ -330,34 +333,6 @@ function fillInvoiceTemplate(invoice) {
   return zip;
 }
 
-function powershellPath(value) {
-  return `'${String(value).replace(/'/g, "''")}'`;
-}
-
-async function convertDocxToPdf(docxPath, pdfPath) {
-  if (process.platform !== "win32") {
-    throw new Error("DOCX to PDF conversion currently requires Microsoft Word on Windows.");
-  }
-
-  const script = `
-$ErrorActionPreference = 'Stop'
-$word = New-Object -ComObject Word.Application
-$word.Visible = $false
-$word.DisplayAlerts = 0
-$document = $null
-try {
-  $document = $word.Documents.Open(${powershellPath(docxPath)}, $false, $true, $false)
-  $document.ExportAsFixedFormat(${powershellPath(pdfPath)}, 17)
-} finally {
-  if ($document) { $document.Close($false) }
-  if ($word) { $word.Quit() }
-  if ($document) { [System.Runtime.InteropServices.Marshal]::ReleaseComObject($document) | Out-Null }
-  if ($word) { [System.Runtime.InteropServices.Marshal]::ReleaseComObject($word) | Out-Null }
-}
-`;
-  await execFileAsync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", script]);
-}
-
 let mainWindow;
 
 function createWindow() {
@@ -381,6 +356,13 @@ function createWindow() {
     },
   });
   mainWindow = win;
+  if (process.platform === "win32") {
+    win.webContents.once("did-finish-load", () => {
+      warmupWordPdfWorker().catch((error) => {
+        console.warn("Invoice PDF converter warm-up failed; it will retry when needed.", error);
+      });
+    });
+  }
   const isExternalHttpUrl = (url) =>
     url.startsWith("http://") || url.startsWith("https://");
 
@@ -759,6 +741,8 @@ app.whenReady().then(() => {
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
+
+app.on("before-quit", stopWordPdfWorker);
 
 app.on("second-instance", () => {
   const [window] = BrowserWindow.getAllWindows();
