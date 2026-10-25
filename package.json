@@ -1,6 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "inventory-manager",
+  "description": "Offline inventory, billing and business management application for Dipali Traders",
+  "author": "Midnight Sphere",
   "private": true,
   "version": "3.0.3",
   "type": "module",
