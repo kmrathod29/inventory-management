@@ -84,6 +84,7 @@
 .dashboard-action-menu { position: relative; display: inline-block; }
 .dashboard-action-menu > button { display: grid; width: 32px; height: 30px; place-items: center; border: 1px solid #d8e0e8; border-radius: 5px; background: #fff; color: #344155; cursor: pointer; }
 .dashboard-action-popover { position: absolute; z-index: 10; top: calc(100% + 4px); right: 0; display: grid; min-width: 105px; padding: 4px; border: 1px solid #d8e0e8; border-radius: 6px; background: #fff; box-shadow: 0 4px 14px rgba(25, 40, 60, .15); }
+.dashboard-action-popover-portal { position: fixed; z-index: 1000; top: 0; right: auto; }
 .dashboard-action-popover button { padding: 7px 9px; border: 0; border-radius: 4px; background: transparent; color: #344155; text-align: left; font-size: 11px; cursor: pointer; }
 .dashboard-action-popover button:hover { background: #f0f4f8; }
 .dashboard-due-label { display: block; margin-top: 4px; color: #b42318; font-size: 11px; font-weight: 600; }
