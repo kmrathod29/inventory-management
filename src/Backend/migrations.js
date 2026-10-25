@@ -266,6 +266,15 @@ const migrations = [
       `);
     },
   },
+  {
+    version: 12,
+    up(db) {
+      const billColumns = db.prepare("PRAGMA table_info(bills)").all();
+      if (billColumns.length && !billColumns.some((column) => column.name === "pdf_path")) {
+        db.exec("ALTER TABLE bills ADD COLUMN pdf_path TEXT");
+      }
+    },
+  },
 ];
 
 export function migrateDatabase(db) {

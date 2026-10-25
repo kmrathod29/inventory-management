@@ -61,6 +61,8 @@ import {
   addBillToCustomer,
   editCustomerBill,
   updateBillPayment,
+  updateBillPdfPath,
+  getBillPdfPath,
   getAppSettings,
   saveGstinApiKey,
   lookupGstin,
@@ -663,36 +665,98 @@ app.whenReady().then(() => {
     process.nextTick(restartApplication);
     return settings;
   });
-  ipcMain.handle("invoice:generateFiles", async (event, invoice) => {
-    const result = await dialog.showSaveDialog(BrowserWindow.fromWebContents(event.sender), {
-      title: "Save invoice PDF",
-      defaultPath: `Invoice-${invoice?.invoiceNumber || new Date().toISOString().slice(0, 10)}.pdf`,
-      filters: [{ name: "PDF document", extensions: ["pdf"] }],
-    });
-    if (result.canceled || !result.filePath) return null;
-
-    const pdfPath = result.filePath.toLowerCase().endsWith(".pdf")
-      ? result.filePath
-      : `${result.filePath}.pdf`;
-    const docxPath = pdfPath.replace(/\.pdf$/i, ".docx");
-    fillInvoiceTemplate(invoice || {}).writeZip(docxPath);
-    await convertDocxToPdf(docxPath, pdfPath);
-    await shell.openPath(pdfPath);
-    return { pdfPath, docxPath };
-  });
-  ipcMain.handle("invoice:preview", async (_, invoice) => {
-    const fileName = `Invoice-${invoice?.invoiceNumber || "preview"}-${Date.now()}`;
-    const tempDirectory = app.getPath("temp");
-    const pdfPath = path.join(tempDirectory, `${fileName}.pdf`);
-    const docxPath = path.join(tempDirectory, `${fileName}.docx`);
-
-    fillInvoiceTemplate(invoice || {}).writeZip(docxPath);
-    await convertDocxToPdf(docxPath, pdfPath);
-    const openError = await shell.openPath(pdfPath);
-    if (openError) {
-      throw new Error(`Could not open the invoice preview: ${openError}`);
+  ipcMain.handle("invoice:savePdf", async (event, billId, invoice, openAfterSave = false) => {
+    const owner = BrowserWindow.fromWebContents(event.sender);
+    const safePart = (value, fallback) => String(value || fallback)
+      .normalize("NFKC").replace(/[<>:"/\\|?*]/g, "_").replace(/\p{Cc}/gu, "_").replace(/[. ]+$/g, "").trim().slice(0, 80) || fallback;
+    const invoiceNo = safePart(invoice?.invoiceNumber || `INV-${billId}`, `INV-${billId}`);
+    const customer = safePart(invoice?.customerName || invoice?.buyerName, "Customer");
+    const fileName = `${invoiceNo}_${customer}.pdf`;
+    const lastDirFile = path.join(app.getPath("userData"), "invoice-save-location.json");
+    const readLastDirectory = () => {
+      try { return JSON.parse(fs.readFileSync(lastDirFile, "utf8")).directory || ""; } catch { return ""; }
+    };
+    const showSaveAs = async (defaultPath) => {
+      const result = await dialog.showSaveDialog(owner, {
+        title: "Save invoice PDF", defaultPath,
+        filters: [{ name: "PDF document", extensions: ["pdf"] }],
+      });
+      if (result.canceled || !result.filePath) return null;
+      return result.filePath.toLowerCase().endsWith(".pdf") ? result.filePath : `${result.filePath}.pdf`;
+    };
+    let targetPath = getBillPdfPath(billId);
+    if (targetPath && fs.existsSync(targetPath)) {
+      const choice = await dialog.showMessageBox(owner, {
+        type: "question", title: "Invoice PDF already exists",
+        message: `A PDF is already saved for this invoice:\n${targetPath}`,
+        buttons: ["Open PDF", "Replace", "Save As / Choose Another Location", "Cancel"],
+        cancelId: 3, defaultId: 0, noLink: true,
+      });
+      if (choice.response === 0) {
+        const error = await shell.openPath(targetPath);
+        if (error) throw new Error(`Could not open the invoice PDF: ${error}`);
+        return { pdfPath: targetPath, opened: true, saved: false };
+      }
+      if (choice.response === 3) return null;
+      if (choice.response === 1) {
+        const confirmation = await dialog.showMessageBox(owner, {
+          type: "warning", title: "Replace invoice PDF?",
+          message: `Replace the existing file?\n${targetPath}`,
+          buttons: ["Replace PDF", "Cancel"], cancelId: 1, defaultId: 1, noLink: true,
+        });
+        if (confirmation.response !== 0) return null;
+      } else {
+        targetPath = await showSaveAs(path.join(readLastDirectory() || path.dirname(targetPath), fileName));
+        if (!targetPath) return null;
+      }
+    } else {
+      targetPath = await showSaveAs(targetPath || path.join(readLastDirectory() || app.getPath("documents"), fileName));
+      if (!targetPath) return null;
     }
-    return { pdfPath, docxPath };
+
+    const stagingPath = path.join(path.dirname(targetPath), `.${path.basename(targetPath, ".pdf")}.${Date.now()}.tmp.pdf`);
+    const docxPath = path.join(app.getPath("temp"), `stockwise-invoice-${billId}-${Date.now()}.docx`);
+    const backupPath = `${targetPath}.stockwise-backup`;
+    let backupCreated = false;
+    let installed = false;
+    try {
+      fillInvoiceTemplate(invoice || {}).writeZip(docxPath);
+      await convertDocxToPdf(docxPath, stagingPath);
+      if (!fs.existsSync(stagingPath) || fs.statSync(stagingPath).size === 0) throw new Error("The PDF generator returned an empty file.");
+      if (fs.existsSync(targetPath)) {
+        fs.renameSync(targetPath, backupPath);
+        backupCreated = true;
+        fs.renameSync(stagingPath, targetPath);
+        installed = true;
+      } else {
+        fs.renameSync(stagingPath, targetPath);
+        installed = true;
+      }
+      updateBillPdfPath(billId, targetPath);
+      if (backupCreated) fs.rmSync(backupPath, { force: true });
+      try {
+        fs.mkdirSync(app.getPath("userData"), { recursive: true });
+        fs.writeFileSync(path.join(app.getPath("userData"), "invoice-save-location.json"), JSON.stringify({ directory: path.dirname(targetPath) }), "utf8");
+      } catch { /* Remembering the folder is best effort and must not invalidate a saved invoice. */ }
+    } catch (error) {
+      if (backupCreated && fs.existsSync(backupPath)) {
+        try {
+          if (installed && fs.existsSync(targetPath)) fs.rmSync(targetPath, { force: true });
+          fs.renameSync(backupPath, targetPath);
+        } catch { /* Keep the recovery copy beside the target if restoration fails. */ }
+      } else if (installed) {
+        try { fs.rmSync(targetPath, { force: true }); } catch { /* Best effort cleanup. */ }
+      }
+      try { fs.rmSync(stagingPath, { force: true }); } catch { /* Best effort cleanup. */ }
+      throw new Error(`Could not save invoice PDF: ${error.message}`, { cause: error });
+    } finally {
+      try { fs.rmSync(docxPath, { force: true }); } catch { /* Best effort cleanup. */ }
+    }
+    if (openAfterSave) {
+      const error = await shell.openPath(targetPath);
+      if (error) throw new Error(`PDF saved, but could not open it: ${error}`);
+    }
+    return { pdfPath: targetPath, opened: openAfterSave, saved: true };
   });
   ipcMain.handle("dialog:pickExcelFile", async () => {
     const result = await dialog.showOpenDialog({

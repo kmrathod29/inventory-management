@@ -103,6 +103,7 @@ function getSales() {
       billType: bill.bill_type || "default",
       panNumber: bill.pan_number || "",
       billNumber: bill.bill_number || "",
+      pdfPath: bill.pdf_path || "",
       invoiceData,
       customer: {
         id: customer.id,

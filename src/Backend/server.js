@@ -72,6 +72,8 @@ export const {
   deleteCustomer, addCustomerBill, addBillToCustomer, deleteBill, editCustomer, editBill,
   editCustomerBill,
   updateBillPayment,
+  updateBillPdfPath,
+  getBillPdfPath,
 } = services[3];
 export const {
   addExpense, getExpenses, getReportData, deleteExpense, getSales, getNetPosition,

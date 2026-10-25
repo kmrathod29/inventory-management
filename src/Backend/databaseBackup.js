@@ -11,7 +11,7 @@ const requiredColumns = {
   customers: ["id", "name", "phone", "address", "pan", "notes"],
   expenses: ["id", "date", "label", "amount", "type", "invoice_data"],
   expense_items: ["id", "expense_id", "product_name", "base", "bucket_size", "quantity", "cost_price"],
-  bills: ["id", "customer_id", "date", "payment_method", "total_purchased", "amount_paid", "amount_due", "status", "bill_type", "pan_number", "bill_number", "invoice_data"],
+  bills: ["id", "customer_id", "date", "payment_method", "total_purchased", "amount_paid", "amount_due", "status", "bill_type", "pan_number", "bill_number", "invoice_data", "pdf_path"],
   bill_activity: ["id", "bill_id", "type", "date", "amount", "payment_method", "note", "created_at"],
   bill_items: ["id", "bill_id", "product_name", "product_sku_code", "base", "bucket_size", "quantity", "price_at_sale", "cost_price"],
 };

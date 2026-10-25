@@ -113,6 +113,7 @@ export function Billing() {
       panNumber: bill.pan_number || "",
       billNumber: bill.bill_number || "",
       invoiceData: bill.invoice_data ? JSON.parse(bill.invoice_data) : null,
+      pdfPath: bill.pdf_path || "",
       invoiceNumber: bill.invoice_data ? JSON.parse(bill.invoice_data).invoiceNumber || "" : "",
       status: bill.status,
       products: bill.products,

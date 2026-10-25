@@ -70,6 +70,7 @@ export function BillDialog({
   const [printStatus, setPrintStatus] = useState("");
   const [isGstinLookupLoading, setIsGstinLookupLoading] = useState(false);
   const savedInvoiceRef = useRef(null);
+  const savedBillIdRef = useRef(bill.id || null);
   const printInProgressRef = useRef(false);
 
   const [showPanel, setShowPanel] = useState(false);
@@ -418,6 +419,7 @@ export function BillDialog({
     };
     savedInvoiceRef.current = {
       ...finalInvoice,
+      billId: savedBillIdRef.current || form.id || bill.id || null,
       date: form.date,
       customerName,
       customerAddress: form.address || "",
@@ -440,13 +442,18 @@ export function BillDialog({
 
       if (isNew) {
         if (form.customerId) {
-          await window.db.addBillToCustomer(form.customerId, customer, billPayload);
+          const created = await window.db.addBillToCustomer(form.customerId, customer, billPayload);
+          savedBillIdRef.current = created?.billId;
         } else {
-          await window.db.addCustomerBill(customer, billPayload);
+          const created = await window.db.addCustomerBill(customer, billPayload);
+          savedBillIdRef.current = created?.billId;
         }
       } else {
         await window.db.editCustomerBill(form.customerId || bill.customerId, customer, form.id, billPayload);
+        savedBillIdRef.current = form.id || bill.id;
       }
+
+      savedInvoiceRef.current.billId = savedBillIdRef.current;
 
       setIsEditing(false);
       if (!keepOpen) onSaved?.();
@@ -462,17 +469,38 @@ export function BillDialog({
 
   const handlePrint = () => window.print();
 
-  async function saveAndPrint() {
+  async function savePdfAndFinish(openAfterSave) {
     if (printInProgressRef.current) return;
     printInProgressRef.current = true;
     setPrintStatus("saving");
     try {
       await new Promise((resolve) => window.requestAnimationFrame(resolve));
-      if (!(await handleSave({ keepOpen: true }))) return;
+      if (!savedBillIdRef.current && !(await handleSave({ keepOpen: true }))) return;
+      if (!isNew && !savedInvoiceRef.current) {
+        savedInvoiceRef.current = {
+          ...(bill.invoiceData || invoice),
+          billId: savedBillIdRef.current,
+          date: bill.date,
+          customerName: bill.name,
+          customerAddress: bill.address || "",
+          customerPan: bill.pan || bill.panNumber || "",
+          customerPhone: bill.phone || "",
+          amountPaid: bill.amountPaid,
+          amountDue: bill.amountDue,
+          products: (bill.products || []).map((item) => ({
+            ...normalizeProduct(item),
+            priceAtSale: item.priceAtSale ?? item.price_at_sale ?? 0,
+          })),
+        };
+      }
       setPrintStatus("printing");
-      const files = await window.db.previewInvoice(savedInvoiceRef.current);
+      const files = await window.db.saveInvoicePdf(
+        savedBillIdRef.current,
+        savedInvoiceRef.current,
+        openAfterSave,
+      );
       if (!files) return;
-      showToast("Invoice preview opened. Print it from the preview window.", "success");
+      showToast(files.opened ? "Invoice PDF opened." : `Invoice PDF saved: ${files.pdfPath}`, "success");
       onSaved?.();
     } catch (error) {
       showToast(
@@ -484,6 +512,9 @@ export function BillDialog({
       setPrintStatus("");
     }
   }
+
+  const saveAndPrint = () => savePdfAndFinish(true);
+  const saveInvoice = () => savePdfAndFinish(false);
 
   function shareOnWhatsApp() {
     if (!isOnline) {
@@ -896,7 +927,7 @@ export function BillDialog({
                 <label htmlFor="bill-grand-total">Grand Total</label>
                 <NumericMathInput id="bill-grand-total" className="invoice-discount-input" value={billTotal} onChange={setGrandTotal} disabled={locked} placeholder="0.00" />
               </div>
-              <button className="invoice-save-button" type="button" onClick={saveAndPrint} disabled={isSaving || Boolean(printStatus) || locked} aria-live="polite">
+              <button className="invoice-save-button" type="button" onClick={saveAndPrint} disabled={isSaving || Boolean(printStatus)} aria-live="polite">
                 <i className={`ti ${printStatus ? "ti-loader-2 invoice-loading-icon" : "ti-save"}`} aria-hidden="true" />
                 <span>
                   <strong>{printStatus === "saving" ? "Saving bill..." : printStatus === "printing" ? "Preparing invoice..." : "Save and Print"}</strong>
@@ -907,8 +938,8 @@ export function BillDialog({
                 <i className="ti ti-brand-whatsapp" aria-hidden="true" />
                 <span><strong>Send on WhatsApp</strong><small>Open the invoice message for this customer</small></span>
               </button>
-              <button className="invoice-secondary-button" type="button" onClick={handleSave} disabled={isSaving || locked}>
-                <i className="ti ti-file-description" aria-hidden="true" /><span><strong>Save</strong><small>Save bill and deduct stock</small></span>
+              <button className="invoice-secondary-button" type="button" onClick={saveInvoice} disabled={isSaving || Boolean(printStatus)}>
+                <i className="ti ti-file-description" aria-hidden="true" /><span><strong>Save</strong><small>Save bill and invoice PDF</small></span>
               </button>
             </aside>
           </div>

@@ -164,8 +164,8 @@ contextBridge.exposeInMainWorld("db", {
     invoke("settings:setTitleBarOverlay", color, symbolColor),
   openDataDirectory: () => invoke("settings:openDataDirectory"),
   changeDataDirectory: () => invoke("settings:changeDataDirectory"),
-  generateInvoiceFiles: (invoice) => invoke("invoice:generateFiles", invoice),
-  previewInvoice: (invoice) => invoke("invoice:preview", invoice),
+  saveInvoicePdf: (billId, invoice, openAfterSave = false) =>
+    invoke("invoice:savePdf", billId, invoice, openAfterSave),
 });
 
 contextBridge.exposeInMainWorld("app", {

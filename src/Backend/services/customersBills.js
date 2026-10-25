@@ -100,8 +100,8 @@ function deleteCustomer(id) {
 function addCustomerBill(customer, bill) {
   const run = ctx.db.transaction(() => {
     const customerId = addCustomer(customer);
-    addBill(customerId, bill);
-    return customerId;
+    const billId = addBill(customerId, bill);
+    return { customerId, billId };
   });
   return run();
 }
@@ -110,10 +110,21 @@ function addBillToCustomer(customerId, customer, bill) {
   const normalizedCustomerId = Number(customerId);
   const run = ctx.db.transaction(() => {
     editCustomer(normalizedCustomerId, customer);
-    addBill(normalizedCustomerId, bill);
-    return normalizedCustomerId;
+    const billId = addBill(normalizedCustomerId, bill);
+    return { customerId: normalizedCustomerId, billId };
   });
   return run();
+}
+
+function updateBillPdfPath(billId, pdfPath) {
+  const result = ctx.db.prepare("UPDATE bills SET pdf_path = ? WHERE id = ?").run(pdfPath, billId);
+  if (result.changes === 0) throw new Error("Bill not found while saving its PDF path.");
+}
+
+function getBillPdfPath(billId) {
+  const bill = ctx.db.prepare("SELECT pdf_path FROM bills WHERE id = ?").get(billId);
+  if (!bill) throw new Error("Bill not found.");
+  return bill.pdf_path || "";
 }
 
 function deleteBill(billId) {
@@ -318,5 +329,7 @@ function getLandingPrice(productName, bucketSize, productSkuCode = "") {
     editBill,
     editCustomerBill,
     updateBillPayment,
+    updateBillPdfPath,
+    getBillPdfPath,
   };
 }
