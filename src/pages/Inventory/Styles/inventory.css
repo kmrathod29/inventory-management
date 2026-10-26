@@ -542,3 +542,37 @@
 .inventory-stock-dialog-header p, .inventory-stock-close, .inventory-stock-results small, .inventory-stock-product small, .inventory-history-product strong, .inventory-history-entry small, .inventory-add-form-subtitle, .inventory-add-field small, .inventory-optional { color: var(--muted-foreground); }
 .inventory-stock-search { border-color: var(--border); color: var(--muted-foreground); }
 .inventory-stock-result-image, .inventory-history-product > span, .inventory-image-preview { background: var(--muted); border-color: var(--border); }
+
+/* Keep remaining table controls legible across every theme and mode. */
+.inventory-page { color: var(--foreground); }
+.inventory-action-menu { background: var(--popover); color: var(--popover-foreground); border-color: var(--border); }
+.inventory-action-menu button { color: var(--popover-foreground); }
+.inventory-action-menu button:hover { background: var(--accent); color: var(--accent-foreground); }
+.inventory-action-menu i { color: inherit; }
+.inventory-action-menu .inventory-action-danger { color: var(--destructive); border-color: var(--border); }
+.inventory-action-menu .inventory-action-danger i { color: var(--destructive); }
+.inventory-pagination button { background: var(--card); color: var(--foreground); border-color: var(--border); }
+.inventory-pagination button.active { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
+.inventory-pagination button:disabled { background: var(--muted); color: var(--muted-foreground); }
+.inventory-controls select, .inventory-list-search input { color: var(--foreground); }
+.inventory-list-search input::placeholder { color: var(--muted-foreground); opacity: 1; }
+
+/* Match the dashboard action control so the trigger remains visible on dark themes. */
+.inventory-actions-cell .inventory-more-button {
+  display: inline-grid;
+  width: 32px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 18px;
+  line-height: 1;
+}
+.inventory-actions-cell .inventory-more-button:hover,
+.inventory-actions-cell .inventory-more-button:focus-visible {
+  border-color: var(--ring);
+  background: var(--accent);
+  color: var(--accent-foreground);
+}

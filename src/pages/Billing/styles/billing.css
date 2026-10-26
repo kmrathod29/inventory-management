@@ -810,6 +810,15 @@ select::-webkit-scrollbar {
 .invoice-grand-total, .invoice-payment-line { border-color: var(--border); }
 .invoice-add-product:hover, .invoice-secondary-button:hover, .invoice-cancel-button:hover { background: var(--accent); }
 .invoice-field input:focus, .invoice-discount-input:focus { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 20%, transparent); }
+.invoice-products-card .bill-products-table td { color: var(--foreground); }
+.offline-status { background: color-mix(in srgb, var(--success) 12%, var(--card)); color: var(--foreground); }
+.offline-status strong { color: var(--foreground); }
+.offline-status small { color: var(--muted-foreground); }
+.offline-status.is-online { background: color-mix(in srgb, var(--success) 12%, var(--card)); }
+.offline-status:not(.is-online) { background: color-mix(in srgb, var(--destructive) 10%, var(--card)); }
+.invoice-products-card .bill-products-table tbody tr:hover { background: color-mix(in srgb, var(--primary) 8%, var(--card)); }
+.invoice-products-card .bill-products-table td, .invoice-products-card .bill-products-table th { border-color: var(--border); }
+.invoice-empty-products { color: var(--muted-foreground); }
 
 /* New bill customer controls share one border and a themed, anchored list. */
 .invoice-meta-card { position: relative; z-index: 5; overflow: visible; }
@@ -1568,3 +1577,14 @@ kbd {
 .invoice-products-card .bill-products-table td, .invoice-summary-line, .invoice-grand-total, .invoice-payment-line { border-color: var(--border); }
 .invoice-add-product:hover, .invoice-secondary-button:hover, .invoice-cancel-button:hover { background: var(--accent); }
 .invoice-field input:focus, .invoice-discount-input:focus { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 20%, transparent); }
+
+/* Final theme pass for invoice status and line items. */
+.invoice-products-card .bill-products-table td { color: var(--foreground); }
+.offline-status { background: color-mix(in srgb, var(--success) 12%, var(--card)); color: var(--foreground); }
+.offline-status strong { color: var(--foreground); }
+.offline-status small { color: var(--muted-foreground); }
+.offline-status.is-online { background: color-mix(in srgb, var(--success) 12%, var(--card)); }
+.offline-status:not(.is-online) { background: color-mix(in srgb, var(--destructive) 10%, var(--card)); }
+.invoice-products-card .bill-products-table tbody tr:hover { background: color-mix(in srgb, var(--primary) 8%, var(--card)); }
+.invoice-products-card .bill-products-table td, .invoice-products-card .bill-products-table th { border-color: var(--border); }
+.invoice-empty-products { color: var(--muted-foreground); }

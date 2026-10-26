@@ -1,14 +1,12 @@
-/* About section.
-   Accent colors are fixed here on purpose: the global --accent variable
-   in the app is a light tone, which made the version and icon hard to see. */
+/* About section follows the active application theme. */
 
 .about-card {
-  --about-accent: #c8643f;
-  --about-accent-soft: #f6e9e3;
-  --about-text: var(--text, #3a2a20);
-  --about-muted: #75665c;
-  --about-border: var(--border, #e8e0d8);
-  --about-surface: var(--surface, #fffdfb);
+  --about-accent: var(--primary);
+  --about-accent-soft: color-mix(in srgb, var(--primary) 12%, var(--card));
+  --about-text: var(--foreground);
+  --about-muted: var(--muted-foreground);
+  --about-border: var(--border);
+  --about-surface: var(--card);
 
   max-width: 640px;
   margin-top: 8px;
