@@ -196,10 +196,44 @@ export function BillDialog({
   // ── line-item mutations ───────────────────────────────────────────
   function handleAddItem(item) {
     const category = item.category || products.find((product) => product.sku_code === item.skuCode)?.category || "General";
-    setForm((f) => ({
-      ...f,
-      products: [...f.products, { ...item, category, hsCode: item.hsCode || categoryHsnCodes[category] || "", purchaseDate: item.purchaseDate || f.date || getBusinessDateISO() }],
-    }));
+    const newItem = {
+      ...item,
+      category,
+      hsCode: item.hsCode || categoryHsnCodes[category] || "",
+      purchaseDate: item.purchaseDate || form.date || getBusinessDateISO(),
+    };
+    const normalizeText = (value) => String(value || "").trim().toLocaleLowerCase();
+    const normalizeNumber = (value) => {
+      const number = Number(value);
+      return Number.isFinite(number) ? number : normalizeText(value);
+    };
+    const sameBillLine = (existing) => {
+      const existingSku = normalizeText(existing.skuCode ?? existing.product_sku_code);
+      const newSku = normalizeText(newItem.skuCode ?? newItem.product_sku_code);
+      const sameProduct = existingSku || newSku
+        ? Boolean(existingSku && newSku && existingSku === newSku)
+        : normalizeText(existing.productName ?? existing.product_name) === normalizeText(newItem.productName);
+      const existingSize = normalizeNumber(existing.bucketSize ?? existing.bucket_size);
+      const newSize = normalizeNumber(newItem.bucketSize ?? newItem.bucket_size);
+      const sameSize = existingSize === newSize;
+      const existingPrice = Number(existing.priceAtSale ?? existing.price_at_sale);
+      const newPrice = Number(newItem.priceAtSale ?? newItem.price_at_sale);
+      return sameProduct
+        && normalizeText(existing.base) === normalizeText(newItem.base)
+        && sameSize
+        && Math.abs(existingPrice - newPrice) < 0.000001;
+    };
+
+    setForm((current) => {
+      const matchIndex = current.products.findIndex(sameBillLine);
+      if (matchIndex < 0) return { ...current, products: [...current.products, newItem] };
+      return {
+        ...current,
+        products: current.products.map((existing, index) => index === matchIndex
+          ? { ...existing, quantity: String((Number(existing.quantity) || 0) + (Number(newItem.quantity) || 0)) }
+          : existing),
+      };
+    });
   }
   function handleReplaceItem(index, item) {
     setForm((f) => ({
