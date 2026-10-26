@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useToast } from "../../../hooks/ToastContext";
 import { useConfirm } from "../../../hooks/useConfirm";
 import { AddProductPanel } from "./AddProductPanel";
@@ -76,6 +76,10 @@ export function BillDialog({
   const [showPanel, setShowPanel] = useState(false);
   const [panelInitial, setPanelInitial] = useState(null); // { item, editIndex }
   const [productQuery, setProductQuery] = useState("");
+  const [customerDropdownOpen, setCustomerDropdownOpen] = useState(false);
+  const [activeCustomerIndex, setActiveCustomerIndex] = useState(0);
+  const customerFieldRef = useRef(null);
+  const customerInputRef = useRef(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [activity, setActivity] = useState([]);
 
@@ -85,6 +89,21 @@ export function BillDialog({
 
   const locked = !isEditing;
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+  const filteredCustomers = useMemo(() => {
+    const query = String(form.name || "").trim().toLocaleLowerCase();
+    return query
+      ? customers.filter((customer) => String(customer.name || "").toLocaleLowerCase().includes(query))
+      : customers;
+  }, [customers, form.name]);
+
+  useEffect(() => {
+    if (!customerDropdownOpen) return undefined;
+    const closeOnOutsidePointer = (event) => {
+      if (!customerFieldRef.current?.contains(event.target)) setCustomerDropdownOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    return () => document.removeEventListener("pointerdown", closeOnOutsidePointer);
+  }, [customerDropdownOpen]);
 
   async function lookupCustomerByGstin() {
     const gstin = String(invoice.buyerGstin || "").trim().toUpperCase();
@@ -777,10 +796,42 @@ export function BillDialog({
   }
 
   if (form.billType === "default") {
-    function selectCustomer(event) {
-      const customer = customers.find((item) => item.name === event.target.value);
+    function commitNewCustomerName() {
+      const name = String(form.name || "").trim();
+      if (!name) return;
+      setForm((current) => ({ ...current, customerId: undefined, name }));
+      setInvoice((current) => ({ ...current, buyerName: name }));
+      setCustomerDropdownOpen(false);
+    }
+
+    function handleCustomerNameChange(value) {
+      const exactMatch = customers.find(
+        (customer) => String(customer.name || "").trim().toLocaleLowerCase() === value.trim().toLocaleLowerCase(),
+      );
+      if (exactMatch) {
+        selectCustomer(exactMatch.name);
+        return;
+      }
+      setForm((current) => ({
+        ...current,
+        ...(current.customerId ? { phone: "", address: "", pan: "", notes: "" } : {}),
+        customerId: undefined,
+        name: value,
+      }));
+      setInvoice((current) => ({
+        ...current,
+        ...(form.customerId ? { buyerPhone: "", buyerAddress: "", buyerPan: "" } : {}),
+        buyerName: value,
+      }));
+      setActiveCustomerIndex(0);
+      setCustomerDropdownOpen(true);
+    }
+
+    function selectCustomer(name) {
+      const customer = customers.find((item) => item.name === name);
       if (!customer) {
-        setForm((current) => ({ ...current, customerId: undefined, name: event.target.value }));
+        setForm((current) => ({ ...current, customerId: undefined, name }));
+        setCustomerDropdownOpen(false);
         return;
       }
       setForm((current) => ({
@@ -799,6 +850,29 @@ export function BillDialog({
         buyerAddress: customer.address || "",
         buyerPan: customer.pan || current.buyerPan || "",
       }));
+      setCustomerDropdownOpen(false);
+    }
+
+    function handleCustomerKeyDown(event) {
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setCustomerDropdownOpen(true);
+        setActiveCustomerIndex((index) => customerDropdownOpen ? Math.min(index + 1, Math.max(0, filteredCustomers.length - 1)) : 0);
+      } else if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setCustomerDropdownOpen(true);
+        setActiveCustomerIndex((index) => customerDropdownOpen ? Math.max(index - 1, 0) : Math.max(filteredCustomers.length - 1, 0));
+      } else if (event.key === "Enter" && customerDropdownOpen && filteredCustomers[activeCustomerIndex]) {
+        event.preventDefault();
+        selectCustomer(filteredCustomers[activeCustomerIndex].name);
+      } else if (event.key === "Enter" && customerDropdownOpen && !filteredCustomers.length && form.name.trim()) {
+        event.preventDefault();
+        commitNewCustomerName();
+      } else if (event.key === "Escape" && customerDropdownOpen) {
+        event.preventDefault();
+        event.stopPropagation();
+        setCustomerDropdownOpen(false);
+      }
     }
 
     return (
@@ -836,24 +910,66 @@ export function BillDialog({
             <div className="invoice-meta-row invoice-customer-row">
               <div className="invoice-field invoice-customer-field">
                 <label htmlFor="customer-name">Customer Name</label>
-                <div className="invoice-input-with-icon">
-                  <i className="ti ti-user" aria-hidden="true" />
-                  <input
-                    id="customer-name"
-                    list="customer-options"
-                    value={form.name || ""}
-                    onChange={selectCustomer}
-                    disabled={locked}
-                    placeholder="Search or select customer..."
-                  />
+                <div className="customer-combobox" ref={customerFieldRef}>
+                  <div className="invoice-input-with-icon customer-input-control" onClick={() => { if (!locked) { customerInputRef.current?.focus(); setCustomerDropdownOpen(true); } }}>
+                    <i className="ti ti-user" aria-hidden="true" />
+                    <input
+                      ref={customerInputRef}
+                      id="customer-name"
+                      value={form.name || ""}
+                      role="combobox"
+                      aria-expanded={customerDropdownOpen}
+                      aria-controls={customerDropdownOpen ? "customer-options-list" : undefined}
+                      aria-activedescendant={customerDropdownOpen && filteredCustomers[activeCustomerIndex] ? `customer-option-${filteredCustomers[activeCustomerIndex].id}` : undefined}
+                      aria-autocomplete="list"
+                      autoComplete="off"
+                      onChange={(event) => handleCustomerNameChange(event.target.value)}
+                      onFocus={() => setCustomerDropdownOpen(true)}
+                      onKeyDown={handleCustomerKeyDown}
+                      onBlur={(event) => { if (!customerFieldRef.current?.contains(event.relatedTarget)) setCustomerDropdownOpen(false); }}
+                      disabled={locked}
+                      placeholder="Search or select customer..."
+                    />
+                    <button className="customer-dropdown-toggle" type="button" aria-label={customerDropdownOpen ? "Close customer list" : "Open customer list"} aria-expanded={customerDropdownOpen} disabled={locked} onMouseDown={(event) => event.preventDefault()} onClick={(event) => { event.stopPropagation(); setCustomerDropdownOpen((open) => !open); }}>
+                      <i className={`ti ${customerDropdownOpen ? "ti-chevron-up" : "ti-chevron-down"}`} aria-hidden="true" />
+                    </button>
+                  </div>
+                  {customerDropdownOpen && (
+                    <ul id="customer-options-list" className="customer-options-list" role="listbox" aria-label="Customers">
+                      {filteredCustomers.length > 0 ? filteredCustomers.map((customer, index) => (
+                        <li
+                          key={customer.id}
+                          id={`customer-option-${customer.id}`}
+                          role="option"
+                          aria-selected={customer.id === form.customerId}
+                          className={`${index === activeCustomerIndex ? "active" : ""}${customer.id === form.customerId ? " selected" : ""}`}
+                          onMouseDown={(event) => event.preventDefault()}
+                          onMouseEnter={() => setActiveCustomerIndex(index)}
+                          onClick={() => selectCustomer(customer.name)}
+                        >
+                          <span>{customer.name}</span>
+                          {customer.phone && <small>{customer.phone}</small>}
+                        </li>
+                      )) : form.name.trim() ? (
+                        <li
+                          className="customer-options-empty customer-create-option"
+                          role="option"
+                          aria-selected="false"
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={commitNewCustomerName}
+                        >
+                          Use “{form.name.trim()}” as a new customer
+                        </li>
+                      ) : (
+                        <li className="customer-options-empty" aria-disabled="true">No customers yet. Enter a name to add one.</li>
+                      )}
+                    </ul>
+                  )}
                 </div>
-                <datalist id="customer-options">
-                  {customers.map((customer) => <option key={customer.id} value={customer.name} />)}
-                </datalist>
               </div>
               <div className="invoice-field">
                 <label htmlFor="customer-mobile">Mobile No. <span>(Optional)</span></label>
-                <div className="invoice-input-with-icon">
+                <div className="invoice-input-with-icon mobile-input-control">
                   <i className="ti ti-phone" aria-hidden="true" />
                   <input id="customer-mobile" value={form.phone || ""} onChange={set("phone")} disabled={locked} placeholder="Enter mobile number" />
                 </div>

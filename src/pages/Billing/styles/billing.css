@@ -811,6 +811,43 @@ select::-webkit-scrollbar {
 .invoice-add-product:hover, .invoice-secondary-button:hover, .invoice-cancel-button:hover { background: var(--accent); }
 .invoice-field input:focus, .invoice-discount-input:focus { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 20%, transparent); }
 
+/* New bill customer controls share one border and a themed, anchored list. */
+.invoice-meta-card { position: relative; z-index: 5; overflow: visible; }
+.bill-regular-page-shell > .bill-page-card { overflow: visible; }
+.invoice-customer-field { position: relative; z-index: 6; }
+.customer-combobox { position: relative; min-width: 0; }
+.customer-input-control { cursor: text; }
+.customer-input-control:focus-within { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 20%, transparent); }
+.customer-input-control input { min-width: 0; flex: 1; border: 0; outline: 0; box-shadow: none; background: transparent; }
+.customer-input-control input:focus { border: 0; box-shadow: none; }
+.customer-dropdown-toggle { display: grid; flex: 0 0 28px; width: 28px; height: 30px; place-items: center; border: 0; border-radius: 5px; background: transparent; color: var(--muted-foreground); cursor: pointer; }
+.customer-dropdown-toggle:hover:not(:disabled) { background: var(--accent); color: var(--foreground); }
+.customer-dropdown-toggle:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+.customer-dropdown-toggle:disabled { cursor: not-allowed; opacity: 0.5; }
+.customer-options-list { position: absolute; z-index: 60; top: calc(100% + 5px); left: 0; right: 0; max-height: min(300px, 45vh); overflow-y: auto; margin: 0; padding: 5px; list-style: none; border: 1px solid var(--border); border-radius: 9px; background: var(--card); color: var(--foreground); box-shadow: 0 12px 28px rgba(25, 30, 40, 0.22); scrollbar-width: thin; }
+.customer-options-list li { display: flex; min-height: 40px; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px; border-radius: 6px; color: var(--foreground); cursor: pointer; }
+.customer-options-list li.active { background: var(--accent); }
+.customer-options-list li.selected { box-shadow: inset 3px 0 0 var(--ring); }
+.customer-options-list li small { color: var(--muted-foreground); font-size: 0.78rem; }
+.customer-options-list .customer-options-empty { color: var(--muted-foreground); cursor: default; }
+.customer-options-list .customer-create-option { color: var(--foreground); cursor: pointer; }
+.customer-options-list .customer-create-option:hover { background: var(--accent); }
+
+.invoice-input-with-icon:focus-within { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 20%, transparent); }
+.invoice-input-with-icon input:focus { border: 0; box-shadow: none; }
+
+.product-combobox.is-open { z-index: 40; }
+.combobox-add-button,
+.combobox-option.active .combobox-add-button { border-color: var(--primary); background: var(--card); color: var(--primary); }
+.combobox-option .combobox-add-button:hover:not(:disabled) { border-color: var(--primary); background: var(--primary); color: var(--primary-foreground); }
+.combobox-option .combobox-add-button:active:not(:disabled) { background: var(--accent); color: var(--foreground); transform: scale(0.96); }
+.combobox-option .combobox-add-button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.combobox-option .combobox-add-button:disabled { cursor: not-allowed; opacity: 0.45; }
+
+/* The legacy theme overrides above also style nested inputs; keep their focus
+   treatment on the shared icon field border instead of the inner input. */
+.invoice-field .invoice-input-with-icon input:focus { border: 0; box-shadow: none; outline: 0; }
+
 .invoice-card {
   max-width: none;
   min-height: 100%;

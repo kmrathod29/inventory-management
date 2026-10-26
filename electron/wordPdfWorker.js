@@ -60,15 +60,35 @@ try {
     $document = $null
     try {
       $request = ConvertFrom-Json -InputObject $line
-      $document = $word.Documents.Open($request.docxPath, $false, $true, $false)
+      if ([string]::IsNullOrWhiteSpace($request.docxPath) -or -not (Test-Path -LiteralPath $request.docxPath -PathType Leaf)) {
+        throw 'The generated invoice document is missing or inaccessible.'
+      }
+      if ([string]::IsNullOrWhiteSpace($request.pdfPath)) {
+        throw 'The destination PDF path is missing.'
+      }
+      $documents = $word.Documents
+      if ($null -eq $documents) {
+        throw 'Microsoft Word document service is unavailable.'
+      }
+      $document = $documents.Open($request.docxPath, $false, $true, $false)
+      if ($null -eq $document) {
+        throw 'Microsoft Word did not return an opened invoice document.'
+      }
       $document.ExportAsFixedFormat($request.pdfPath, 17)
       $result = @{ id = $request.id; ok = $true }
     } catch {
-      $result = @{ id = $request.id; ok = $false; error = $_.Exception.Message }
+      $lineNumber = $_.InvocationInfo.ScriptLineNumber
+      $sourceLine = [string]$_.InvocationInfo.Line
+      if ($sourceLine) { $sourceLine = $sourceLine.Trim() }
+      $detail = $_.Exception.Message
+      if ($lineNumber -and $sourceLine) {
+        $detail = "\${detail} (PowerShell line \${lineNumber}: \${sourceLine})"
+      }
+      $result = @{ id = $request.id; ok = $false; error = $detail }
     } finally {
-      if ($document) {
-        $document.Close($false)
-        [System.Runtime.InteropServices.Marshal]::ReleaseComObject($document) | Out-Null
+      if ($null -ne $document) {
+        try { $document.Close($false) } catch { }
+        try { [System.Runtime.InteropServices.Marshal]::ReleaseComObject($document) | Out-Null } catch { }
       }
     }
     [Console]::Out.WriteLine(($result | ConvertTo-Json -Compress -Depth 3))
@@ -129,7 +149,7 @@ try {
   return instance.ready;
 }
 
-export function warmupWordPdfWorker() {
+export async function warmupWordPdfWorker() {
   if (process.platform !== "win32") {
     return Promise.reject(new Error("DOCX to PDF conversion currently requires Microsoft Word on Windows."));
   }

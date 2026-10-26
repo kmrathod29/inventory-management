@@ -73,13 +73,12 @@ export function ProductCombobox({
       case "ArrowDown":
         e.preventDefault();
         setOpen(true);
-        setActiveIndex((i) => Math.min(i + 1, shown.length - 1));
+        setActiveIndex((i) => open ? Math.min(i + 1, shown.length - 1) : 0);
         break;
       case "ArrowUp":
-        if (open) {
-          e.preventDefault();
-          setActiveIndex((i) => Math.max(i - 1, 0));
-        }
+        e.preventDefault();
+        setOpen(true);
+        setActiveIndex((i) => open ? Math.max(i - 1, 0) : Math.max(shown.length - 1, 0));
         break;
       case "Enter":
         if (open && shown[activeIndex]) {
@@ -100,7 +99,7 @@ export function ProductCombobox({
   }
 
   return (
-    <div className="product-combobox">
+    <div className={`product-combobox${open ? " is-open" : ""}`}>
       <input
         ref={inputRef}
         type="text"
@@ -118,6 +117,7 @@ export function ProductCombobox({
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
+        onClick={() => setOpen(true)}
         onBlur={() => setOpen(false)}
         onKeyDown={handleKeyDown}
       />
@@ -154,6 +154,7 @@ export function ProductCombobox({
                   type="button"
                   className="combobox-add-button"
                   aria-label={`Add ${product.name}`}
+                  disabled={disabled}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={(e) => {
                     e.stopPropagation();
