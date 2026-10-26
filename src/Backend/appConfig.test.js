@@ -23,9 +23,11 @@ test("loads defaults and persists validated settings", () => {
     const config = saveAppConfig(configPath, {
       defaultPaymentMethod: "Card",
       dataDirectory: path.join(directory, "business-data"),
+      invoicePdfDirectory: path.join(directory, "Invoices"),
     });
     assert.deepEqual(loadAppConfig(configPath), config);
     assert.equal(config.defaultPaymentMethod, "Card");
+    assert.equal(config.invoicePdfDirectory, path.join(directory, "Invoices"));
     assert.equal(
       saveAppConfig(configPath, { ...config, defaultPaymentMethod: "UPI" }).defaultPaymentMethod,
       "UPI",
@@ -108,6 +110,10 @@ test("rejects malformed settings and unsupported payment defaults", () => {
     assert.throws(
       () => saveAppConfig(configPath, { appearanceMode: "automatic" }),
       /Appearance mode must be/,
+    );
+    assert.throws(
+      () => saveAppConfig(configPath, { invoicePdfDirectory: "relative-folder" }),
+      /configured invoice PDF directory must be an absolute path/,
     );
     assert.throws(
       () => saveAppConfig(configPath, { defaultProfileCredentials: { passwordHash: "plaintext" } }),

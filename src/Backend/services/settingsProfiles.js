@@ -41,6 +41,7 @@ function getAppSettings() {
     ...publicConfig,
     gstinApiKeyConfigured: Boolean(ctx.appConfig.gstinApiKeyEncrypted),
     dataDirectory: ctx.dataDirectory,
+    invoicePdfDirectory: ctx.appConfig.invoicePdfDirectory || path.join(ctx.userDataPath, "Invoices"),
     activeProfileId: ctx.appConfig.activeProfileId,
     defaultProfilePasswordSet: Boolean(ctx.appConfig.defaultProfileCredentials),
     profiles: [
@@ -73,6 +74,19 @@ function saveGstinApiKey(apiKey) {
   const nextConfig = saveAppConfig(ctx.appConfigPath, {
     ...ctx.appConfig,
     gstinApiKeyEncrypted: encryptedKey,
+  });
+  ctx.appConfig = nextConfig;
+  return getAppSettings();
+}
+
+function setInvoicePdfDirectory(directory) {
+  if (typeof directory !== "string" || !directory.trim()) {
+    throw new Error("Choose a folder for invoice PDFs.");
+  }
+  const invoicePdfDirectory = path.resolve(directory);
+  const nextConfig = saveAppConfig(ctx.appConfigPath, {
+    ...ctx.appConfig,
+    invoicePdfDirectory,
   });
   ctx.appConfig = nextConfig;
   return getAppSettings();
@@ -398,5 +412,6 @@ async function setLocalDataDirectory(destinationDirectory) {
     updateInventoryAddItemMode,
     updateAppearanceSettings,
     setLocalDataDirectory,
+    setInvoicePdfDirectory,
   };
 }

@@ -45,6 +45,7 @@ const DATA_MUTATION_CHANNELS = new Set([
   "settings:updateInventoryAddItemMode",
   "settings:updateAppearance",
   "settings:changeDataDirectory",
+  "settings:changeInvoicePdfDirectory",
 ]);
 
 function invoke(channel, ...args) {
@@ -164,6 +165,8 @@ contextBridge.exposeInMainWorld("db", {
     invoke("settings:setTitleBarOverlay", color, symbolColor),
   openDataDirectory: () => invoke("settings:openDataDirectory"),
   changeDataDirectory: () => invoke("settings:changeDataDirectory"),
+  openInvoicePdfDirectory: () => invoke("settings:openInvoicePdfDirectory"),
+  changeInvoicePdfDirectory: () => invoke("settings:changeInvoicePdfDirectory"),
   saveInvoicePdf: (billId, invoice, openAfterSave = false) =>
     invoke("invoice:savePdf", billId, invoice, openAfterSave),
 });

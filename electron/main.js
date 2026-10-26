@@ -64,6 +64,7 @@ import {
   updateBillPdfPath,
   getBillPdfPath,
   getAppSettings,
+  setInvoicePdfDirectory,
   saveGstinApiKey,
   lookupGstin,
   setLocalDataDirectory,
@@ -651,6 +652,43 @@ app.whenReady().then(() => {
     const error = await shell.openPath(getAppSettings().dataDirectory);
     if (error) throw new Error(`Could not open the data folder: ${error}`);
   });
+  const ensureInvoicePdfDirectory = (directory) => {
+    if (typeof directory !== "string" || !path.isAbsolute(directory)) {
+      throw new Error("The invoice PDF folder path is invalid. Choose another folder in Settings.");
+    }
+    const probePath = path.join(directory, `.stockwise-write-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    let descriptor;
+    try {
+      fs.mkdirSync(directory, { recursive: true });
+      descriptor = fs.openSync(probePath, "wx");
+      fs.closeSync(descriptor);
+      descriptor = undefined;
+      fs.unlinkSync(probePath);
+    } catch (error) {
+      if (descriptor !== undefined) {
+        try { fs.closeSync(descriptor); } catch { /* Best effort cleanup. */ }
+      }
+      try { fs.rmSync(probePath, { force: true }); } catch { /* Best effort cleanup. */ }
+      throw new Error(`Invoice PDF folder is unavailable or not writable: ${directory}. Choose another folder in Settings.`, { cause: error });
+    }
+    return directory;
+  };
+  const selectInvoicePdfDirectory = async (event) => {
+    const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender), {
+      title: "Choose Invoice PDF Folder",
+      defaultPath: getAppSettings().invoicePdfDirectory,
+      properties: ["openDirectory", "createDirectory"],
+    });
+    if (result.canceled || result.filePaths.length === 0) return null;
+    const directory = ensureInvoicePdfDirectory(result.filePaths[0]);
+    return setInvoicePdfDirectory(directory);
+  };
+  ipcMain.handle("settings:openInvoicePdfDirectory", async () => {
+    const directory = ensureInvoicePdfDirectory(getAppSettings().invoicePdfDirectory);
+    const error = await shell.openPath(directory);
+    if (error) throw new Error(`Could not open the invoice PDF folder: ${error}`);
+  });
+  ipcMain.handle("settings:changeInvoicePdfDirectory", selectInvoicePdfDirectory);
   ipcMain.handle("settings:changeDataDirectory", async (event) => {
     const result = await dialog.showOpenDialog(
       BrowserWindow.fromWebContents(event.sender),
@@ -672,10 +710,6 @@ app.whenReady().then(() => {
     const invoiceNo = safePart(invoice?.invoiceNumber || `INV-${billId}`, `INV-${billId}`);
     const customer = safePart(invoice?.customerName || invoice?.buyerName, "Customer");
     const fileName = `${invoiceNo}_${customer}.pdf`;
-    const lastDirFile = path.join(app.getPath("userData"), "invoice-save-location.json");
-    const readLastDirectory = () => {
-      try { return JSON.parse(fs.readFileSync(lastDirFile, "utf8")).directory || ""; } catch { return ""; }
-    };
     const showSaveAs = async (defaultPath) => {
       const result = await dialog.showSaveDialog(owner, {
         title: "Save invoice PDF", defaultPath,
@@ -706,12 +740,51 @@ app.whenReady().then(() => {
         });
         if (confirmation.response !== 0) return null;
       } else {
-        targetPath = await showSaveAs(path.join(readLastDirectory() || path.dirname(targetPath), fileName));
+        targetPath = await showSaveAs(path.join(getAppSettings().invoicePdfDirectory, fileName));
         if (!targetPath) return null;
       }
     } else {
-      targetPath = await showSaveAs(targetPath || path.join(readLastDirectory() || app.getPath("documents"), fileName));
-      if (!targetPath) return null;
+      if (targetPath) {
+        targetPath = await showSaveAs(targetPath);
+        if (!targetPath) return null;
+      } else {
+        let directory = getAppSettings().invoicePdfDirectory;
+        try {
+          ensureInvoicePdfDirectory(directory);
+        } catch (error) {
+          const choice = await dialog.showMessageBox(owner, {
+            type: "error", title: "Invoice PDF folder unavailable",
+            message: `${error.message}\n\nChoose another folder to continue saving this invoice.`,
+            buttons: ["Choose Another Folder", "Cancel"], cancelId: 1, defaultId: 0, noLink: true,
+          });
+          if (choice.response !== 0) throw error;
+          const updated = await selectInvoicePdfDirectory(event);
+          if (!updated) return null;
+          directory = updated.invoicePdfDirectory;
+        }
+        let selectedPath = path.join(directory, fileName);
+        let suffix = 2;
+        while (fs.existsSync(selectedPath)) {
+          selectedPath = path.join(directory, `${path.basename(fileName, ".pdf")} (${suffix}).pdf`);
+          suffix += 1;
+        }
+        targetPath = selectedPath;
+      }
+    }
+
+    try {
+      ensureInvoicePdfDirectory(path.dirname(targetPath));
+    } catch (error) {
+      const choice = await dialog.showMessageBox(owner, {
+        type: "error", title: "Invoice PDF folder unavailable",
+        message: `${error.message}\n\nChoose another folder to continue saving this invoice.`,
+        buttons: ["Choose Another Folder", "Cancel"], cancelId: 1, defaultId: 0, noLink: true,
+      });
+      if (choice.response !== 0) throw error;
+      const updated = await selectInvoicePdfDirectory(event);
+      if (!updated) return null;
+      targetPath = path.join(updated.invoicePdfDirectory, path.basename(targetPath));
+      ensureInvoicePdfDirectory(path.dirname(targetPath));
     }
 
     const stagingPath = path.join(path.dirname(targetPath), `.${path.basename(targetPath, ".pdf")}.${Date.now()}.tmp.pdf`);
@@ -734,10 +807,6 @@ app.whenReady().then(() => {
       }
       updateBillPdfPath(billId, targetPath);
       if (backupCreated) fs.rmSync(backupPath, { force: true });
-      try {
-        fs.mkdirSync(app.getPath("userData"), { recursive: true });
-        fs.writeFileSync(path.join(app.getPath("userData"), "invoice-save-location.json"), JSON.stringify({ directory: path.dirname(targetPath) }), "utf8");
-      } catch { /* Remembering the folder is best effort and must not invalidate a saved invoice. */ }
     } catch (error) {
       if (backupCreated && fs.existsSync(backupPath)) {
         try {

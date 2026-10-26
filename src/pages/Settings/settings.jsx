@@ -269,6 +269,29 @@ export function SettingsPage({
     }
   }
 
+  async function handleOpenInvoicePdfDirectory() {
+    try {
+      await window.db.openInvoicePdfDirectory();
+    } catch (error) {
+      showToast(error.message || "Could not open the invoice PDF folder.", "error");
+    }
+  }
+
+  async function handleChangeInvoicePdfDirectory() {
+    setBusy("invoice-pdf-folder");
+    try {
+      const updatedSettings = await window.db.changeInvoicePdfDirectory();
+      if (updatedSettings) {
+        setSettings(updatedSettings);
+        showToast("Invoice PDF folder updated. Previously saved PDFs were not moved.", "success");
+      }
+    } catch (error) {
+      showToast(error.message || "Could not change the invoice PDF folder.", "error");
+    } finally {
+      setBusy("");
+    }
+  }
+
   function openProfileDialog() {
     setProfileUsername(
       profileId === "create-new"
@@ -405,6 +428,8 @@ export function SettingsPage({
               busy={busy}
               onOpenDirectory={handleOpenDataDirectory}
               onChangeDirectory={handleChangeDataDirectory}
+              onOpenInvoicePdfDirectory={handleOpenInvoicePdfDirectory}
+              onChangeInvoicePdfDirectory={handleChangeInvoicePdfDirectory}
               onCreateBackup={handleCreateBackup}
               onRestoreBackup={handleRestoreBackup}
               onCreatePortableBackup={handleCreatePortableBackup}

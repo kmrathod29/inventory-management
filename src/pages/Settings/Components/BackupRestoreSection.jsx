@@ -3,6 +3,8 @@ export function BackupRestoreSection({
   busy,
   onOpenDirectory,
   onChangeDirectory,
+  onOpenInvoicePdfDirectory,
+  onChangeInvoicePdfDirectory,
   onCreateBackup,
   onRestoreBackup,
   onCreatePortableBackup,
@@ -33,6 +35,25 @@ export function BackupRestoreSection({
         </button>
       </div>
       <p className="settings-note">Choose an empty folder. StockWise copies the database and product images; it does not delete the existing data.</p>
+
+      <div className="settings-divider" />
+
+      <h3 className="settings-sub-heading">Invoice PDF Storage</h3>
+      <div className="settings-path-row">
+        <div className="settings-path">
+          <span>Invoice PDF folder</span>
+          <code>{settings?.invoicePdfDirectory || "Loading..."}</code>
+        </div>
+        <button className="settings-action" type="button" onClick={onOpenInvoicePdfDirectory} disabled={!settings || Boolean(busy)}>
+          <i className="ti ti-folder-open" aria-hidden="true" />
+          <span>Open Folder</span>
+        </button>
+        <button className="settings-action" type="button" onClick={onChangeInvoicePdfDirectory} disabled={!settings || Boolean(busy)}>
+          <i className="ti ti-folder-share" aria-hidden="true" />
+          <span>{busy === "invoice-pdf-folder" ? "Changing Folder..." : "Change Folder"}</span>
+        </button>
+      </div>
+      <p className="settings-note">New invoice PDFs use this folder by default. Changing it does not move previously saved invoices.</p>
 
       <div className="settings-divider" />
 

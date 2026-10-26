@@ -38,6 +38,7 @@ export function defaultAppConfig() {
     categoryTaxRates: {},
     categoryHsnCodes: {},
     dataDirectory: null,
+    invoicePdfDirectory: null,
     invoiceDefaults: defaultInvoiceDefaults(),
     inventoryAddItemMode: null,
     appearanceTheme: "lara",
@@ -92,6 +93,11 @@ function validateAppConfig(config) {
     (typeof dataDirectory !== "string" || !path.isAbsolute(dataDirectory))
   ) {
     throw new Error("The configured data directory must be an absolute path.");
+  }
+
+  const invoicePdfDirectory = config.invoicePdfDirectory ?? null;
+  if (invoicePdfDirectory !== null && (typeof invoicePdfDirectory !== "string" || !path.isAbsolute(invoicePdfDirectory))) {
+    throw new Error("The configured invoice PDF directory must be an absolute path.");
   }
 
   const invoiceDefaults = config.invoiceDefaults ?? defaultInvoiceDefaults();
@@ -156,6 +162,7 @@ function validateAppConfig(config) {
     categoryTaxRates: normalizedCategoryTaxRates,
     categoryHsnCodes: normalizedCategoryHsnCodes,
     dataDirectory,
+    invoicePdfDirectory,
     invoiceDefaults: defaults,
     inventoryAddItemMode,
     appearanceTheme,

@@ -56,7 +56,7 @@ export const {
   getAppSettings, setDefaultProfilePassword, createProfile, switchProfile,
   saveGstinApiKey, lookupGstin,
   updateDefaultPaymentMethod, updateInvoiceDefaults, updateCategoryTaxRates, updateBillingSettings, updateInventoryAddItemMode,
-  updateAppearanceSettings, setLocalDataDirectory,
+  updateAppearanceSettings, setLocalDataDirectory, setInvoicePdfDirectory,
 } = services[0];
 export const { backupDatabase, exportDatabase, createPortableDatabaseBackup, restoreDatabase, restorePortableDatabase } = services[1];
 export const {
