@@ -47,7 +47,7 @@ test("QR cache persists, reuses unchanged payload, invalidates changed settings,
 
 test("DOCX QR replacement follows the named placeholder and removes it when unconfigured", () => {
   const zip = new AdmZip();
-  zip.addFile("word/document.xml", Buffer.from('<w:drawing><wp:docPr descr="Shop logo"/><a:blip r:embed="rId8"/></w:drawing><w:drawing><wp:docPr descr="UPI payment QR code"/><a:blip r:embed="rId9"/></w:drawing>'));
+  zip.addFile("word/document.xml", Buffer.from('<w:drawing><wp:docPr descr="Shop logo"/><a:blip r:embed="rId8"/></w:drawing><w:drawing><wp:docPr name="qr"/><a:blip r:embed="rId9"/></w:drawing>'));
   zip.addFile("word/_rels/document.xml.rels", Buffer.from('<Relationships><Relationship Id="rId8" Type="image" Target="media/image1.png"/><Relationship Id="rId9" Type="image" Target="media/image2.png"/></Relationships>'));
   zip.addFile("word/media/image1.png", Buffer.from("shop logo"));
   zip.addFile("word/media/image2.png", Buffer.from("old qr png"));

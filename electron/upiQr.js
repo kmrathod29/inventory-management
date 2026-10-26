@@ -23,8 +23,11 @@ export function createUpiUri(upiId, shopName) {
 
 export function replaceQrImageInDocx(zip, imageBuffer) {
   let documentXml = zip.readAsText("word/document.xml");
-  const qrDescription = /<wp:docPr\b(?=[^>]*\bdescr="UPI payment QR code")[^>]*\/>/;
-  const qrDocPr = qrDescription.exec(documentXml);
+  // Word can discard alt-text when users replace the image but preserve its
+  // object name. Prefer that stable template marker, with the original alt
+  // text as a fallback for older copies of the template.
+  const qrMarker = /<wp:docPr\b(?=[^>]*(?:\bname="qr"|\bdescr="UPI payment QR code"))[^>]*\/>/i;
+  const qrDocPr = qrMarker.exec(documentXml);
   if (!qrDocPr) throw new Error("The UPI QR placeholder is missing from Invoice.docx.");
   const drawingStart = documentXml.lastIndexOf("<w:drawing>", qrDocPr.index);
   const drawingClose = documentXml.indexOf("</w:drawing>", qrDocPr.index);
