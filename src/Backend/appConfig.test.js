@@ -96,6 +96,10 @@ test("rejects malformed settings and unsupported payment defaults", () => {
       /Invoice default "shopName" must be text/,
     );
     assert.throws(
+      () => saveAppConfig(configPath, { invoiceDefaults: { upiId: "invalid" } }),
+      /valid UPI ID/,
+    );
+    assert.throws(
       () => saveAppConfig(configPath, { invoiceDefaults: { vatPercent: "101" } }),
       /Default VAT percentage must be between 0 and 100/,
     );

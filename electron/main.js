@@ -6,6 +6,7 @@ import fs from "node:fs";
 import { Buffer } from "node:buffer";
 import { createRequire } from "node:module";
 import { pathToFileURL } from "url";
+import { ensureUpiQr, replaceQrImageInDocx } from "./upiQr.js";
 import {
   convertDocxToPdf,
   stopWordPdfWorker,
@@ -192,7 +193,7 @@ function findInvoiceTemplate() {
   return template;
 }
 
-function fillInvoiceTemplate(invoice) {
+function fillInvoiceTemplate(invoice, upiQrPath) {
   const zip = new AdmZip(findInvoiceTemplate());
   let documentXml = zip.readAsText("word/document.xml");
   const items = Array.isArray(invoice.products) ? invoice.products : [];
@@ -333,6 +334,7 @@ function fillInvoiceTemplate(invoice) {
     documentXml = documentXml.split(from).join(escapeXml(to));
   }
   zip.updateFile("word/document.xml", Buffer.from(documentXml, "utf8"));
+  replaceQrImageInDocx(zip, upiQrPath ? fs.readFileSync(upiQrPath) : null);
   return zip;
 }
 
@@ -629,15 +631,17 @@ app.whenReady().then(() => {
   ipcMain.handle("settings:updateDefaultPaymentMethod", (_, paymentMethod) =>
     updateDefaultPaymentMethod(paymentMethod),
   );
-  ipcMain.handle("settings:updateInvoiceDefaults", (_, invoiceDefaults) =>
-    updateInvoiceDefaults(invoiceDefaults),
-  );
+  ipcMain.handle("settings:updateInvoiceDefaults", async (_, invoiceDefaults) => {
+    await ensureUpiQr({ userDataPath: app.getPath("userData"), upiId: invoiceDefaults?.upiId, shopName: invoiceDefaults?.shopName });
+    return updateInvoiceDefaults(invoiceDefaults);
+  });
   ipcMain.handle("settings:updateCategoryTaxRates", (_, categoryTaxRates) =>
     updateCategoryTaxRates(categoryTaxRates),
   );
-  ipcMain.handle("settings:updateBillingSettings", (_, invoiceDefaults, categoryTaxRates, categoryHsnCodes) =>
-    updateBillingSettings(invoiceDefaults, categoryTaxRates, categoryHsnCodes),
-  );
+  ipcMain.handle("settings:updateBillingSettings", async (_, invoiceDefaults, categoryTaxRates, categoryHsnCodes) => {
+    await ensureUpiQr({ userDataPath: app.getPath("userData"), upiId: invoiceDefaults?.upiId, shopName: invoiceDefaults?.shopName });
+    return updateBillingSettings(invoiceDefaults, categoryTaxRates, categoryHsnCodes);
+  });
   ipcMain.handle("settings:updateInventoryAddItemMode", (_, mode) =>
     updateInventoryAddItemMode(mode),
   );
@@ -793,7 +797,9 @@ app.whenReady().then(() => {
     let backupCreated = false;
     let installed = false;
     try {
-      fillInvoiceTemplate(invoice || {}).writeZip(docxPath);
+      const savedSettings = getAppSettings().invoiceDefaults || {};
+      const upiQrPath = await ensureUpiQr({ userDataPath: app.getPath("userData"), upiId: savedSettings.upiId, shopName: savedSettings.shopName });
+      fillInvoiceTemplate(invoice || {}, upiQrPath).writeZip(docxPath);
       await convertDocxToPdf(docxPath, stagingPath);
       if (!fs.existsSync(stagingPath) || fs.statSync(stagingPath).size === 0) throw new Error("The PDF generator returned an empty file.");
       if (fs.existsSync(targetPath)) {

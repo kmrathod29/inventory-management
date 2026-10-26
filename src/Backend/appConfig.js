@@ -120,6 +120,9 @@ function validateAppConfig(config) {
     }
     defaults[key] = value.trim();
   }
+  if (defaults.upiId && !/^[A-Za-z0-9._-]{2,128}@[A-Za-z0-9.-]{2,64}$/.test(defaults.upiId)) {
+    throw new Error("Enter a valid UPI ID, for example name@bank.");
+  }
   const vatPercent = Number(defaults.vatPercent);
   if (!defaults.vatPercent.trim() || !Number.isFinite(vatPercent) || vatPercent < 0 || vatPercent > 100) {
     throw new Error("Default VAT percentage must be between 0 and 100.");
