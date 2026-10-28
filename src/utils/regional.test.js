@@ -7,8 +7,8 @@ test("regional defaults and currency use Indian conventions", () => {
   assert.match(formatCurrency(125000), /₹\s?1,25,000\.00/);
 });
 
-test("Gregorian dates render DD/MM/YYYY without shifting ISO date-only values", () => {
-  assert.equal(formatDate("2026-10-13"), "13/10/2026");
+test("Gregorian dates render DD-MM-YYYY without shifting ISO date-only values", () => {
+  assert.equal(formatDate("2026-10-13"), "13-10-2026");
 });
 
 test("business date is computed in Asia/Kolkata", () => {

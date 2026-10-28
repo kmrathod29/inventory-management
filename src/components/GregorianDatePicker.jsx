@@ -8,7 +8,7 @@ export function GregorianDatePicker({ value, onChange, disabled = false, classNa
       value={value || getBusinessDateISO()}
       onChange={(event) => onChange(event.target.value)}
       disabled={disabled}
-      aria-label="Date (DD/MM/YYYY)"
+      aria-label="Date (DD-MM-YYYY)"
     />
   );
 }

@@ -3,7 +3,7 @@ import path from "node:path";
 import { Buffer } from "node:buffer";
 import { access, constants } from "node:fs/promises";
 import { createRequire } from "node:module";
-import { formatCurrency } from "../utils/regional.js";
+import { formatCurrency, formatDate } from "../utils/regional.js";
 
 const require = createRequire(import.meta.url);
 const XLSX = require("xlsx");
@@ -234,7 +234,7 @@ async function createBillsPdf(db) {
         document.fontSize(10);
         document.text(`Invoice Number: ${invoiceData.invoiceNumber || bill.bill_number || bill.id}`);
         document.text(`TPIN: ${invoiceData.tpinNumber || "—"}`);
-        document.text(`Date: ${bill.date}`, document.page.width - 180, document.y - 24, { width: 135, align: "right" });
+        document.text(`Date: ${formatDate(bill.date)}`, document.page.width - 180, document.y - 24, { width: 135, align: "right" });
         document.moveDown();
         document.text(`Buyer Name: ${invoiceData.buyerName || bill.customer_name || "Unknown"}`);
         document.text(`Buyer Address: ${invoiceData.buyerAddress || bill.customer_address || "—"}`);
@@ -292,7 +292,7 @@ async function createBillsPdf(db) {
       document.fontSize(10);
       document.text(`Bill No: ${bill.bill_number || bill.id}`);
       if (billType === "pan") document.text(`PAN Number: ${bill.pan_number || "—"}`);
-      document.text(`Date: ${bill.date}`);
+      document.text(`Date: ${formatDate(bill.date)}`);
       document.text(`Bill Type: ${bill.bill_type || "default"}`);
       document.text(`Payment Method: ${bill.payment_method || "—"}`);
       document.moveDown();

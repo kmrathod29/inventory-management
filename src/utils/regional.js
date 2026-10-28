@@ -7,7 +7,7 @@ export const REGIONAL_DEFAULTS = Object.freeze({
   locale: "en-IN",
   timeZone: "Asia/Kolkata",
   dateLocale: "en-IN",
-  dateFormat: "DD/MM/YYYY",
+  dateFormat: "DD-MM-YYYY",
   timeFormat: "HH:mm",
   language: "en",
   measurementSystem: "metric",
@@ -30,16 +30,25 @@ export function formatNumber(value, options) {
   return new Intl.NumberFormat(REGIONAL_DEFAULTS.locale, options).format(Number.isFinite(amount) ? amount : 0);
 }
 
-export function formatDate(value, options = { day: "2-digit", month: "2-digit", year: "numeric" }) {
+export function formatDate(value, options) {
   if (!value) return "";
   const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value));
   const date = match
     ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
     : new Date(value);
   if (Number.isNaN(date.getTime())) return String(value);
-  return new Intl.DateTimeFormat(REGIONAL_DEFAULTS.dateLocale, { ...options, timeZone: "UTC" }).format(
-    new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())),
-  );
+  const dateUtc = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  if (!options) {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      timeZone: "UTC",
+    }).formatToParts(dateUtc);
+    const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+    return `${values.day}-${values.month}-${values.year}`;
+  }
+  return new Intl.DateTimeFormat(REGIONAL_DEFAULTS.dateLocale, { ...options, timeZone: "UTC" }).format(dateUtc);
 }
 
 export function getBusinessDateISO(now = new Date()) {

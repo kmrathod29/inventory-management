@@ -7,6 +7,7 @@ import { Buffer } from "node:buffer";
 import { createRequire } from "node:module";
 import { pathToFileURL } from "url";
 import { ensureUpiQr, replaceQrImageInDocx } from "./upiQr.js";
+import { formatDate } from "../src/utils/regional.js";
 import {
   convertDocxToPdf,
   stopWordPdfWorker,
@@ -241,7 +242,7 @@ function fillInvoiceTemplate(invoice, upiQrPath) {
     "{{SHOP_GSTIN}}": invoice.tpinNumber || invoice.shopGstin,
     "{{SHOP_PAN}}": invoice.shopPan,
     "{{INVOICE_NUMBER}}": invoice.invoiceNumber,
-    "{{INVOICE_DATE}}": invoice.date,
+    "{{INVOICE_DATE}}": formatDate(invoice.date),
     "{{CUSTOMER_NAME}}": invoice.customerName ?? invoice.buyerName,
     "{{CUSTOMER_ADDRESS}}": invoice.customerAddress ?? invoice.buyerAddress,
     "{{CUSTOMER_PAN}}": invoice.customerPan ?? invoice.buyerPan ?? invoice.pan ?? invoice.panNumber ?? "",
