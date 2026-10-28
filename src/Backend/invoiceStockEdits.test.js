@@ -28,7 +28,7 @@ function setup() {
     { productName: "Tea", quantity: 10, priceAtSale: 12 },
     { productName: "Coffee", quantity: 2, priceAtSale: 15 },
   ]));
-  return { db, service, billId };
+  return { db, service, billId, customerId };
 }
 
 function bill(products) {
@@ -123,5 +123,17 @@ test("failed invoice edit rolls back item replacement and stock changes", () => 
       { product_name: "Coffee", quantity: 2 },
       { product_name: "Tea", quantity: 10 },
     ]);
+  } finally { db.close(); }
+});
+
+test("deleting a customer restores bill stock and removes all associated bill history", () => {
+  const { db, service, billId, customerId } = setup();
+  try {
+    service.deleteCustomer(customerId);
+    assert.equal(stock(db, "Tea"), 30);
+    assert.equal(stock(db, "Coffee"), 20);
+    assert.equal(db.prepare("SELECT COUNT(*) AS count FROM bills WHERE id = ?").get(billId).count, 0);
+    assert.equal(db.prepare("SELECT COUNT(*) AS count FROM bill_items WHERE bill_id = ?").get(billId).count, 0);
+    assert.equal(db.prepare("SELECT COUNT(*) AS count FROM bill_activity WHERE bill_id = ?").get(billId).count, 0);
   } finally { db.close(); }
 });

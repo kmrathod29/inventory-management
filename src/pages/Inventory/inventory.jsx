@@ -9,6 +9,7 @@ import { useNetworkStatus } from "../../hooks/useNetworkStatus";
 
 export function InventoryPage() {
   const [products, setProducts] = useState([]);
+  const [deactivatedProducts, setDeactivatedProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All Categories");
   const [configuredCategories, setConfiguredCategories] = useState([]);
@@ -20,11 +21,12 @@ export function InventoryPage() {
 
   async function fetchProducts() {
     const data = await handleAsync(
-      () => window.db.getProducts(),
+      () => Promise.all([window.db.getProducts(), window.db.getDeactivatedProducts()]),
       "Failed to load products"
     );
     if (data) {
-      setProducts(data);
+      setProducts(data[0]);
+      setDeactivatedProducts(data[1]);
     }
   }
 
@@ -32,11 +34,12 @@ export function InventoryPage() {
     let cancelled = false;
     async function loadProducts() {
       const data = await handleAsync(
-        () => window.db.getProducts(),
+        () => Promise.all([window.db.getProducts(), window.db.getDeactivatedProducts()]),
         "Failed to load products"
       );
       if (!cancelled && data) {
-        setProducts(data);
+        setProducts(data[0]);
+        setDeactivatedProducts(data[1]);
       }
     }
     loadProducts();
@@ -63,7 +66,11 @@ export function InventoryPage() {
     stock: (product.bases || []).reduce((total, base) => total + (base.stocks || []).reduce((sum, value) => sum + Number(value || 0), 0), 0),
     threshold: Number(product.low_stock_threshold ?? product.lowStockThreshold ?? 10),
   })), [products]);
-  const categories = ["All Categories", ...new Set([...configuredCategories, ...summaries.map((product) => product.category)])];
+  const categories = ["All Categories", ...new Set([
+    ...configuredCategories,
+    ...summaries.map((product) => product.category),
+    ...deactivatedProducts.map((product) => product.category || product.bases?.[0]?.name || "General"),
+  ])];
   const totalProducts = products.length;
   const inStock = summaries.filter((product) => product.stock >= product.threshold).length;
   const lowStock = summaries.filter((product) => product.stock > 0 && product.stock < product.threshold).length;
@@ -100,6 +107,21 @@ export function InventoryPage() {
         </section>
 
         <InventoryProductsTable products={products} onRefresh={fetchProducts} search={search} category={category} status={status} />
+
+        <section className="inventory-deactivated-section" aria-labelledby="deactivated-products-heading">
+          <div className="inventory-deactivated-heading">
+            <h2 id="deactivated-products-heading">Deactivated</h2>
+            <span>{deactivatedProducts.length} products</span>
+          </div>
+          <InventoryProductsTable
+            products={deactivatedProducts}
+            onRefresh={fetchProducts}
+            search={search}
+            category={category}
+            status={status}
+            isDeactivated
+          />
+        </section>
       </main>
       <EditConsole
         ref={addDialogRef}

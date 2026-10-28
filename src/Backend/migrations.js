@@ -275,6 +275,17 @@ const migrations = [
       }
     },
   },
+  {
+    version: 13,
+    up(db) {
+      const productsTable = db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'products'").get();
+      if (!productsTable) return;
+      const productColumns = db.prepare("PRAGMA table_info(products)").all();
+      if (!productColumns.some((column) => column.name === "is_active")) {
+        db.exec("ALTER TABLE products ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1");
+      }
+    },
+  },
 ];
 
 export function migrateDatabase(db) {

@@ -587,68 +587,31 @@ export function BillDialog({
         const quantity = Number(product.quantity || 0);
         const price = Number(product.priceAtSale || 0);
         const unit = product.base || "units";
-        return `${product.productName || "Product"} — ${quantity} ${unit} × ${formatCurrency(price)} = ${formatCurrency(quantity * price)}`;
+        return `- ${product.productName || "Product"}\n  Quantity: ${quantity} ${unit}\n  Rate: ${formatCurrency(price)}\n  Amount: ${formatCurrency(quantity * price)}`;
       }).join("\n")
       : "No products added";
-    let message = [
-      "🧾 *DIPALI TRADERS*",
-      "━━━━━━━━━━━━━━━━━━",
+    const message = [
+      "*DIPALI TRADERS*",
+      "BILL DETAILS",
+      "------------------------------",
       "",
       `Hello *${form.name.trim() || "Customer"}*,`,
       "",
-      "Here are the details of your bill:",
+      `Bill No.: ${invoice.invoiceNumber || form.billNumber || "—"}`,
+      `Date: ${formattedDate}`,
       "",
-      `📋 *Bill No.:* ${invoice.invoiceNumber || form.billNumber || "—"}`,
-      `📅 *Date:* ${formattedDate}`,
-      "",
-      "*PRODUCT DETAILS*",
+      "*PRODUCTS*",
       productDetails,
       "",
-      "━━━━━━━━━━━━━━━━━━",
-      `*Subtotal:* ${formatCurrency(totalPurchased)}`,
-      `*Discount:* ${formatCurrency(vatDiscount)}`,
-      `💰 *TOTAL AMOUNT: ${formatCurrency(billTotal)}*`,
-      "━━━━━━━━━━━━━━━━━━",
+      "------------------------------",
+      `Subtotal: ${formatCurrency(totalPurchased)}`,
+      `Discount: ${formatCurrency(vatDiscount)}`,
+      `*TOTAL AMOUNT: ${formatCurrency(billTotal)}*`,
+      "------------------------------",
       "",
       "Thank you for your business!",
       "*Dipali Traders*",
     ].join("\n");
-    const icon = {
-      receipt: String.fromCodePoint(0x1F9FE),
-      clipboard: String.fromCodePoint(0x1F4CB),
-      calendar: String.fromCodePoint(0x1F4C5),
-      money: String.fromCodePoint(0x1F4B0),
-    };
-    const divider = "\u2501".repeat(18);
-    message = `${message.slice(0, 0)}${[
-      `${icon.receipt} *DIPALI TRADERS*`,
-      divider,
-      "",
-      `Hello *${form.name.trim() || "Customer"}*,`,
-      "",
-      "Here are the details of your bill:",
-      "",
-      `${icon.clipboard} *Bill No.:* ${invoice.invoiceNumber || form.billNumber || "\u2014"}`,
-      `${icon.calendar} *Date:* ${formattedDate}`,
-      "",
-      "*PRODUCT DETAILS*",
-      ...(form.products.length
-        ? form.products.map((product) => {
-          const quantity = Number(product.quantity || 0);
-          const price = Number(product.priceAtSale || 0);
-          return `${product.productName || "Product"} \u2014 ${quantity} ${product.base || "units"} \u00d7 ${formatCurrency(price)} = ${formatCurrency(quantity * price)}`;
-        })
-        : ["No products added"]),
-      "",
-      divider,
-      `*Subtotal:* ${formatCurrency(totalPurchased)}`,
-      `*Discount:* ${formatCurrency(vatDiscount)}`,
-      `${icon.money} *TOTAL AMOUNT: ${formatCurrency(billTotal)}*`,
-      divider,
-      "",
-      "Thank you for your business!",
-      "*Dipali Traders*",
-    ].join("\n")}`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
   }
 

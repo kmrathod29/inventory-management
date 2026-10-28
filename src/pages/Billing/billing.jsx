@@ -226,7 +226,7 @@ export function Billing() {
 
   async function handleDelete(billId) {
     const confirmed = await confirm(
-      "Delete this bill? This will restore the stock it used."
+      "Delete this bill? Its stock will be restored, and the bill will be removed from sales and reports."
     );
     if (!confirmed) return;
 

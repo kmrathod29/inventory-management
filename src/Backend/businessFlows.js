@@ -497,6 +497,17 @@ export function addBill(db, customerId, bill) {
     throw new Error("Customer not found.");
   }
 
+  for (const item of normalizedBill.products) {
+    const productBySku = item.skuCode
+      ? db.prepare("SELECT is_active FROM products WHERE sku_code = ?").get(item.skuCode)
+      : null;
+    const product = productBySku
+      ?? db.prepare("SELECT is_active FROM products WHERE TRIM(name) = TRIM(?) COLLATE NOCASE").get(item.productName);
+    if (product && Number(product.is_active) === 0) {
+      throw new Error(`Product "${item.productName}" is deactivated and cannot be added to a bill.`);
+    }
+  }
+
   const run = db.transaction(() => {
     const result = db
       .prepare(`

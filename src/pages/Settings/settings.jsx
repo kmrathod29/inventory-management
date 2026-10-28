@@ -133,26 +133,6 @@ export function SettingsPage({
     }
   }
 
-  async function handleUploadToDrive() {
-    setBusy("drive-upload");
-    try {
-      const result = await window.db.createPortableBackup();
-      if (result) {
-        showToast(
-          `Backup saved to ${fileName(result.filePath)}. Google Drive will upload it when the selected folder syncs.`,
-          "success",
-        );
-      }
-    } catch (error) {
-      showToast(
-        error.message || "Could not prepare the Google Drive backup.",
-        "error",
-      );
-    } finally {
-      setBusy("");
-    }
-  }
-
   async function handleRestorePortableBackup() {
     const accepted = await confirm(
       "Restore replaces this profile's database and product images, then restarts StockWise. A recovery database backup will be created first. Continue?",
@@ -433,7 +413,6 @@ export function SettingsPage({
               onCreateBackup={handleCreateBackup}
               onRestoreBackup={handleRestoreBackup}
               onCreatePortableBackup={handleCreatePortableBackup}
-              onUploadToDrive={handleUploadToDrive}
               onRestorePortableBackup={handleRestorePortableBackup}
             />
           )}

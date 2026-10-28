@@ -88,7 +88,12 @@ function deleteCustomer(id) {
       .prepare(`SELECT id FROM bills WHERE customer_id = ?`)
       .all(id);
     for (const bill of bills) {
+      const items = ctx.db.prepare(`SELECT * FROM bill_items WHERE bill_id = ?`).all(bill.id);
+      for (const item of items) {
+        adjustInventoryStock(ctx.db, item.product_name, item.base, item.bucket_size, item.quantity, item.product_sku_code);
+      }
       ctx.db.prepare(`DELETE FROM bill_items WHERE bill_id = ?`).run(bill.id);
+      ctx.db.prepare(`DELETE FROM bill_activity WHERE bill_id = ?`).run(bill.id);
     }
     ctx.db.prepare(`DELETE FROM bills WHERE customer_id = ?`).run(id);
     ctx.db.prepare(`DELETE FROM customers WHERE id = ?`).run(id);
@@ -142,6 +147,7 @@ function deleteBill(billId) {
     }
 
     ctx.db.prepare(`DELETE FROM bill_items WHERE bill_id = ?`).run(billId);
+    ctx.db.prepare(`DELETE FROM bill_activity WHERE bill_id = ?`).run(billId);
     ctx.db.prepare(`DELETE FROM bills WHERE id = ?`).run(billId);
   });
 

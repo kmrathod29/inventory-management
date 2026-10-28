@@ -36,7 +36,7 @@ function ProductImage({ product }) {
   return image ? <img src={image} alt="" /> : <span className="inventory-image-placeholder" aria-hidden="true"><i className="ti ti-photo" /></span>;
 }
 
-export function InventoryProductsTable({ products, onRefresh, search, category, status }) {
+export function InventoryProductsTable({ products, onRefresh, search, category, status, isDeactivated = false }) {
   const editDialogRef = useRef(null);
   const [editingProduct, setEditingProduct] = useState(null);
   const [openMenu, setOpenMenu] = useState(null);
@@ -64,8 +64,8 @@ export function InventoryProductsTable({ products, onRefresh, search, category, 
     const matchesSearch = !query || [product.name, product.category, product.unit]
       .some((value) => String(value).toLocaleLowerCase().includes(query));
     return matchesSearch && (category === "All Categories" || product.category === category)
-      && (status === "All Status" || product.status === status);
-  }), [summaries, search, category, status]);
+      && (isDeactivated || status === "All Status" || product.status === status);
+  }), [summaries, search, category, status, isDeactivated]);
   const sorted = useMemo(() => [...filtered].sort((first, second) => {
     const left = first[sortKey];
     const right = second[sortKey];
@@ -117,15 +117,19 @@ export function InventoryProductsTable({ products, onRefresh, search, category, 
       setHistoryProduct(product);
       return;
     }
-    if (action === "deactivate") {
-      confirm(`Deactivate ${product.name}? This removes the product and its stock records.`).then(async (accepted) => {
+    if (action === "deactivate" || action === "reactivate") {
+      const activate = action === "reactivate";
+      const prompt = activate
+        ? `Reactivate ${product.name}? It will be included in current inventory and billing again.`
+        : `Deactivate ${product.name}? Its stock and product details will be kept, but it will be hidden from active inventory and billing.`;
+      confirm(prompt, activate ? "Reactivate" : "Deactivate").then(async (accepted) => {
         if (!accepted) return;
         try {
-          await window.db.deleteProduct(product.id);
+          await window.db[activate ? "reactivateProduct" : "deactivateProduct"](product.id);
           await onRefresh?.();
-          showToast("Product deactivated.", "success");
+          showToast(activate ? "Product reactivated." : "Product deactivated.", "success");
         } catch (error) {
-          showToast(error?.message || "Could not deactivate the product.", "error");
+          showToast(error?.message || `Could not ${activate ? "reactivate" : "deactivate"} the product.`, "error");
         }
       });
       return;
@@ -158,14 +162,20 @@ export function InventoryProductsTable({ products, onRefresh, search, category, 
                 <td>{product.category}</td>
                 <td>{formatCurrency(product.selling)}</td>
                 <td>{product.stock}</td>
-                <td><span className={`inventory-status inventory-status-${product.status.toLowerCase().replaceAll(" ", "-")}`}>{product.status}</span></td>
+                <td><span className={`inventory-status inventory-status-${isDeactivated ? "deactivated" : product.status.toLowerCase().replaceAll(" ", "-")}`}>{isDeactivated ? "Deactivated" : product.status}</span></td>
                 <td className="inventory-actions-cell">
                   <button type="button" className="inventory-more-button" aria-label={`Actions for ${product.name}`} onClick={() => setOpenMenu(openMenu === product.id ? null : product.id)}>⋮</button>
                   {openMenu === product.id && (
                     <div className="inventory-action-menu">
-                      <button type="button" onClick={() => actionFor("edit", product)}><i className="ti ti-pencil" />Edit</button>
-                      <button type="button" onClick={() => actionFor("history", product)}><i className="ti ti-history" />History</button>
-                      <button type="button" className="inventory-action-danger" onClick={() => actionFor("deactivate", product)}><i className="ti ti-trash" />Deactivate</button>
+                      {!isDeactivated ? (
+                        <>
+                          <button type="button" onClick={() => actionFor("edit", product)}><i className="ti ti-pencil" />Edit</button>
+                          <button type="button" onClick={() => actionFor("history", product)}><i className="ti ti-history" />History</button>
+                          <button type="button" className="inventory-action-danger" onClick={() => actionFor("deactivate", product)}><i className="ti ti-archive-off" />Deactivate</button>
+                        </>
+                      ) : (
+                        <button type="button" onClick={() => actionFor("reactivate", product)}><i className="ti ti-archive" />Reactivate</button>
+                      )}
                     </div>
                   )}
                 </td>
@@ -184,12 +194,14 @@ export function InventoryProductsTable({ products, onRefresh, search, category, 
           <button type="button" onClick={() => setPage((current) => Math.min(pageCount, current + 1))} disabled={currentPage === pageCount} aria-label="Next page">›</button>
         </div>
       </div>
-      <EditConsole
-        ref={editDialogRef}
-        editingItem={editingProduct}
-        onSaved={onRefresh}
-        onClose={() => { editDialogRef.current?.close(); setEditingProduct(null); }}
-      />
+      {!isDeactivated && (
+        <EditConsole
+          ref={editDialogRef}
+          editingItem={editingProduct}
+          onSaved={onRefresh}
+          onClose={() => { editDialogRef.current?.close(); setEditingProduct(null); }}
+        />
+      )}
       {ConfirmDialogComponent}
       {historyProduct && <InventoryHistoryDialog product={historyProduct} onClose={() => setHistoryProduct(null)} />}
     </>

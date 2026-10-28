@@ -110,7 +110,8 @@ export function CustomersPage() {
             try {
               await window.db.editCustomer(selected.id, { ...selected, notes });
               const updatedCustomers = await refresh();
-              setSelected(updatedCustomers.find((customer) => customer.id === selected.id) || null);
+              const updatedCustomer = updatedCustomers.find((customer) => customer.id === selected.id);
+              setSelected(updatedCustomer ? customerSummary(updatedCustomer, products) : null);
               showToast("Customer notes saved.", "success");
             } catch (error) {
               showToast(error?.message || "Could not save customer notes.", "error");

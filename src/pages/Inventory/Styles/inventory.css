@@ -64,6 +64,12 @@
 .inventory-offline-status small { color: #718096; font-size: 11px; }
 
 .inventory-content { padding: 16px 22px 24px; }
+.inventory-deactivated-section { margin-top: 30px; }
+.inventory-deactivated-heading { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.inventory-deactivated-heading h2 { margin: 0; color: var(--foreground); font-size: 18px; }
+.inventory-deactivated-heading span { color: var(--muted-foreground); font-size: 12px; }
+.inventory-status-deactivated { background: #e9edf2; color: #566273; }
+.inventory-deactivated-section .inventory-empty-row { padding: 10px 12px; color: var(--muted-foreground); }
 .inventory-stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
 .inventory-stat-card { display: flex; align-items: center; gap: 16px; min-height: 88px; padding: 10px 14px; border: 1px solid #e0e7ef; border-radius: 8px; background: #fff; box-shadow: 0 2px 8px rgba(28, 44, 64, .04); }
 .inventory-stat-card small { display: block; color: #647184; font-size: 13px; }

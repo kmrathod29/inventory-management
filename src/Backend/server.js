@@ -60,7 +60,8 @@ export const {
 } = services[0];
 export const { backupDatabase, exportDatabase, createPortableDatabaseBackup, restoreDatabase, restorePortableDatabase } = services[1];
 export const {
-  saveInventoryProductChanges, addProduct, getProducts, getNextInvoiceNumber,
+  saveInventoryProductChanges, addProduct, getProducts, getDeactivatedProducts,
+  deactivateProduct, reactivateProduct, getNextInvoiceNumber,
   isInvoiceNumberAvailable, deleteProduct, editProduct, getProductByName,
   getVariantBySize, addVariant, addBase, getBaseByName, addBaseStock,
   copyImageToDatabase, resolveImagePath, deleteBaseStock, deleteBase, deleteVariant,

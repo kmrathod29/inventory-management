@@ -15,6 +15,9 @@ import {
 import {
   addProduct,
   getProducts,
+  getDeactivatedProducts,
+  deactivateProduct,
+  reactivateProduct,
   getNextInvoiceNumber,
   isInvoiceNumberAvailable,
   getExpenseDetails,
@@ -462,6 +465,9 @@ app.whenReady().then(() => {
   ipcMain.handle("db:addProduct", (_, product) => addProduct(product));
   ipcMain.handle("db:saveInventoryProduct", (_, product) => saveInventoryProductChanges(product));
   ipcMain.handle("db:getProducts", () => getProducts());
+  ipcMain.handle("db:getDeactivatedProducts", () => getDeactivatedProducts());
+  ipcMain.handle("db:deactivateProduct", (_, id) => deactivateProduct(id));
+  ipcMain.handle("db:reactivateProduct", (_, id) => reactivateProduct(id));
   ipcMain.handle("db:getNextInvoiceNumber", () => getNextInvoiceNumber());
   ipcMain.handle("db:isInvoiceNumberAvailable", (_, number, excludeExpenseId) =>
     isInvoiceNumberAvailable(number, excludeExpenseId),

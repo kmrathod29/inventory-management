@@ -30,8 +30,10 @@ function addProduct(product) {
   return addInventoryProduct(ctx.db, product);
 }
 
-function getProducts() {
-  const products = ctx.db.prepare(`SELECT * FROM products`).all();
+function loadProducts(active) {
+  const products = ctx.db
+    .prepare("SELECT * FROM products WHERE is_active = ?")
+    .all(active);
 
   for (const product of products) {
     product.variants = ctx.db
@@ -60,6 +62,14 @@ function getProducts() {
   return products;
 }
 
+function getProducts() {
+  return loadProducts(1);
+}
+
+function getDeactivatedProducts() {
+  return loadProducts(0);
+}
+
 function getNextInvoiceNumber() {
   return suggestNextInvoiceNumber(ctx.db, ctx.appConfig.invoiceDefaults?.invoiceNumber);
 }
@@ -70,6 +80,21 @@ function isInvoiceNumberAvailable(invoiceNumber, excludeExpenseId) {
 
 function deleteProduct(id) {
   deleteInventoryProduct(ctx.db, id);
+}
+
+function setProductActiveState(id, isActive) {
+  if (!id) throw new Error("Product id is required.");
+  const product = ctx.db.prepare("SELECT id FROM products WHERE id = ?").get(id);
+  if (!product) throw new Error("Product not found.");
+  ctx.db.prepare("UPDATE products SET is_active = ? WHERE id = ?").run(isActive ? 1 : 0, id);
+}
+
+function deactivateProduct(id) {
+  setProductActiveState(id, false);
+}
+
+function reactivateProduct(id) {
+  setProductActiveState(id, true);
 }
 
 function deleteProducts(productIds) {
@@ -108,7 +133,7 @@ function editProduct(id, product) {
   updateInventoryProduct(ctx.db, id, product);
 }
 function getProductByName(name) {
-  return ctx.db.prepare(`SELECT * FROM products WHERE name = ?`).get(name);
+  return ctx.db.prepare(`SELECT * FROM products WHERE name = ? AND is_active = 1`).get(name);
 }
 
 function getVariantBySize(productId, bucketSize) {
@@ -423,6 +448,9 @@ function importProductsFromExcel(filePath) {
     saveInventoryProductChanges,
     addProduct,
     getProducts,
+    getDeactivatedProducts,
+    deactivateProduct,
+    reactivateProduct,
     getNextInvoiceNumber,
     isInvoiceNumberAvailable,
     deleteProduct,
