@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { validatePasswordCredentials, validateProfiles } from "./profileAuth.js";
+import { normalizeProfileUsername, validatePasswordCredentials, validateProfiles } from "./profileAuth.js";
 
 export const DEFAULT_PAYMENT_METHOD = "Cash";
 export const PAYMENT_METHODS = ["Cash", "UPI", "Card", "Credit"];
@@ -47,6 +47,7 @@ export function defaultAppConfig() {
     profiles: [],
     activeProfileId: "user",
     defaultProfileCredentials: null,
+    appAuthentication: null,
   };
 }
 
@@ -152,6 +153,9 @@ function validateAppConfig(config) {
   const defaultProfileCredentials = config.defaultProfileCredentials == null
     ? null
     : validatePasswordCredentials(config.defaultProfileCredentials);
+  const appAuthentication = config.appAuthentication == null
+    ? null
+    : validateAppAuthentication(config.appAuthentication);
   const activeProfileId = config.activeProfileId ?? "user";
   if (
     typeof activeProfileId !== "string" ||
@@ -174,7 +178,25 @@ function validateAppConfig(config) {
     profiles,
     activeProfileId,
     defaultProfileCredentials,
+    appAuthentication,
   };
+}
+
+function validateAppAuthentication(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Application sign-in settings must be an object.");
+  }
+  const username = normalizeProfileUsername(value.username);
+  if (typeof value.password === "string") {
+    if (value.password.length < 8 || value.password.length > 1024) {
+      throw new Error("The saved application password must be between 8 and 1024 characters.");
+    }
+    return { username, password: value.password };
+  }
+  if (value.password !== undefined) {
+    throw new Error("The saved application password must be between 8 and 1024 characters.");
+  }
+  return { username, ...validatePasswordCredentials(value) };
 }
 
 export function loadAppConfig(configPath) {
@@ -186,7 +208,14 @@ export function loadAppConfig(configPath) {
   } catch (error) {
     throw new Error(`Could not read application settings at "${configPath}".`, { cause: error });
   }
-  return validateAppConfig(contents);
+  const validatedConfig = validateAppConfig(contents);
+  const savedApplicationPassword = contents.appAuthentication?.password;
+  const hasObsoleteApplicationHash = Object.hasOwn(contents.appAuthentication ?? {}, "passwordHash") ||
+    Object.hasOwn(contents.appAuthentication ?? {}, "passwordSalt");
+  if (typeof savedApplicationPassword === "string" && hasObsoleteApplicationHash) {
+    return saveAppConfig(configPath, validatedConfig);
+  }
+  return validatedConfig;
 }
 
 export function saveAppConfig(configPath, config) {

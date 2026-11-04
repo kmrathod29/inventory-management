@@ -6,6 +6,7 @@ import { AboutSection } from "./Components/AboutSection";
 import { BackupRestoreSection } from "./Components/BackupRestoreSection";
 import { BillingTaxSection } from "./Components/BillingTaxSection";
 import { ProfilesSection } from "./Components/ProfilesSection";
+import { SecuritySection } from "./Components/SecuritySection";
 import { ShopDetailsSection } from "./Components/ShopDetailsSection";
 import { useNetworkStatus } from "../../hooks/useNetworkStatus";
 import "./settings.css";
@@ -29,6 +30,7 @@ export function SettingsPage({
   appearanceTheme,
   appearanceMode,
   setAppearance,
+  setAuthStatus,
 }) {
   const [busy, setBusy] = useState("");
   const [activeSection, setActiveSection] = useState("shop");
@@ -349,6 +351,26 @@ export function SettingsPage({
     }
   }
 
+  async function handleSecuritySave(values) {
+    setBusy("security");
+    try {
+      const updatedAuthStatus = await window.auth.update(
+        values.enabled,
+        values.currentPassword,
+        values.username,
+        values.newPassword,
+      );
+      setAuthStatus(updatedAuthStatus);
+      setSettings(await window.db.getAppSettings());
+      showToast("Sign-in settings updated.", "success");
+    } catch (error) {
+      showToast(error.message || "Could not update sign-in settings.", "error");
+      throw error;
+    } finally {
+      setBusy("");
+    }
+  }
+
   return (
     <main className="settings-page">
       <header className="settings-header">
@@ -372,6 +394,7 @@ export function SettingsPage({
             ["backup", "Backup & Restore", "Manage your data and backups", "ti-database"],
             ["appearance", "Appearance", "Theme and interface preferences", "ti-palette"],
             ["about", "About", "Application version and support", "ti-info-circle"],
+            ["security", "Security", "Application password and recovery", "ti-lock"],
           ].map(([id, label, description, icon]) => (
             <button
               key={id}
@@ -445,6 +468,14 @@ export function SettingsPage({
                 onClose={() => setProfileDialogMode("")}
               />
             </>
+          )}
+          {activeSection === "security" && (
+            <SecuritySection
+              key={`${settings?.appLoginConfigured}:${settings?.appLogin?.username || ""}`}
+              settings={settings}
+              busy={busy}
+              onSave={handleSecuritySave}
+            />
           )}
         </div>
       </div>

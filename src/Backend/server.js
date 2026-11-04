@@ -10,6 +10,7 @@ import { createBackupService } from "./services/backupExport.js";
 import { createProductsService } from "./services/products.js";
 import { createCustomersService } from "./services/customersBills.js";
 import { createExpensesService } from "./services/expensesAnalytics.js";
+import { createAppAuthenticationService } from "./services/appAuthentication.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appConfigPath = path.join(app.getPath("userData"), "settings.json");
@@ -46,6 +47,7 @@ const context = {
 
 const services = [
   createSettingsService(context),
+  createAppAuthenticationService(context),
   createBackupService(context),
   createProductsService(context),
   createCustomersService(context),
@@ -58,7 +60,10 @@ export const {
   updateDefaultPaymentMethod, updateInvoiceDefaults, updateCategoryTaxRates, updateBillingSettings, updateInventoryAddItemMode,
   updateAppearanceSettings, setLocalDataDirectory, setInvoicePdfDirectory,
 } = services[0];
-export const { backupDatabase, exportDatabase, createPortableDatabaseBackup, restoreDatabase, restorePortableDatabase } = services[1];
+export const {
+  getAuthenticationStatus, login, updateAuthentication,
+} = services[1];
+export const { backupDatabase, exportDatabase, createPortableDatabaseBackup, restoreDatabase, restorePortableDatabase } = services[2];
 export const {
   saveInventoryProductChanges, addProduct, getProducts, getDeactivatedProducts,
   deactivateProduct, reactivateProduct, getNextInvoiceNumber,
@@ -67,7 +72,7 @@ export const {
   copyImageToDatabase, resolveImagePath, deleteBaseStock, deleteBase, deleteVariant,
   importProductsFromExcel, deleteProducts, deleteInventoryRows, findProductsReferencedByBills,
   updateProducts, updateVariantPrice, updateBaseStock, addStockToProduct, getInventoryStockHistory,
-} = services[2];
+} = services[3];
 export const {
   addCustomer, addBillActivity, getBillActivity, addBill, getCustomers,
   deleteCustomer, addCustomerBill, addBillToCustomer, deleteBill, editCustomer, editBill,
@@ -75,11 +80,11 @@ export const {
   updateBillPayment,
   updateBillPdfPath,
   getBillPdfPath,
-} = services[3];
+} = services[4];
 export const {
   addExpense, getExpenses, getReportData, deleteExpense, getSales, getNetPosition,
   getTopProducts, getTopCustomers, recordImportExpense, editImportExpense,
   editExpense, getExpenseDetails,
-} = services[4];
+} = services[5];
 
 export default db;

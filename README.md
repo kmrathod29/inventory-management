@@ -4,7 +4,13 @@
 
 A simple, modern inventory manager built for small, local businesses. StockWise lets you manage your product catalog, track stock levels across multiple product bases and sizes, create bills and invoices, and keep tabs on customer payments — all from a clean, offline desktop app.
 
-No internet connection required. All data is stored locally on your machine.
+Core inventory and billing data is stored locally and works offline.
+
+## Application sign-in
+
+Application sign-in is optional. Open **Settings > Security** and select **Require username and password at startup** to enable it. Set a username and a password of at least eight characters. Leave the option unchecked to open the software without a login screen.
+
+When sign-in is enabled, enter the current password in **Settings > Security** to change the username or password, or to disable the login requirement. Passwords are stored as salted hashes.
 
 ## Regional defaults
 

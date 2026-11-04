@@ -90,6 +90,9 @@ import {
   createProfile,
   switchProfile,
   setDefaultProfilePassword,
+  getAuthenticationStatus,
+  login,
+  updateAuthentication,
 } from "../src/Backend/server.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
@@ -343,6 +346,25 @@ function fillInvoiceTemplate(invoice, upiQrPath) {
 }
 
 let mainWindow;
+const authenticatedWebContents = new Set();
+const publicIpcChannels = new Set([
+  "auth:getStatus",
+  "auth:login",
+  "settings:setTitleBarOverlay",
+]);
+
+function registerIpcHandler(channel, handler) {
+  ipcMain.handle(channel, (event, ...args) => {
+    if (
+      getAuthenticationStatus().isEnabled &&
+      !publicIpcChannels.has(channel) &&
+      !authenticatedWebContents.has(event.sender.id)
+    ) {
+      throw new Error("Sign in to continue.");
+    }
+    return handler(event, ...args);
+  });
+}
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -463,100 +485,100 @@ app.whenReady().then(() => {
       return new Response("Not found", { status: 404 });
     }
   });
-  ipcMain.handle("db:addProduct", (_, product) => addProduct(product));
-  ipcMain.handle("db:saveInventoryProduct", (_, product) => saveInventoryProductChanges(product));
-  ipcMain.handle("db:getProducts", () => getProducts());
-  ipcMain.handle("db:getDeactivatedProducts", () => getDeactivatedProducts());
-  ipcMain.handle("db:deactivateProduct", (_, id) => deactivateProduct(id));
-  ipcMain.handle("db:reactivateProduct", (_, id) => reactivateProduct(id));
-  ipcMain.handle("db:getNextInvoiceNumber", () => getNextInvoiceNumber());
-  ipcMain.handle("db:isInvoiceNumberAvailable", (_, number, excludeExpenseId) =>
+  registerIpcHandler("db:addProduct", (_, product) => addProduct(product));
+  registerIpcHandler("db:saveInventoryProduct", (_, product) => saveInventoryProductChanges(product));
+  registerIpcHandler("db:getProducts", () => getProducts());
+  registerIpcHandler("db:getDeactivatedProducts", () => getDeactivatedProducts());
+  registerIpcHandler("db:deactivateProduct", (_, id) => deactivateProduct(id));
+  registerIpcHandler("db:reactivateProduct", (_, id) => reactivateProduct(id));
+  registerIpcHandler("db:getNextInvoiceNumber", () => getNextInvoiceNumber());
+  registerIpcHandler("db:isInvoiceNumberAvailable", (_, number, excludeExpenseId) =>
     isInvoiceNumberAvailable(number, excludeExpenseId),
   );
-  ipcMain.handle("db:deleteProduct", (_, id) => deleteProduct(id));
-  ipcMain.handle("db:deleteProducts", (_, productIds) => deleteProducts(productIds));
-  ipcMain.handle("db:deleteInventoryRows", (_, targets) =>
+  registerIpcHandler("db:deleteProduct", (_, id) => deleteProduct(id));
+  registerIpcHandler("db:deleteProducts", (_, productIds) => deleteProducts(productIds));
+  registerIpcHandler("db:deleteInventoryRows", (_, targets) =>
     deleteInventoryRows(targets),
   );
-  ipcMain.handle("db:findProductsReferencedByBills", (_, productIds) =>
+  registerIpcHandler("db:findProductsReferencedByBills", (_, productIds) =>
     findProductsReferencedByBills(productIds),
   );
-  ipcMain.handle("db:updateProducts", (_, productIds, changes) =>
+  registerIpcHandler("db:updateProducts", (_, productIds, changes) =>
     updateProducts(productIds, changes),
   );
-  ipcMain.handle("db:updateVariantPrice", (_, productId, baseId, sizeId, field, value) =>
+  registerIpcHandler("db:updateVariantPrice", (_, productId, baseId, sizeId, field, value) =>
     updateVariantPrice(productId, baseId, sizeId, field, value),
   );
-  ipcMain.handle("db:updateBaseStock", (_, productId, baseId, sizeId, value) =>
+  registerIpcHandler("db:updateBaseStock", (_, productId, baseId, sizeId, value) =>
     updateBaseStock(productId, baseId, sizeId, value),
   );
-  ipcMain.handle("db:addStockToProduct", (_, productId, quantity) =>
+  registerIpcHandler("db:addStockToProduct", (_, productId, quantity) =>
     addStockToProduct(productId, quantity),
   );
-  ipcMain.handle("db:getInventoryStockHistory", (_, productId) =>
+  registerIpcHandler("db:getInventoryStockHistory", (_, productId) =>
     getInventoryStockHistory(productId),
   );
-  ipcMain.handle("db:editProduct", (_, id, product) =>
+  registerIpcHandler("db:editProduct", (_, id, product) =>
     editProduct(id, product),
   );
-  ipcMain.handle("db:addExpense", (_, expense) => addExpense(expense));
-  ipcMain.handle("db:getExpenses", () => getExpenses());
-  ipcMain.handle("db:getReportData", (_, startDate, endDate) => getReportData(startDate, endDate));
-  ipcMain.handle("db:deleteExpense", (_, id) => deleteExpense(id));
-  ipcMain.handle("db:getSales", () => getSales());
-  ipcMain.handle("db:getNetPosition", (_, period) => getNetPosition(period));
-  ipcMain.handle("db:getProductByName", (_, name) => getProductByName(name));
-  ipcMain.handle("db:getVariantBySize", (_, productId, bucketSize) =>
+  registerIpcHandler("db:addExpense", (_, expense) => addExpense(expense));
+  registerIpcHandler("db:getExpenses", () => getExpenses());
+  registerIpcHandler("db:getReportData", (_, startDate, endDate) => getReportData(startDate, endDate));
+  registerIpcHandler("db:deleteExpense", (_, id) => deleteExpense(id));
+  registerIpcHandler("db:getSales", () => getSales());
+  registerIpcHandler("db:getNetPosition", (_, period) => getNetPosition(period));
+  registerIpcHandler("db:getProductByName", (_, name) => getProductByName(name));
+  registerIpcHandler("db:getVariantBySize", (_, productId, bucketSize) =>
     getVariantBySize(productId, bucketSize),
   );
-  ipcMain.handle("db:addVariant", (_, productId, variant) =>
+  registerIpcHandler("db:addVariant", (_, productId, variant) =>
     addVariant(productId, variant),
   );
-  ipcMain.handle("db:addBase", (_, productId, baseName) =>
+  registerIpcHandler("db:addBase", (_, productId, baseName) =>
     addBase(productId, baseName),
   );
-  ipcMain.handle("db:addBaseStock", (_, baseId, variantId, stock) =>
+  registerIpcHandler("db:addBaseStock", (_, baseId, variantId, stock) =>
     addBaseStock(baseId, variantId, stock),
   );
-  ipcMain.handle("db:getBaseByName", (_, productId, baseName) =>
+  registerIpcHandler("db:getBaseByName", (_, productId, baseName) =>
     getBaseByName(productId, baseName),
   );
-  ipcMain.handle("db:addCustomer", (_, customer) => addCustomer(customer));
-  ipcMain.handle("db:addBill", (_, customerId, bill) =>
+  registerIpcHandler("db:addCustomer", (_, customer) => addCustomer(customer));
+  registerIpcHandler("db:addBill", (_, customerId, bill) =>
     addBill(customerId, bill),
   );
-  ipcMain.handle("db:addCustomerBill", (_, customer, bill) => addCustomerBill(customer, bill));
-  ipcMain.handle("db:addBillToCustomer", (_, customerId, customer, bill) =>
+  registerIpcHandler("db:addCustomerBill", (_, customer, bill) => addCustomerBill(customer, bill));
+  registerIpcHandler("db:addBillToCustomer", (_, customerId, customer, bill) =>
     addBillToCustomer(customerId, customer, bill),
   );
-  ipcMain.handle("db:editCustomerBill", (_, customerId, customer, billId, bill) =>
+  registerIpcHandler("db:editCustomerBill", (_, customerId, customer, billId, bill) =>
     editCustomerBill(customerId, customer, billId, bill),
   );
-  ipcMain.handle("db:updateBillPayment", (_, billId, amountPaid, status) =>
+  registerIpcHandler("db:updateBillPayment", (_, billId, amountPaid, status) =>
     updateBillPayment(billId, amountPaid, status),
   );
-  ipcMain.handle("db:addBillActivity", (_, billId, activity) =>
+  registerIpcHandler("db:addBillActivity", (_, billId, activity) =>
     addBillActivity(billId, activity),
   );
-  ipcMain.handle("db:getBillActivity", (_, billId) => getBillActivity(billId));
-  ipcMain.handle("db:editCustomer", (_, id, customer) =>
+  registerIpcHandler("db:getBillActivity", (_, billId) => getBillActivity(billId));
+  registerIpcHandler("db:editCustomer", (_, id, customer) =>
     editCustomer(id, customer),
   );
-  ipcMain.handle("db:getExpenseDetails", (_, id) => getExpenseDetails(id));
-  ipcMain.handle("db:editExpense", (_, id, expense) =>
+  registerIpcHandler("db:getExpenseDetails", (_, id) => getExpenseDetails(id));
+  registerIpcHandler("db:editExpense", (_, id, expense) =>
     editExpense(id, expense),
   );
-  ipcMain.handle("db:editImportExpense", (_, id, expenseMeta, items) =>
+  registerIpcHandler("db:editImportExpense", (_, id, expenseMeta, items) =>
     editImportExpense(id, expenseMeta, items),
   );
-  ipcMain.handle("db:editBill", (_, billId, bill) => editBill(billId, bill));
-  ipcMain.handle("db:getCustomers", () => getCustomers());
-  ipcMain.handle("db:deleteCustomer", (_, id) => deleteCustomer(id));
-  ipcMain.handle("db:deleteBill", (_, billId) => deleteBill(billId));
-  ipcMain.handle("db:resolveImagePath", (_, relativePath) =>
+  registerIpcHandler("db:editBill", (_, billId, bill) => editBill(billId, bill));
+  registerIpcHandler("db:getCustomers", () => getCustomers());
+  registerIpcHandler("db:deleteCustomer", (_, id) => deleteCustomer(id));
+  registerIpcHandler("db:deleteBill", (_, billId) => deleteBill(billId));
+  registerIpcHandler("db:resolveImagePath", (_, relativePath) =>
     resolveImagePath(relativePath),
   );
-  ipcMain.handle("db:createBackup", async (event) => {
+  registerIpcHandler("db:createBackup", async (event) => {
     const result = await dialog.showSaveDialog(
       BrowserWindow.fromWebContents(event.sender),
       {
@@ -569,7 +591,7 @@ app.whenReady().then(() => {
     const filePath = await backupDatabase(result.filePath);
     return { filePath };
   });
-  ipcMain.handle("db:restoreBackup", async (event) => {
+  registerIpcHandler("db:restoreBackup", async (event) => {
     const result = await dialog.showOpenDialog(
       BrowserWindow.fromWebContents(event.sender),
       {
@@ -584,7 +606,7 @@ app.whenReady().then(() => {
     process.nextTick(restartApplication);
     return restoreResult;
   });
-  ipcMain.handle("db:createPortableBackup", async (event) => {
+  registerIpcHandler("db:createPortableBackup", async (event) => {
     const result = await dialog.showSaveDialog(BrowserWindow.fromWebContents(event.sender), {
       title: "Create Portable StockWise Backup",
       defaultPath: `StockWise-Portable-Backup-${new Date().toISOString().slice(0, 10)}.zip`,
@@ -593,7 +615,7 @@ app.whenReady().then(() => {
     if (result.canceled || !result.filePath) return null;
     return { filePath: await createPortableDatabaseBackup(result.filePath, app.getVersion()) };
   });
-  ipcMain.handle("db:restorePortableBackup", async (event) => {
+  registerIpcHandler("db:restorePortableBackup", async (event) => {
     const result = await dialog.showOpenDialog(BrowserWindow.fromWebContents(event.sender), {
       title: "Restore Portable StockWise Backup",
       properties: ["openFile"],
@@ -604,7 +626,7 @@ app.whenReady().then(() => {
     process.nextTick(restartApplication);
     return restoreResult;
   });
-  ipcMain.handle("settings:pickExportDirectory", async (event) => {
+  registerIpcHandler("settings:pickExportDirectory", async (event) => {
     const result = await dialog.showOpenDialog(
       BrowserWindow.fromWebContents(event.sender),
       {
@@ -615,19 +637,31 @@ app.whenReady().then(() => {
     if (result.canceled || result.filePaths.length === 0) return null;
     return result.filePaths[0];
   });
-  ipcMain.handle("settings:exportData", (_, destinationPath, selections) =>
+  registerIpcHandler("settings:exportData", (_, destinationPath, selections) =>
     exportDatabase(destinationPath, selections, app.getVersion()),
   );
-  ipcMain.handle("settings:get", () => getAppSettings());
-  ipcMain.handle("settings:saveGstinApiKey", (_, apiKey) => saveGstinApiKey(apiKey));
-  ipcMain.handle("gstin:lookup", (_, gstin) => lookupGstin(gstin));
-  ipcMain.handle("settings:createProfile", (_, username, password) =>
+  registerIpcHandler("auth:getStatus", () => getAuthenticationStatus());
+  registerIpcHandler("auth:login", (event, username, password) => {
+    const status = login(username, password);
+    authenticatedWebContents.add(event.sender.id);
+    return status;
+  });
+  registerIpcHandler("auth:update", (event, ...args) => {
+    const status = updateAuthentication(...args);
+    if (status.isEnabled) authenticatedWebContents.add(event.sender.id);
+    if (!status.isEnabled) authenticatedWebContents.clear();
+    return status;
+  });
+  registerIpcHandler("settings:get", () => getAppSettings());
+  registerIpcHandler("settings:saveGstinApiKey", (_, apiKey) => saveGstinApiKey(apiKey));
+  registerIpcHandler("gstin:lookup", (_, gstin) => lookupGstin(gstin));
+  registerIpcHandler("settings:createProfile", (_, username, password) =>
     createProfile(username, password),
   );
-  ipcMain.handle("settings:setDefaultProfilePassword", (_, password) =>
+  registerIpcHandler("settings:setDefaultProfilePassword", (_, password) =>
     setDefaultProfilePassword(password),
   );
-  ipcMain.handle("settings:switchProfile", (event, profileId, username, password) => {
+  registerIpcHandler("settings:switchProfile", (event, profileId, username, password) => {
     const settings = switchProfile(profileId, username, password);
     setTimeout(() => {
       const window = BrowserWindow.fromWebContents(event.sender);
@@ -635,31 +669,31 @@ app.whenReady().then(() => {
     }, 100);
     return settings;
   });
-  ipcMain.handle("settings:updateDefaultPaymentMethod", (_, paymentMethod) =>
+  registerIpcHandler("settings:updateDefaultPaymentMethod", (_, paymentMethod) =>
     updateDefaultPaymentMethod(paymentMethod),
   );
-  ipcMain.handle("settings:updateInvoiceDefaults", async (_, invoiceDefaults) => {
+  registerIpcHandler("settings:updateInvoiceDefaults", async (_, invoiceDefaults) => {
     await ensureUpiQr({ userDataPath: app.getPath("userData"), upiId: invoiceDefaults?.upiId, shopName: invoiceDefaults?.shopName });
     return updateInvoiceDefaults(invoiceDefaults);
   });
-  ipcMain.handle("settings:updateCategoryTaxRates", (_, categoryTaxRates) =>
+  registerIpcHandler("settings:updateCategoryTaxRates", (_, categoryTaxRates) =>
     updateCategoryTaxRates(categoryTaxRates),
   );
-  ipcMain.handle("settings:updateBillingSettings", async (_, invoiceDefaults, categoryTaxRates, categoryHsnCodes) => {
+  registerIpcHandler("settings:updateBillingSettings", async (_, invoiceDefaults, categoryTaxRates, categoryHsnCodes) => {
     await ensureUpiQr({ userDataPath: app.getPath("userData"), upiId: invoiceDefaults?.upiId, shopName: invoiceDefaults?.shopName });
     return updateBillingSettings(invoiceDefaults, categoryTaxRates, categoryHsnCodes);
   });
-  ipcMain.handle("settings:updateInventoryAddItemMode", (_, mode) =>
+  registerIpcHandler("settings:updateInventoryAddItemMode", (_, mode) =>
     updateInventoryAddItemMode(mode),
   );
-  ipcMain.handle("settings:updateAppearance", (_, theme, mode) =>
+  registerIpcHandler("settings:updateAppearance", (_, theme, mode) =>
     updateAppearanceSettings(theme, mode),
   );
-  ipcMain.handle("settings:setTitleBarOverlay", (_, color, symbolColor) => {
+  registerIpcHandler("settings:setTitleBarOverlay", (_, color, symbolColor) => {
     if (!mainWindow || mainWindow.isDestroyed()) return;
     mainWindow.setTitleBarOverlay({ color, symbolColor, height: OVERLAY_HEIGHT });
   });
-  ipcMain.handle("settings:openDataDirectory", async () => {
+  registerIpcHandler("settings:openDataDirectory", async () => {
     const error = await shell.openPath(getAppSettings().dataDirectory);
     if (error) throw new Error(`Could not open the data folder: ${error}`);
   });
@@ -694,13 +728,13 @@ app.whenReady().then(() => {
     const directory = ensureInvoicePdfDirectory(result.filePaths[0]);
     return setInvoicePdfDirectory(directory);
   };
-  ipcMain.handle("settings:openInvoicePdfDirectory", async () => {
+  registerIpcHandler("settings:openInvoicePdfDirectory", async () => {
     const directory = ensureInvoicePdfDirectory(getAppSettings().invoicePdfDirectory);
     const error = await shell.openPath(directory);
     if (error) throw new Error(`Could not open the invoice PDF folder: ${error}`);
   });
-  ipcMain.handle("settings:changeInvoicePdfDirectory", selectInvoicePdfDirectory);
-  ipcMain.handle("settings:changeDataDirectory", async (event) => {
+  registerIpcHandler("settings:changeInvoicePdfDirectory", selectInvoicePdfDirectory);
+  registerIpcHandler("settings:changeDataDirectory", async (event) => {
     const result = await dialog.showOpenDialog(
       BrowserWindow.fromWebContents(event.sender),
       {
@@ -714,7 +748,7 @@ app.whenReady().then(() => {
     process.nextTick(restartApplication);
     return settings;
   });
-  ipcMain.handle("invoice:savePdf", async (event, billId, invoice, openAfterSave = false) => {
+  registerIpcHandler("invoice:savePdf", async (event, billId, invoice, openAfterSave = false) => {
     const owner = BrowserWindow.fromWebContents(event.sender);
     const safePart = (value, fallback) => String(value || fallback)
       .normalize("NFKC").replace(/[<>:"/\\|?*]/g, "_").replace(/\p{Cc}/gu, "_").replace(/[. ]+$/g, "").trim().slice(0, 80) || fallback;
@@ -840,7 +874,7 @@ app.whenReady().then(() => {
     }
     return { pdfPath: targetPath, opened: openAfterSave, saved: true };
   });
-  ipcMain.handle("dialog:pickExcelFile", async () => {
+  registerIpcHandler("dialog:pickExcelFile", async () => {
     const result = await dialog.showOpenDialog({
       properties: ["openFile"],
       filters: [{ name: "Excel Files", extensions: ["xlsx", "xls"] }],
@@ -848,30 +882,30 @@ app.whenReady().then(() => {
     if (result.canceled || result.filePaths.length === 0) return null;
     return result.filePaths[0];
   });
-  ipcMain.handle("db:recordImportExpense", (_, expenseMeta, items) =>
+  registerIpcHandler("db:recordImportExpense", (_, expenseMeta, items) =>
     recordImportExpense(expenseMeta, items),
   );
-  ipcMain.handle("db:importExcel", (_, filePath) =>
+  registerIpcHandler("db:importExcel", (_, filePath) =>
     importProductsFromExcel(filePath),
   );
-  ipcMain.handle("db:copyImage", (_, sourcePath) =>
+  registerIpcHandler("db:copyImage", (_, sourcePath) =>
     copyImageToDatabase(sourcePath),
   );
 
-  ipcMain.handle("db:deleteBaseStock", (_, baseId, variantId) =>
+  registerIpcHandler("db:deleteBaseStock", (_, baseId, variantId) =>
     deleteBaseStock(baseId, variantId),
   );
-  ipcMain.handle("db:deleteBase", (_, baseId) => deleteBase(baseId));
-  ipcMain.handle("db:deleteVariant", (_, variantId) =>
+  registerIpcHandler("db:deleteBase", (_, baseId) => deleteBase(baseId));
+  registerIpcHandler("db:deleteVariant", (_, variantId) =>
     deleteVariant(variantId),
   );
-  ipcMain.handle("db:getTopProducts", (_, period) =>
+  registerIpcHandler("db:getTopProducts", (_, period) =>
     getTopProducts(period),
   );
-  ipcMain.handle("db:getTopCustomers", (_, period) =>
+  registerIpcHandler("db:getTopCustomers", (_, period) =>
     getTopCustomers(period),
   );
-  ipcMain.handle("dialog:pickImage", async () => {
+  registerIpcHandler("dialog:pickImage", async () => {
     const result = await dialog.showOpenDialog({
       properties: ["openFile"],
       filters: [{ name: "Images", extensions: ["jpg", "jpeg", "png", "webp"] }],

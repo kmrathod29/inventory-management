@@ -35,6 +35,7 @@ function publicProfile(profile) {
 function getAppSettings() {
   const publicConfig = { ...ctx.appConfig };
   delete publicConfig.defaultProfileCredentials;
+  delete publicConfig.appAuthentication;
   delete publicConfig.gstinApiKeyEncrypted;
   delete publicConfig.profiles;
   return {
@@ -44,6 +45,12 @@ function getAppSettings() {
     invoicePdfDirectory: ctx.appConfig.invoicePdfDirectory || path.join(ctx.userDataPath, "Invoices"),
     activeProfileId: ctx.appConfig.activeProfileId,
     defaultProfilePasswordSet: Boolean(ctx.appConfig.defaultProfileCredentials),
+    appLoginConfigured: Boolean(ctx.appConfig.appAuthentication),
+    appLogin: ctx.appConfig.appAuthentication
+      ? {
+          username: ctx.appConfig.appAuthentication.username,
+        }
+      : null,
     profiles: [
       { id: "user", username: "user", isDefault: true },
       ...ctx.appConfig.profiles.map(publicProfile),

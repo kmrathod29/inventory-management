@@ -142,6 +142,51 @@ test("persists profile metadata and default profile credentials", () => {
   }
 });
 
+test("validates and persists optional application sign-in configuration", () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "stockwise-app-auth-settings-"));
+  const configPath = path.join(directory, "settings.json");
+  const appAuthentication = {
+    username: "Owner",
+    password: "correct-horse-battery",
+  };
+  try {
+    const config = saveAppConfig(configPath, { appAuthentication });
+    assert.deepEqual(loadAppConfig(configPath).appAuthentication, config.appAuthentication);
+    assert.throws(
+      () => saveAppConfig(configPath, { appAuthentication: { username: "Owner", password: "short" } }),
+      /between 8 and 1024 characters/,
+    );
+    assert.equal(saveAppConfig(configPath, { ...config, appAuthentication: null }).appAuthentication, null);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("removes obsolete application password hashes when plaintext is already configured", () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "stockwise-app-auth-migration-"));
+  const configPath = path.join(directory, "settings.json");
+  const credentials = createProfileCredentials("correct-horse-battery");
+  try {
+    fs.writeFileSync(configPath, JSON.stringify({
+      appAuthentication: {
+        username: "Owner",
+        password: "correct-horse-battery",
+        ...credentials,
+      },
+    }));
+
+    assert.deepEqual(loadAppConfig(configPath).appAuthentication, {
+      username: "Owner",
+      password: "correct-horse-battery",
+    });
+    const savedConfig = fs.readFileSync(configPath, "utf8");
+    assert.match(savedConfig, /"password": "correct-horse-battery"/);
+    assert.doesNotMatch(savedConfig, /passwordHash|passwordSalt/);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("uses configured, packaged, and development data directories", () => {
   const configuredPath = path.join(os.tmpdir(), "stockwise-configured-data");
   const userDataPath = path.join(os.tmpdir(), "stockwise-user-data");

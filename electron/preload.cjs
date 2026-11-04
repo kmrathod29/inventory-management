@@ -176,6 +176,13 @@ contextBridge.exposeInMainWorld("db", {
     invoke("invoice:savePdf", billId, invoice, openAfterSave),
 });
 
+contextBridge.exposeInMainWorld("auth", {
+  getStatus: () => ipcRenderer.invoke("auth:getStatus"),
+  login: (username, password) => ipcRenderer.invoke("auth:login", username, password),
+  update: (enabled, currentPassword, username, newPassword) =>
+    ipcRenderer.invoke("auth:update", enabled, currentPassword, username, newPassword),
+});
+
 contextBridge.exposeInMainWorld("app", {
   onDataChanged: (callback) => {
     const listener = () => callback();
