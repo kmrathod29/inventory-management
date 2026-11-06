@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import "./styles/billing.css";
 import { emptyBill, statusMeta } from "../../Backend/customers";
 import { BillDialog, BillHeader, BillTable } from "./Components/index.js";
@@ -316,40 +317,41 @@ export function Billing() {
       </div>
 
       {ConfirmDialogComponent}
-      {paymentBill && (
+      {paymentBill && createPortal(
         <div className="payment-dialog-overlay" role="presentation" onMouseDown={(event) => {
           if (event.target === event.currentTarget) setPaymentBill(null);
         }}>
           <div className="payment-dialog" role="dialog" aria-modal="true" aria-labelledby="payment-dialog-title">
-          <form onSubmit={savePayment}>
-            <button type="button" className="dialog-close payment-dialog-close" onClick={() => setPaymentBill(null)} aria-label="Close">×</button>
-            <h2 id="payment-dialog-title">Update Payment</h2>
-            <p>{paymentBill.name} · {formatCurrency(paymentBill.totalPurchased)}</p>
-            <div className="payment-dialog-due">
-              <span>Amount due</span>
-              <strong>{formatCurrency(Math.max(0, Number(paymentBill.amountDue || 0)))}</strong>
-            </div>
-            <label>
-              Payment status
-              <select value={paymentStatus} onChange={(event) => setPaymentStatus(event.target.value)}>
-                <option value="Paid">Completed</option>
-                <option value="Due">Pending</option>
-                <option value="Partial">Partially Paid</option>
-              </select>
-            </label>
-            {paymentStatus === "Partial" && (
+            <form onSubmit={savePayment}>
+              <button type="button" className="dialog-close payment-dialog-close" onClick={() => setPaymentBill(null)} aria-label="Close">×</button>
+              <h2 id="payment-dialog-title">Update Payment</h2>
+              <p>{paymentBill.name} · {formatCurrency(paymentBill.totalPurchased)}</p>
+              <div className="payment-dialog-due">
+                <span>Amount due</span>
+                <strong>{formatCurrency(Math.max(0, Number(paymentBill.amountDue || 0)))}</strong>
+              </div>
               <label>
-                Payment amount
-                <input type="number" min="0.01" max={Math.max(0, Number(paymentBill.amountDue || 0) - 0.01)} step="0.01" value={partialAmount} onChange={(event) => setPartialAmount(event.target.value)} required />
+                Payment status
+                <select value={paymentStatus} onChange={(event) => setPaymentStatus(event.target.value)}>
+                  <option value="Paid">Completed</option>
+                  <option value="Due">Pending</option>
+                  <option value="Partial">Partially Paid</option>
+                </select>
               </label>
-            )}
-            <div className="payment-dialog-actions">
-              <button type="button" className="btn-secondary" onClick={() => setPaymentBill(null)}>Cancel</button>
-              <button type="submit" className="btn-primary">Save Payment</button>
-            </div>
-          </form>
+              {paymentStatus === "Partial" && (
+                <label>
+                  Payment amount
+                  <input type="number" min="0.01" max={Math.max(0, Number(paymentBill.amountDue || 0) - 0.01)} step="0.01" value={partialAmount} onChange={(event) => setPartialAmount(event.target.value)} required />
+                </label>
+              )}
+              <div className="payment-dialog-actions">
+                <button type="button" className="btn-secondary" onClick={() => setPaymentBill(null)}>Cancel</button>
+                <button type="submit" className="btn-primary">Save Payment</button>
+              </div>
+            </form>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

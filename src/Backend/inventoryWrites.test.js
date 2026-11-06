@@ -72,3 +72,17 @@ test("adds incoming stock when the product, variant, and base already exist", ()
     db.close();
   }
 });
+
+test("records product creation even when the new product starts with no stock", () => {
+  const db = createDatabase();
+
+  try {
+    saveInventoryProduct(db, { ...validProduct, bases: [{ name: "AC1", stocks: [0] }] });
+    assert.deepEqual(
+      db.prepare("SELECT action, quantity, previous_stock, new_stock FROM inventory_stock_history").get(),
+      { action: "Product created", quantity: 0, previous_stock: 0, new_stock: 0 },
+    );
+  } finally {
+    db.close();
+  }
+});

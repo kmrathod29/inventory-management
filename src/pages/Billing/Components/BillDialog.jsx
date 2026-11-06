@@ -268,6 +268,14 @@ export function BillDialog({
       ),
     }));
   }
+  function handleSetPrice(index, value) {
+    setForm((f) => ({
+      ...f,
+      products: f.products.map((p, i) =>
+        i === index ? { ...p, priceAtSale: value } : p,
+      ),
+    }));
+  }
   function handleQuickAddProduct(product) {
     const variant = product.variants?.[0];
     const base = product.bases?.[0];
@@ -1015,6 +1023,7 @@ export function BillDialog({
                 onDelete={handleRemoveProduct}
                 onChangeQty={handleChangeQty}
                 onSetQty={handleSetQty}
+                onSetPrice={handleSetPrice}
                 products={products}
                 categoryHsnCodes={categoryHsnCodes}
               />
@@ -1315,6 +1324,7 @@ export function BillDialog({
               onDelete={handleRemoveProduct}
               onChangeQty={handleChangeQty}
               onSetQty={handleSetQty}
+              onSetPrice={handleSetPrice}
               products={products}
             />
           </section>

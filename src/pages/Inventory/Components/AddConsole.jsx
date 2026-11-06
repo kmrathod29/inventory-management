@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useResolvedImage } from "../../../hooks/resolvedImage.js";
 import { useToast } from "../../../hooks/ToastContext.jsx";
 import { useErrorHandler } from "../../../hooks/useErrorHandler";
+import { fuzzyScore } from "../../../utils/fuzzySearch.js";
 
-export function AddConsole({ product, setProduct, onClose, onSaved }) {
+export function AddConsole({ product, products = [], setProduct, onClose, onSaved }) {
   const showToast = useToast();
   const { handleAsync } = useErrorHandler();
   const [name, setName] = useState(product?.name || "");
@@ -15,7 +16,18 @@ export function AddConsole({ product, setProduct, onClose, onSaved }) {
   const [stock, setStock] = useState(String(product?.bases?.reduce((total, base) => total + (base.stocks || []).reduce((sum, value) => sum + Number(value || 0), 0), 0) ?? ""));
   const [lowStockThreshold, setLowStockThreshold] = useState(String(product?.low_stock_threshold ?? product?.lowStockThreshold ?? 10));
   const [isSaving, setIsSaving] = useState(false);
+  const [isNameFocused, setIsNameFocused] = useState(false);
   const resolvedImage = useResolvedImage(image);
+  const matchingProducts = useMemo(() => {
+    const query = name.trim();
+    if (product || !query) return [];
+    return products
+      .map((item) => ({ item, score: fuzzyScore(query, item.name) }))
+      .filter(({ score }) => score !== null)
+      .sort((a, b) => b.score - a.score || a.item.name.localeCompare(b.item.name))
+      .slice(0, 8)
+      .map(({ item }) => item);
+  }, [name, product, products]);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,7 +110,41 @@ export function AddConsole({ product, setProduct, onClose, onSaved }) {
       <div className="inventory-add-form-grid">
         <label className="inventory-add-field inventory-add-field-full">
           Product Name
-          <input value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Ultratech Cement 50kg" autoFocus required />
+          <div className="inventory-product-name-autocomplete">
+            <input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              onFocus={() => setIsNameFocused(true)}
+              onBlur={() => setIsNameFocused(false)}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") setIsNameFocused(false);
+              }}
+              placeholder="e.g. Ultratech Cement 50kg"
+              autoFocus
+              required
+              autoComplete="off"
+              aria-autocomplete="list"
+              aria-expanded={isNameFocused && matchingProducts.length > 0}
+            />
+            {isNameFocused && matchingProducts.length > 0 && (
+              <ul className="inventory-product-name-suggestions">
+                {matchingProducts.map((item) => (
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => {
+                        setName(item.name);
+                        setIsNameFocused(false);
+                      }}
+                    >
+                      {item.name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </label>
         <label className="inventory-add-field">
           Category

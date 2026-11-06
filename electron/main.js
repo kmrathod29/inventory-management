@@ -87,6 +87,7 @@ import {
   updateBaseStock,
   addStockToProduct,
   getInventoryStockHistory,
+  getInventoryActivityHistory,
   createProfile,
   switchProfile,
   setDefaultProfilePassword,
@@ -517,6 +518,9 @@ app.whenReady().then(() => {
   );
   registerIpcHandler("db:getInventoryStockHistory", (_, productId) =>
     getInventoryStockHistory(productId),
+  );
+  registerIpcHandler("db:getInventoryActivityHistory", (_, action) =>
+    getInventoryActivityHistory(action),
   );
   registerIpcHandler("db:editProduct", (_, id, product) =>
     editProduct(id, product),

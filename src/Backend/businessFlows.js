@@ -74,10 +74,8 @@ export function addInventoryProduct(db, product) {
   const initialStock = validatedProduct.bases.reduce(
     (total, base) => total + base.stocks.reduce((sum, stock) => sum + stock, 0), 0,
   );
-  if (initialStock > 0) {
-    db.prepare(`INSERT INTO inventory_stock_history (product_id, action, quantity, previous_stock, new_stock) VALUES (?, ?, ?, ?, ?)`)
-      .run(productId, "Product created", initialStock, 0, initialStock);
-  }
+  db.prepare(`INSERT INTO inventory_stock_history (product_id, action, quantity, previous_stock, new_stock) VALUES (?, ?, ?, ?, ?)`)
+    .run(productId, "Product created", initialStock, 0, initialStock);
   return productId;
 }
 
@@ -437,6 +435,20 @@ export function addStockToProduct(db, productId, quantity) {
 
 export function getInventoryStockHistory(db, productId) {
   return db.prepare(`SELECT id, action, quantity, previous_stock, new_stock, created_at FROM inventory_stock_history WHERE product_id = ? ORDER BY created_at DESC, id DESC`).all(productId);
+}
+
+export function getInventoryActivityHistory(db, action) {
+  if (!["Product created", "Stock added"].includes(action)) {
+    throw new Error("Unsupported inventory history action.");
+  }
+  return db.prepare(`
+    SELECT history.id, history.action, history.quantity, history.previous_stock,
+      history.new_stock, history.created_at, products.name AS product_name
+    FROM inventory_stock_history history
+    JOIN products ON products.id = history.product_id
+    WHERE history.action = ?
+    ORDER BY history.created_at DESC, history.id DESC
+  `).all(action);
 }
 
 export function adjustStock(db, productName, baseName, bucketSize, deltaQty, productSkuCode = "") {

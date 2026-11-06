@@ -19,6 +19,7 @@ export function BillItemsTable({
   onDelete,
   onChangeQty,
   onSetQty,
+  onSetPrice,
   products = [],
 }) {
   const rowRefs = useRef([]);
@@ -136,7 +137,23 @@ export function BillItemsTable({
                   p.quantity
                 )}
               </td>
-              <td>{formatCurrency(p.priceAtSale)}</td>
+              <td>
+                {isEditing ? (
+                  <input
+                    className="bill-quantity-input bill-price-input"
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={p.priceAtSale}
+                    aria-label={`Price for ${p.productName}`}
+                    onChange={(e) => onSetPrice?.(i, e.target.value)}
+                    onKeyDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  formatCurrency(p.priceAtSale)
+                )}
+              </td>
               <td>
                 {formatCurrency((p.quantity || 0) * (p.priceAtSale || 0))}
               </td>

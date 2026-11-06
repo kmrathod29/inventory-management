@@ -58,6 +58,11 @@
 .inventory-page-header p { margin: 6px 0 0; color: #6d7888; font-size: 14px; }
 .inventory-add-stock-button { display: inline-flex; align-items: center; gap: 7px; min-height: 38px; margin-left: auto; padding: 0 18px; border: 1px solid #d71920; border-radius: 7px; background: #dc1d23; color: #fff; font-weight: 700; cursor: pointer; }
 .inventory-add-stock-button:hover { background: #bd151b; }
+.inventory-header-actions, .inventory-add-product-actions { display: inline-flex; align-items: center; gap: 8px; }
+.inventory-header-actions { margin-left: auto; }
+.inventory-header-actions .inventory-add-stock-button { margin-left: 0; }
+.inventory-history-button { display: inline-grid; place-items: center; width: 38px; height: 38px; padding: 0; border: 1px solid #dce3eb; border-radius: 7px; background: var(--card); color: var(--foreground); font-size: 18px; cursor: pointer; }
+.inventory-history-button:hover { border-color: #b7c3d1; background: var(--muted); }
 .inventory-offline-status { display: grid; grid-template-columns: 12px auto; column-gap: 9px; align-items: center; min-width: 132px; color: #252d39; font-size: 14px; }
 .inventory-offline-status span { grid-row: 1 / span 2; width: 12px; height: 12px; border-radius: 50%; background: #d8191f; }
 .inventory-offline-status.is-online span { background: #1a9c51; }
@@ -157,6 +162,22 @@
 
 .inventory-history-overlay { position: fixed; top: 40px; left: 0; right: 0; bottom: 0; z-index: 1001; display: grid; place-items: center; padding: 24px; background: rgba(16, 28, 43, .48); }
 .inventory-history-dialog { width: min(620px, 100%); max-height: calc(100vh - 48px); overflow: hidden; border: 1px solid #dce4ed; border-radius: 10px; background: #fff; box-shadow: 0 24px 60px rgba(20, 35, 52, .22); color: #1d2939; }
+.inventory-activity-dialog { display: flex; box-sizing: border-box; width: min(1080px, 100%); height: min(78vh, 760px); max-height: calc(100vh - 88px); min-height: 0; flex-direction: column; }
+.inventory-activity-dialog .inventory-history-header { flex-shrink: 0; }
+.inventory-activity-dialog .inventory-history-header h2 { margin: 0; color: #152033; font-size: 21px; }
+.inventory-activity-dialog .inventory-history-header p { margin: 6px 0 0; color: #718096; font-size: 13px; }
+.inventory-activity-list { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: var(--muted-foreground) var(--muted); margin: 16px 22px; border: 1px solid var(--border); border-radius: 7px; }
+.inventory-activity-list::-webkit-scrollbar { width: 12px; height: 12px; }
+.inventory-activity-list::-webkit-scrollbar-track { background: var(--muted); border-radius: 7px; }
+.inventory-activity-list::-webkit-scrollbar-thumb { border: 3px solid var(--muted); border-radius: 7px; background: var(--muted-foreground); }
+.inventory-activity-list::-webkit-scrollbar-thumb:hover { background: var(--foreground); }
+.inventory-activity-table { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 13px; }
+.inventory-activity-table th { position: sticky; top: 0; z-index: 1; padding: 12px 14px; background: var(--muted); color: var(--muted-foreground); font-size: 11px; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: .04em; }
+.inventory-activity-table td { padding: 13px 14px; border-top: 1px solid var(--border); color: var(--foreground); white-space: nowrap; }
+.inventory-activity-table td:first-child { width: 34%; overflow: hidden; font-weight: 600; text-overflow: ellipsis; }
+.inventory-activity-table td:last-child { font-variant-numeric: tabular-nums; }
+.inventory-activity-dialog footer { flex-shrink: 0; }
+.inventory-activity-dialog .inventory-history-empty { margin: 0; }
 .inventory-history-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 20px 22px; border-bottom: 1px solid #e5eaf0; }
 .inventory-history-header button { border: 0; background: transparent; color: #718096; font-size: 25px; line-height: 1; cursor: pointer; }
 .inventory-history-product { display: flex; align-items: center; gap: 12px; }
@@ -186,6 +207,11 @@
 .inventory-add-field-full { grid-column: 1 / -1; }
 .inventory-add-field input { min-height: 40px; box-sizing: border-box; padding: 9px 11px; border: 1px solid #d7e0ea; border-radius: 6px; background: #fff; color: #1d2939; font: inherit; font-weight: 400; outline: 0; }
 .inventory-add-field input:focus { border-color: #b5c3d3; box-shadow: 0 0 0 3px rgba(76, 112, 150, .1); }
+.inventory-product-name-autocomplete { position: relative; }
+.inventory-product-name-autocomplete > input { width: 100%; }
+.inventory-product-name-suggestions { position: absolute; z-index: 20; top: calc(100% + 4px); right: 0; left: 0; max-height: 220px; overflow-y: auto; margin: 0; padding: 4px; list-style: none; border: 1px solid var(--border); border-radius: 6px; background: var(--card); box-shadow: 0 8px 20px rgba(15, 23, 42, .14); }
+.inventory-product-name-suggestions button { display: block; width: 100%; padding: 9px 10px; border: 0; border-radius: 4px; background: transparent; color: var(--foreground); font: inherit; text-align: left; cursor: pointer; }
+.inventory-product-name-suggestions button:hover, .inventory-product-name-suggestions button:focus-visible { outline: none; background: var(--accent); }
 .inventory-add-field small { color: #7b8797; font-size: 11px; font-weight: 400; }
 .inventory-optional { color: #7b8797; font-weight: 400; }
 .inventory-image-picker { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 4px 9px; border: 1px solid #d7e0ea; border-radius: 6px; background: #fff; color: #506075; font: inherit; cursor: pointer; }
@@ -210,6 +236,9 @@
 }
 
 @media (max-width: 480px) {
+  .inventory-activity-dialog .inventory-history-header { padding: 16px; }
+  .inventory-activity-list { margin: 12px 16px; }
+  .inventory-activity-table th, .inventory-activity-table td { padding: 11px 10px; }
   .inventory-content { padding: 12px; }
   .inventory-stat-grid { grid-template-columns: 1fr; }
   .inventory-table-footer { align-items: flex-start; flex-direction: column; }

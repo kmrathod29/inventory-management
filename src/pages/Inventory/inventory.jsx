@@ -2,6 +2,7 @@ import "./Styles/inventory.css";
 import { EditConsole } from "./Components/EditConsole";
 import { InventoryProductsTable } from "./Components/InventoryProductsTable";
 import { AddStockDialog } from "./Components/AddStockDialog";
+import { InventoryActivityDialog } from "./Components/InventoryActivityDialog";
 import { useMemo, useRef, useState, useEffect } from "react";
 import { useErrorHandler } from "../../hooks/useErrorHandler";
 import { useDataChanged } from "../../hooks/useDataChanged";
@@ -17,6 +18,7 @@ export function InventoryPage() {
   const isOnline = useNetworkStatus();
   const addDialogRef = useRef(null);
   const [showStockDialog, setShowStockDialog] = useState(false);
+  const [historyAction, setHistoryAction] = useState(null);
   const { handleAsync } = useErrorHandler();
 
   async function fetchProducts() {
@@ -87,7 +89,10 @@ export function InventoryPage() {
           <h1>Inventory</h1>
           <p>Manage products, prices and available stock</p>
         </div>
-        <button type="button" className="inventory-add-stock-button" onClick={() => setShowStockDialog(true)}><i className="ti ti-plus" /> Add Stock</button>
+        <div className="inventory-header-actions">
+          <button type="button" className="inventory-add-stock-button" onClick={() => setShowStockDialog(true)}><i className="ti ti-plus" /> Add Stock</button>
+          <button type="button" className="inventory-history-button" onClick={() => setHistoryAction("Stock added")} aria-label="View added stock history" title="Added stock history"><i className="ti ti-history" /></button>
+        </div>
         <div className={`inventory-offline-status${isOnline ? " is-online" : ""}`}><span /> <strong>{isOnline ? "Online" : "Offline"}</strong><small>{isOnline ? "Network connected" : "Data stored locally"}</small></div>
       </header>
 
@@ -103,7 +108,10 @@ export function InventoryPage() {
           <div className="inventory-list-search"><i className="ti ti-search" aria-hidden="true" /><input value={search} onChange={(event) => handleSearchChange(event.target.value)} placeholder="Search product by name, SKU or category..." /></div>
           <select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="Filter by category">{categories.map((item) => <option key={item}>{item}</option>)}</select>
           <select value={status} onChange={(event) => setStatus(event.target.value)} aria-label="Filter by status"><option>All Status</option><option>In Stock</option><option>Low Stock</option><option>Out of Stock</option></select>
-          <button className="inventory-add-button" type="button" onClick={openAddProduct}><i className="ti ti-plus" /> Add Product</button>
+          <div className="inventory-add-product-actions">
+            <button className="inventory-add-button" type="button" onClick={openAddProduct}><i className="ti ti-plus" /> Add Product</button>
+            <button type="button" className="inventory-history-button" onClick={() => setHistoryAction("Product created")} aria-label="View added product history" title="Added products history"><i className="ti ti-history" /></button>
+          </div>
         </section>
 
         <InventoryProductsTable products={products} onRefresh={fetchProducts} search={search} category={category} status={status} />
@@ -125,10 +133,12 @@ export function InventoryPage() {
       </main>
       <EditConsole
         ref={addDialogRef}
+        products={products}
         onSaved={fetchProducts}
         onClose={() => addDialogRef.current?.close()}
       />
       {showStockDialog && <AddStockDialog products={products} onSaved={() => { setShowStockDialog(false); fetchProducts(); }} onClose={() => setShowStockDialog(false)} />}
+      {historyAction && <InventoryActivityDialog action={historyAction} onClose={() => setHistoryAction(null)} />}
     </div>
   );
 }

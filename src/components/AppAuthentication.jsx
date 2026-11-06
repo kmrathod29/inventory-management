@@ -113,7 +113,7 @@ export function AppAuthentication({ status, onAuthenticated }) {
 
           <p className="app-auth-hint">
             <LockKeyhole size={14} aria-hidden="true" />
-            <span>In case you forget your password, contact midnightsphere team.</span>
+            <span>In case you forget your password, contact midnightsphere Team.</span>
           </p>
         </form>
       </section>

@@ -76,9 +76,12 @@ export function saveInventoryProduct(db, product) {
     const stockTotal = validatedProduct.bases.reduce(
       (total, base) => total + base.stocks.reduce((sum, stock) => sum + stock, 0), 0,
     );
-    if (stockTotal > 0) {
+    if (!existingProduct) {
       db.prepare(`INSERT INTO inventory_stock_history (product_id, action, quantity, previous_stock, new_stock) VALUES (?, ?, ?, ?, ?)`)
-        .run(productId, existingProduct ? "Stock imported" : "Product created", stockTotal, 0, stockTotal);
+        .run(productId, "Product created", stockTotal, 0, stockTotal);
+    } else if (stockTotal > 0) {
+      db.prepare(`INSERT INTO inventory_stock_history (product_id, action, quantity, previous_stock, new_stock) VALUES (?, ?, ?, ?, ?)`)
+        .run(productId, "Stock imported", stockTotal, 0, stockTotal);
     }
     return productId;
   })();

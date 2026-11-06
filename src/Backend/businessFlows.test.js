@@ -8,6 +8,8 @@ import {
   deleteInventoryProducts,
   findProductsReferencedByBills,
   editImportExpense,
+  addStockToProduct,
+  getInventoryActivityHistory,
   getNextInvoiceNumber,
   isInvoiceNumberAvailable,
   recordImportExpense,
@@ -50,6 +52,26 @@ test("updates only the targeted variant price and base stock rows", () => {
     );
     assert.throws(() => updateVariantPrice(db, product.id, base.id, variant.id, "sales", -1));
     assert.throws(() => updateBaseStock(db, product.id, base.id, variant.id, "invalid"));
+  } finally {
+    db.close();
+  }
+});
+
+test("lists global product and stock additions newest first", () => {
+  const db = createDatabase();
+  try {
+    addInventoryProduct(db, { ...product, bases: [{ name: "AC1", stocks: [0] }] });
+    addStockToProduct(db, product.id, 4);
+
+    assert.deepEqual(
+      getInventoryActivityHistory(db, "Product created").map((entry) => entry.product_name),
+      ["Tea"],
+    );
+    const stockHistory = getInventoryActivityHistory(db, "Stock added");
+    assert.equal(stockHistory.length, 1);
+    assert.equal(stockHistory[0].product_name, "Tea");
+    assert.equal(stockHistory[0].quantity, 4);
+    assert.throws(() => getInventoryActivityHistory(db, "Stock adjusted"), /Unsupported/);
   } finally {
     db.close();
   }

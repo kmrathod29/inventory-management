@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { rankProducts } from "../../../utils/fuzzySearch";
 import { useResolvedImage } from "../../../hooks/resolvedImage";
+import { formatCurrency } from "../../../utils/regional";
 
 const RENDER_CAP = 60; // max options rendered at once (searches all, shows top N)
 
@@ -11,6 +12,10 @@ function ProductSearchImage({ product }) {
 
 function getProductPrice(product) {
   return product.variants?.[0]?.sales ?? product.variants?.[0]?.mp ?? 0;
+}
+
+function getProductLandingPrice(product) {
+  return product.variants?.[0]?.landing ?? 0;
 }
 
 function getProductStock(product) {
@@ -142,6 +147,7 @@ export function ProductCombobox({
                   <strong className="combobox-option-name">{product.name}</strong>
                   <span className="combobox-option-stock">
                     {product.sku_code || "No SKU"} · Stock: {getProductStock(product)}
+                    {" · "}Landing: {formatCurrency(getProductLandingPrice(product))}
                   </span>
                 </span>
                 <span className="combobox-option-price">

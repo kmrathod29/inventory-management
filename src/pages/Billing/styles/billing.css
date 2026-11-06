@@ -311,7 +311,7 @@
 
 .payment-dialog-overlay {
   position: fixed;
-  z-index: 100;
+  z-index: 1200;
   top: 40px;
   left: 0;
   right: 0;
@@ -1445,6 +1445,10 @@ kbd {
   border-radius: 5px;
   background: var(--background-secondary);
   color: var(--color-primary);
+}
+
+.bill-price-input {
+  width: 96px;
 }
 
 .invoice-product-hint {

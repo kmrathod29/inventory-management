@@ -1,11 +1,9 @@
 import "./Styles/dashboard.css";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { createPortal } from "react-dom";
 import { useErrorHandler } from "../../hooks/useErrorHandler";
 import { useDataChanged } from "../../hooks/useDataChanged";
 import { formatCurrency, formatDate, getBusinessDateISO } from "../../utils/regional";
-import { useConfirm } from "../../hooks/useConfirm";
 import { useNetworkStatus } from "../../hooks/useNetworkStatus";
 
 function stockTotal(product) {
@@ -18,14 +16,9 @@ function stockTotal(product) {
 export function DashboardPage() {
   const navigate = useNavigate();
   const { handleAsync } = useErrorHandler();
-  const { confirm, ConfirmDialogComponent } = useConfirm();
   const [products, setProducts] = useState([]);
   const [sales, setSales] = useState([]);
   const [search, setSearch] = useState("");
-  const [openActions, setOpenActions] = useState(null);
-  const [actionPosition, setActionPosition] = useState(null);
-  const actionButtonRef = useRef(null);
-  const actionPopoverRef = useRef(null);
   const searchInputRef = useRef(null);
   const isOnline = useNetworkStatus();
 
@@ -50,29 +43,6 @@ export function DashboardPage() {
   useDataChanged(loadDashboard);
 
   useEffect(() => {
-    if (openActions === null) return undefined;
-    const positionPopover = () => {
-      const anchor = actionButtonRef.current?.getBoundingClientRect();
-      const popover = actionPopoverRef.current;
-      if (!anchor || !popover) return;
-      const bounds = popover.getBoundingClientRect();
-      const gap = 4;
-      const openUp = anchor.bottom + gap + bounds.height > window.innerHeight - 8;
-      setActionPosition({
-        left: Math.min(Math.max(8, anchor.right - bounds.width), window.innerWidth - bounds.width - 8),
-        top: openUp ? Math.max(8, anchor.top - bounds.height - gap) : anchor.bottom + gap,
-      });
-    };
-    positionPopover();
-    window.addEventListener("resize", positionPopover);
-    window.addEventListener("scroll", positionPopover, true);
-    return () => {
-      window.removeEventListener("resize", positionPopover);
-      window.removeEventListener("scroll", positionPopover, true);
-    };
-  }, [openActions]);
-
-  useEffect(() => {
     const focusSearch = (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
@@ -81,16 +51,6 @@ export function DashboardPage() {
     };
     document.addEventListener("keydown", focusSearch);
     return () => document.removeEventListener("keydown", focusSearch);
-  }, []);
-
-  useEffect(() => {
-    const closeActions = (event) => {
-      if (!(event.target instanceof Element) || (!event.target.closest(".dashboard-action-menu") && !event.target.closest(".dashboard-action-popover"))) {
-        setOpenActions(null);
-      }
-    };
-    document.addEventListener("pointerdown", closeActions);
-    return () => document.removeEventListener("pointerdown", closeActions);
   }, []);
 
   const today = getBusinessDateISO();
@@ -102,12 +62,6 @@ export function DashboardPage() {
     const text = `${invoice.invoiceNumber || sale.billNumber || sale.id} ${sale.customer.name}`.toLocaleLowerCase();
     return !search.trim() || text.includes(search.trim().toLocaleLowerCase());
   }).sort((first, second) => new Date(second.customer.date) - new Date(first.customer.date) || second.id - first.id).slice(0, 5), [sales, search]);
-
-  async function deleteRecent(sale) {
-    if (!await confirm("Are you sure you want to delete this bill? Stock will be restored.")) return;
-    await handleAsync(() => window.db.deleteBill(sale.id), "Failed to delete bill");
-    loadDashboard();
-  }
 
   return (
     <div className="dashboard-page">
@@ -126,11 +80,9 @@ export function DashboardPage() {
         </section>
         <section className="dashboard-invoices-panel">
           <div className="dashboard-panel-heading"><h2>Recent Invoices</h2><button type="button" onClick={() => navigate("/billing")}>View all invoices <i className="ti ti-chevron-right" /></button></div>
-          <div className="dashboard-invoice-table-wrap"><table className="dashboard-invoice-table"><thead><tr><th>SN</th><th>Invoice No.</th><th>Name</th><th>Mobile</th><th>Grand Total</th><th>Date</th><th>Payment Status</th><th>Actions</th></tr></thead><tbody>{recentInvoices.map((sale, index) => { const invoice = sale.invoiceData || {}; const invoiceNumber = invoice.invoiceNumber || sale.billNumber || `INV-${String(sale.id).padStart(4, "0")}`; const status = sale.customer.amountDue > 0 && sale.customer.amountPaid > 0 ? "Partially Paid" : sale.customer.amountDue > 0 ? "Pending" : "Completed"; const route = (action) => navigate("/billing", { state: { billId: sale.id, action } }); return <tr key={sale.id}><td>{index + 1}</td><td>{invoiceNumber}</td><td>{sale.customer.name}</td><td>{sale.customer.phone}</td><td>{formatCurrency(sale.customer.totalPurchased)}</td><td>{formatDate(sale.customer.date, "DD MMM YYYY")}</td><td><span className={`dashboard-status dashboard-status-${status.toLowerCase().replaceAll(" ", "-")}`}>{status}</span>{status === "Partially Paid" && Number(sale.customer.amountDue) > 0 && <small className="dashboard-due-label">Due {formatCurrency(sale.customer.amountDue)}</small>}</td><td><div className="dashboard-action-menu"><button ref={openActions === sale.id ? actionButtonRef : null} type="button" aria-label="Open actions" onClick={(event) => { if (openActions === sale.id) setOpenActions(null); else { actionButtonRef.current = event.currentTarget; setActionPosition(null); setOpenActions(sale.id); } }}><i className="ti ti-dots-vertical" aria-hidden="true" /></button></div></td></tr>; })}{recentInvoices.length === 0 && <tr><td colSpan="8" className="dashboard-empty">No invoices found.</td></tr>}</tbody></table></div>
+          <div className="dashboard-invoice-table-wrap"><table className="dashboard-invoice-table"><thead><tr><th>SN</th><th>Invoice No.</th><th>Name</th><th>Mobile</th><th>Grand Total</th><th>Date</th><th>Payment Status</th></tr></thead><tbody>{recentInvoices.map((sale, index) => { const invoice = sale.invoiceData || {}; const invoiceNumber = invoice.invoiceNumber || sale.billNumber || `INV-${String(sale.id).padStart(4, "0")}`; const status = sale.customer.amountDue > 0 && sale.customer.amountPaid > 0 ? "Partially Paid" : sale.customer.amountDue > 0 ? "Pending" : "Completed"; return <tr key={sale.id}><td>{index + 1}</td><td>{invoiceNumber}</td><td>{sale.customer.name}</td><td>{sale.customer.phone}</td><td>{formatCurrency(sale.customer.totalPurchased)}</td><td>{formatDate(sale.customer.date, "DD MMM YYYY")}</td><td><span className={`dashboard-status dashboard-status-${status.toLowerCase().replaceAll(" ", "-")}`}>{status}</span>{status === "Partially Paid" && Number(sale.customer.amountDue) > 0 && <small className="dashboard-due-label">Due {formatCurrency(sale.customer.amountDue)}</small>}</td></tr>; })}{recentInvoices.length === 0 && <tr><td colSpan="7" className="dashboard-empty">No invoices found.</td></tr>}</tbody></table></div>
         </section>
       </main>
-      {openActions !== null && createPortal(<div ref={actionPopoverRef} className="dashboard-action-popover dashboard-action-popover-portal" style={actionPosition ? { left: actionPosition.left, top: actionPosition.top } : { visibility: "hidden", left: 0, top: 0 }}><button type="button" onClick={() => navigate("/billing", { state: { billId: openActions, action: "edit" } })}>Edit</button><button type="button" onClick={() => navigate("/billing", { state: { billId: openActions, action: "payment" } })}>Payment</button><button type="button" onClick={() => deleteRecent(recentInvoices.find((sale) => sale.id === openActions))}>Delete</button></div>, document.body)}
-      {ConfirmDialogComponent}
     </div>
   );
 }

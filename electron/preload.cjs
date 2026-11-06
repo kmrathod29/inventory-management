@@ -86,6 +86,8 @@ contextBridge.exposeInMainWorld("db", {
     invoke("db:addStockToProduct", productId, quantity),
   getInventoryStockHistory: (productId) =>
     invoke("db:getInventoryStockHistory", productId),
+  getInventoryActivityHistory: (action) =>
+    invoke("db:getInventoryActivityHistory", action),
   getProductByName: (name) => invoke("db:getProductByName", name),
   getVariantBySize: (productId, bucketSize) =>
     invoke("db:getVariantBySize", productId, bucketSize),
