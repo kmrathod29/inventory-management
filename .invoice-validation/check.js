@@ -8,7 +8,7 @@ const checks = [
   ['foot-cell-cert in CSS+HTML', src.includes('foot-cell-cert')],
   ['foot-cell-terms in CSS+HTML', src.includes('foot-cell-terms')],
   ['foot-cell-bank grid-row:1', src.includes('grid-row: 1;') || src.includes('grid-row:1')],
-  ['45mm 30mm 25mm rows', src.includes('45mm 30mm 25mm')],
+  ['45mm 24mm 31mm rows', src.includes('45mm 24mm 31mm')],
   ['product-body 78mm', src.includes('78mm')],
   ['footer-height 100mm', src.includes('100mm')],
   ['No signature-space in HTML', !src.includes('<div class="signature-space">')],
@@ -16,7 +16,7 @@ const checks = [
   ['certContent in JS', src.includes('certContent')],
   ['termsSection in JS', src.includes('termsSection')],
   ['summaryContent in JS', src.includes('summaryContent')],
-  ['grid-template-rows: 45mm 30mm 25mm', src.includes('grid-template-rows: 45mm 30mm 25mm')],
+  ['grid-template-rows: 45mm 24mm 31mm', src.includes('grid-template-rows: 45mm 24mm 31mm')],
 ];
 let pass = 0, fail = 0;
 for (const [name, result] of checks) {

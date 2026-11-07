@@ -145,9 +145,9 @@ html, body {
   position: absolute; left: 0; width: 139mm; bottom: 4mm;
   text-align: right; font-size: 7.8pt; line-height: 1.25; padding-top: 0;
 }
-/* Logo – right side, separate from info */
+/* Logo – right side, centered in remaining 60mm gap so margins are equal */
 .logo-box {
-  position: absolute; right: 7mm; top: 0; width: 34mm; height: 27mm;
+  position: absolute; right: 13mm; top: 0; width: 34mm; height: 27mm;
   display: flex; align-items: flex-start; justify-content: center;
 }
 .company-head:after {
@@ -267,14 +267,14 @@ html, body {
 /*  3-row × 2-column shared grid — left and right cells share identical row heights
     so their borders form one continuous horizontal line across the full width.
     Row 1 (45mm) : Bank Details        | Financial Summary (Grand Total + Words)
-    Row 2 (30mm) : Terms & Conditions  | Certification
-    Row 3 (25mm) : Customer Signature  | Authorised Signatory
+    Row 2 (24mm) : Terms & Conditions  | Certification
+    Row 3 (31mm) : Customer Signature  | Authorised Signatory
     Total = 100mm = footer-height exactly. */
 .footer {
   height: var(--footer-height); flex: none;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: 45mm 30mm 25mm;
+  grid-template-rows: 45mm 24mm 31mm;
   border: var(--border-width-outer) solid var(--line);
 }
 
@@ -289,7 +289,8 @@ html, body {
   grid-column: 1; grid-row: 1;
   border-right: var(--border-width) solid var(--line);
   border-bottom: var(--border-width) solid var(--line);
-  padding-top: 2mm;
+  display: flex; flex-direction: column; justify-content: center;
+  padding-top: 0;
 }
 /* ── Row 1 right: Financial Summary ── */
 .foot-cell-summary {
