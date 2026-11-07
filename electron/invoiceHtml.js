@@ -95,9 +95,9 @@ export function createInvoiceHtml(invoice, { qrDataUrl = "", logoDataUrl = "", a
   --header-height: 30mm;
   --customer-height: 35mm;
   --product-header-height: 11mm;
-  --product-body-height: 73mm;
+  --product-body-height: 78mm;
   --page-total-height: 7mm;
-  --footer-height: 104mm;
+  --footer-height: 100mm;
   --border-width: 0.4mm;
   --border-width-outer: 0.5mm;
   --ink: #000;
@@ -264,49 +264,68 @@ html, body {
 .page-total-label { text-align: center; font-weight: 700 }
 
 /* ═══════════════════════════ FOOTER ═══════════════════════════ */
-/* Single 3-row × 2-column grid so left and right cells share the same row heights.
-   Row 1: Bank Details | Financial Summary    (39mm)
-   Row 2: Terms & Conditions | (Summary cont) (23mm) — bottoms aligned across
-   Row 3: Customer Signature | Auth Signatory  (32mm) — bottoms aligned across
-   The Financial Summary spans rows 1+2 on the right. */
+/*  3-row × 2-column shared grid — left and right cells share identical row heights
+    so their borders form one continuous horizontal line across the full width.
+    Row 1 (45mm) : Bank Details        | Financial Summary (Grand Total + Words)
+    Row 2 (30mm) : Terms & Conditions  | Certification
+    Row 3 (25mm) : Customer Signature  | Authorised Signatory
+    Total = 100mm = footer-height exactly. */
 .footer {
   height: var(--footer-height); flex: none;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: 39mm 23mm 32mm;
+  grid-template-rows: 45mm 30mm 25mm;
   border: var(--border-width-outer) solid var(--line);
 }
 
 .foot-cell {
-  padding: 1.1mm 1.5mm; font-size: 7.5pt; line-height: 1.2;
+  padding: 1.5mm 1.5mm; font-size: 7.5pt; line-height: 1.2;
   min-width: 0; overflow-wrap: anywhere;
+  overflow: hidden;
 }
-/* Left cells: column 1 — right border separates from column 2, bottom border separates rows */
-.foot-cell-l1 {
-  grid-column: 1;
+
+/* ── Row 1 left: Bank Details ── */
+.foot-cell-bank {
+  grid-column: 1; grid-row: 1;
   border-right: var(--border-width) solid var(--line);
   border-bottom: var(--border-width) solid var(--line);
+  padding-top: 2mm;
 }
-/* Bank details: extra top padding so heading has breathing room */
-.foot-cell-bank { padding-top: 2.5mm }
-/* Financial summary spans rows 1+2 on the right — no right border (outer handles it) */
+/* ── Row 1 right: Financial Summary ── */
 .foot-cell-summary {
-  grid-column: 2; grid-row: 1 / 3;
+  grid-column: 2; grid-row: 1;
+  border-bottom: var(--border-width) solid var(--line);
+  padding-top: 1.5mm;
+}
+/* ── Row 2 left: Terms & Conditions ── */
+.foot-cell-terms {
+  grid-column: 1; grid-row: 2;
+  border-right: var(--border-width) solid var(--line);
+  border-bottom: var(--border-width) solid var(--line);
+  display: flex; flex-direction: column;
+}
+/* Terms content vertically centered below heading */
+.terms-inner {
+  flex: 1; display: flex; align-items: center;
+}
+/* ── Row 2 right: Certification ── */
+.foot-cell-cert {
+  grid-column: 2; grid-row: 2;
   border-bottom: var(--border-width) solid var(--line);
 }
-/* Customer Signature: row 3 left — right border, no bottom border */
+/* ── Row 3 left: Customer Signature ── */
 .foot-cell-custsig {
   grid-column: 1; grid-row: 3;
   border-right: var(--border-width) solid var(--line);
   position: relative;
 }
-/* Auth Signatory: row 3 right — no right or bottom border */
+/* ── Row 3 right: Authorised Signatory ── */
 .foot-cell-auth {
   grid-column: 2; grid-row: 3;
   position: relative;
 }
 
-.terms-content { white-space: pre-line }
+.terms-content { white-space: pre-line; font-size: 7.5pt; line-height: 1.3 }
 .foot-title { font-size: 7.6pt; font-weight: 700; text-decoration: underline; margin-bottom: .8mm }
 .words-content { font-size: 7.6pt; line-height: 1.25 }
 
@@ -318,36 +337,29 @@ html, body {
 .qr { width: 20mm; height: 20mm; object-fit: contain }
 .pay-upi { font-size: 6.8pt; font-weight: 700; text-align: center; white-space: nowrap }
 
-/* Financial summary */
-.summary-lines {
-  font-size: 7.5pt; line-height: 1.35;
-  padding-top: 1mm;
-}
+/* Financial summary — compact row spacing to fit in 45mm */
+.summary-lines { font-size: 7.5pt; line-height: 1.3 }
 .summary-line {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  gap: 2mm; vertical-align: top; min-height: 7mm; padding: 1mm 0;
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 2mm; min-height: 6mm; padding: .6mm 0;
 }
-.summary-line:first-child { padding-top: 1.5mm }
+.summary-line:first-child { padding-top: 1mm }
 .summary-line strong { white-space: nowrap }
 .grand-total {
-  font-size: 10pt; font-weight: 700;
+  font-size: 9.5pt; font-weight: 700;
   border-top: var(--border-width) solid var(--line);
-  margin: .8mm -1.5mm 0; padding: .8mm 1.5mm 0;
+  margin: .5mm -1.5mm 0; padding: .6mm 1.5mm 0;
 }
-/* Total in Words row inside the summary */
+/* Total in Words row */
 .total-words-row {
   border-top: var(--border-width) solid var(--line);
-  margin: .8mm -1.5mm 0; padding: 1mm 1.5mm 0;
+  margin: .5mm -1.5mm 0; padding: .8mm 1.5mm 0;
 }
-.total-words-row .foot-title { margin-bottom: .4mm }
-.total-words-row .words-content { font-weight: 500; font-size: 7.6pt }
+.total-words-row .foot-title { margin-bottom: .3mm }
+.total-words-row .words-content { font-weight: 500; font-size: 7.4pt }
 
-/* Certification block inside the summary cell (below Total in Words) */
-.cert-block {
-  border-top: var(--border-width) solid var(--line);
-  margin: .8mm -1.5mm 0; padding: 1mm 1.5mm 0;
-  font-size: 7.5pt; line-height: 1.2;
-}
+/* Certification text in its own row-2 cell */
+.cert-text { font-size: 7.5pt; line-height: 1.3; margin-top: .5mm }
 
 .continuation {
   height: 100%; display: flex; flex-direction: column;
@@ -356,11 +368,10 @@ html, body {
 }
 .continuation span { font-size: 7.6pt; font-weight: 400; margin-top: 1mm }
 
-/* Signature labels – centered at bottom of their cells */
+/* Signature labels — centered, 3.5mm from bottom border */
 .signature-label {
-  position: absolute; bottom: 1.2mm; left: 0; right: 0;
-  text-align: center;
-  font-size: 7.5pt; font-weight: 700;
+  position: absolute; bottom: 3.5mm; left: 0; right: 0;
+  text-align: center; font-size: 7.5pt; font-weight: 700;
 }
 .signature-space { height: 7mm }
 
@@ -480,8 +491,8 @@ function table(rows){
 function footer(page,total,last){
   const i=D.invoice, t=D.totals;
 
-  /* ─── Right top: financial summary + certification (spans rows 1+2) ─── */
-  const rightTop = last
+  /* ─── Row 1 right: financial summary (Grand Total + Total in Words) ─── */
+  const summaryContent = last
     ? '<div class="summary-lines">'
         +'<div class="summary-line"><span>Taxable Amount</span><strong>'+money(t.taxable)+'</strong></div>'
         +'<div class="summary-line"><span>Total Tax</span><strong>'+money(t.tax)+'</strong></div>'
@@ -494,13 +505,13 @@ function footer(page,total,last){
         +'</div>'
         +'<div class="summary-line eo-oe"><strong>(E &amp; O.E.)</strong></div>'
       +'</div>'
-      +'<div class="cert-block">'
-        +'<div class="foot-title">Certification</div>'
-        +esc(i.certification)
-      +'</div>'
     : '<div class="continuation">CONTINUED ON NEXT PAGE<span>Final invoice summary will appear on the last page.</span></div>';
 
-  /* ─── Bank details with QR ─── */
+  /* ─── Row 2 right: Certification ─── */
+  const certContent = '<div class="foot-title">Certification</div>'
+    +'<div class="cert-text">'+esc(i.certification)+'</div>';
+
+  /* ─── Row 1 left: Bank Details + QR ─── */
   const bankSection = '<div class="foot-title">Bank Details</div>'
     +'<div class="bank-grid">'
       +'<div class="bank-lines">'
@@ -516,20 +527,19 @@ function footer(page,total,last){
       +'</div>'
     +'</div>';
 
-  /* ─── Terms section ─── */
+  /* ─── Row 2 left: Terms & Conditions (content vertically centered) ─── */
   const termsSection = '<div class="foot-title">Terms and Conditions</div>'
-    +'<div class="terms-content">'+esc(i.terms)+'</div>';
+    +'<div class="terms-inner"><div class="terms-content">'+esc(i.terms)+'</div></div>';
 
   return '<footer class="footer">'
-    +'<section class="foot-cell foot-cell-l1 foot-cell-bank">'+bankSection+'</section>'
-    +'<section class="foot-cell foot-cell-summary">'+rightTop+'</section>'
-    +'<section class="foot-cell foot-cell-l1">'+termsSection+'</section>'
+    +'<section class="foot-cell foot-cell-bank">'+bankSection+'</section>'
+    +'<section class="foot-cell foot-cell-summary">'+summaryContent+'</section>'
+    +'<section class="foot-cell foot-cell-terms">'+termsSection+'</section>'
+    +'<section class="foot-cell foot-cell-cert">'+certContent+'</section>'
     +'<section class="foot-cell foot-cell-custsig">'
-      +'<div class="signature-space"></div>'
       +'<div class="signature-label">Customer Signature</div>'
     +'</section>'
     +'<section class="foot-cell foot-cell-auth">'
-      +'<div class="stamp-space"></div>'
       +'<div class="signature-label">Authorised Signatory</div>'
     +'</section>'
   +'</footer>'
