@@ -1,18 +1,13 @@
 /* global process */
 import { app, BrowserWindow, ipcMain, dialog, protocol, net, Menu, shell } from "electron";
 import { fileURLToPath } from "url";
+import { formatDate } from "../src/utils/regional.js";
 import path from "path";
 import fs from "node:fs";
-import { Buffer } from "node:buffer";
-import { createRequire } from "node:module";
 import { pathToFileURL } from "url";
-import { ensureUpiQr, replaceQrImageInDocx } from "./upiQr.js";
-import { formatDate } from "../src/utils/regional.js";
-import {
-  convertDocxToPdf,
-  stopWordPdfWorker,
-  warmupWordPdfWorker,
-} from "./wordPdfWorker.js";
+import { ensureUpiQr } from "./upiQr.js";
+import { createInvoiceHtml } from "./invoiceHtml.js";
+import { renderInvoicePdf } from "./invoicePdf.js";
 import {
   addProduct,
   getProducts,
@@ -96,8 +91,6 @@ import {
   updateAuthentication,
 } from "../src/Backend/server.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const require = createRequire(import.meta.url);
-const AdmZip = require("adm-zip");
 
 const TITLEBAR_HEIGHT = 40;
 const OVERLAY_HEIGHT = TITLEBAR_HEIGHT - 1; // 39, so native buttons don't cover the border
@@ -114,33 +107,9 @@ const iconPath = app.isPackaged
   : path.join(app.getAppPath(), "build", "icon.ico");
 
 function restartApplication() {
-  stopWordPdfWorker();
   for (const window of BrowserWindow.getAllWindows()) window.destroy();
   app.relaunch();
   app.exit(0);
-}
-
-function escapeXml(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
-}
-
-function invoiceMoney(value) {
-  return `₹${(Number(value) || 0).toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
-
-function invoiceNumber(value) {
-  return (Number(value) || 0).toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 }
 
 const numberWords = [
@@ -189,163 +158,6 @@ function invoiceAmountInWords(value) {
     : `${rupeeText} Only`;
 }
 
-function findInvoiceTemplate() {
-  const candidates = [
-    path.join(app.getAppPath(), "Invoice.docx"),
-    path.resolve(app.getAppPath(), "..", "Invoice.docx"),
-    path.join(process.resourcesPath, "Invoice.docx"),
-    path.resolve(process.cwd(), "..", "Invoice.docx"),
-  ];
-  const template = candidates.find((candidate) => fs.existsSync(candidate));
-  if (!template) throw new Error("Invoice.docx template was not found.");
-  return template;
-}
-
-function fillInvoiceTemplate(invoice, upiQrPath) {
-  const zip = new AdmZip(findInvoiceTemplate());
-  let documentXml = zip.readAsText("word/document.xml");
-  const items = Array.isArray(invoice.products) ? invoice.products : [];
-  const subtotal = items.reduce(
-    (sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.priceAtSale) || 0),
-    0,
-  );
-  const discount = Number(invoice.discount) || 0;
-  const discountPercent = Number(invoice.discountPercent)
-    || (subtotal > 0 ? discount / subtotal * 100 : 0);
-  const grandTotal = Math.max(0, subtotal - discount);
-  const categoryTaxRates = invoice.categoryTaxRates || {};
-  const productTaxRate = (item) => {
-    const category = item.category || "General";
-    const categoryKey = Object.keys(categoryTaxRates).find((key) => key.trim().toLocaleLowerCase() === String(category).trim().toLocaleLowerCase());
-    return Number(item.taxRate ?? categoryTaxRates[categoryKey] ?? invoice.vatPercent ?? 0) || 0;
-  };
-  const taxableSubtotal = subtotal;
-  const taxTotals = items.reduce((totals, item) => {
-    const itemTotal = (Number(item.quantity) || 0) * (Number(item.priceAtSale) || 0);
-    const rate = productTaxRate(item);
-    const tax = rate > 0 ? itemTotal - itemTotal / (1 + rate / 100) : 0;
-    if (invoice.outOfGujarat === true) totals.igst += tax;
-    else {
-      totals.cgst += tax / 2;
-      totals.sgst += tax / 2;
-    }
-    totals.tax += tax;
-    return totals;
-  }, { tax: 0, cgst: 0, sgst: 0, igst: 0 });
-  const amountInWords = invoice.amountInWords?.trim()
-    || invoiceAmountInWords(grandTotal);
-  const replacements = {
-    "{{SHOP_NAME}}": invoice.shopName,
-    "{{SHOP_TAGLINE}}": invoice.shopTagline,
-    "{{SHOP_ADDRESS}}": [invoice.shopAddressLine1 || invoice.shopAddress, invoice.shopAddressLine2, invoice.shopAddressLine3].filter(Boolean).join(", "),
-    "{{AD_LINE1}}": invoice.shopAddressLine1 || invoice.shopAddress,
-    "{{AD_LINE2}}": invoice.shopAddressLine2,
-    "{{AD_LINE3}}": invoice.shopAddressLine3,
-    "{{SHOP_PHONE}}": invoice.shopTelephone,
-    "{{SHOP_EMAIL}}": invoice.shopEmail,
-    "{{SHOP_GSTIN}}": invoice.tpinNumber || invoice.shopGstin,
-    "{{SHOP_PAN}}": invoice.shopPan,
-    "{{INVOICE_NUMBER}}": invoice.invoiceNumber,
-    "{{INVOICE_DATE}}": formatDate(invoice.date),
-    "{{CUSTOMER_NAME}}": invoice.customerName ?? invoice.buyerName,
-    "{{CUSTOMER_ADDRESS}}": invoice.customerAddress ?? invoice.buyerAddress,
-    "{{CUSTOMER_PAN}}": invoice.customerPan ?? invoice.buyerPan ?? invoice.pan ?? invoice.panNumber ?? "",
-    "{{CUSTOMER_PHONE}}": invoice.customerPhone ?? invoice.buyerPhone,
-    "{{CUSTOMER_GSTIN}}": invoice.buyerGstin,
-    "{{TOTAL_QUANTITY}}": items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0),
-    "{{SUBTOTAL}}": invoiceMoney(subtotal),
-    "{{DISCOUNT}}": invoiceMoney(discount),
-    "{{DISCOUNT_P}}": `${discountPercent.toFixed(2)}%`,
-    "{{TAXABLE_AMOUNT}}": invoiceMoney(taxableSubtotal - taxTotals.tax),
-    "{{CGST_TOTAL}}": invoiceMoney(taxTotals.cgst),
-    "{{SGST_TOTAL}}": invoiceMoney(taxTotals.sgst),
-    "{{IGST_TOTAL}}": invoiceMoney(taxTotals.igst),
-    "{{TOTAL_TAX}}": invoiceMoney(taxTotals.tax),
-    "{{GRAND_TOTAL}}": invoiceMoney(grandTotal),
-    "{{AMOUNT_PAID}}": invoiceMoney(invoice.amountPaid),
-    "{{AMOUNT_DUE}}": invoiceMoney(invoice.amountDue),
-    "{{AMOUNT_IN_WORDS}}": amountInWords,
-    "{{BANK_NAME}}": invoice.bankName,
-    "{{BANK_BRANCH}}": invoice.bankBranch,
-    "{{BANK_AC}}": invoice.bankAccountNumber,
-    "{{BANK_IFSC}}": invoice.bankIfsc,
-    "{{UPI_ID}}": invoice.upiId,
-  };
-
-  documentXml = documentXml
-    .replace(/\{[^{}]*\{[^{}]*\}[^{}]*\}/g, (match) => match.replace(/<[^>]+>/g, "").replace(/\s+/g, ""))
-    .replace(/\{\{INVOICE_NUMBER\}/g, "{{INVOICE_NUMBER}}")
-    .replace(/\{\{\s*S\s*GST_TOTAL\s*\}\}/g, "{{SGST_TOTAL}}")
-    .replace(/\{\{\s*I\s*GST_TOTAL\s*\}\}/g, "{{IGST_TOTAL}}");
-
-  const tableMatch = documentXml.match(/<w:tbl\b[\s\S]*?<\/w:tbl>/);
-  const itemRowMatch = tableMatch?.[0].match(/<w:tr\b[^>]*>[\s\S]*?\{\{ITEM_NO\}\}[\s\S]*?<\/w:tr>/);
-  if (tableMatch && itemRowMatch) {
-    const tableXml = tableMatch[0];
-    const tableRows = [...tableXml.matchAll(/<w:tr\b[^>]*>[\s\S]*?<\/w:tr>/g)].map((match) => match[0]);
-    const itemRowIndex = tableRows.findIndex((row) => row.includes("{{ITEM_NO}}"));
-    const itemRow = tableRows[itemRowIndex];
-    let itemSlotEnd = itemRowIndex + 1;
-    while (
-      itemSlotEnd < tableRows.length
-      && !tableRows[itemSlotEnd].includes("{{TOTAL_QUANTITY}}")
-      && !tableRows[itemSlotEnd].includes("{{TAXABLE_AMOUNT}}")
-    ) {
-      itemSlotEnd += 1;
-    }
-    const itemSlots = tableRows.slice(itemRowIndex, itemSlotEnd);
-    const rows = items.length ? items : [{}];
-    const generatedRows = rows.map((item, index) => {
-      const quantity = Number(item.quantity) || 0;
-      const itemTotal = quantity * (Number(item.priceAtSale) || 0);
-      const itemRatePercent = productTaxRate(item);
-      const itemTaxable = itemRatePercent > 0
-        ? itemTotal / (1 + itemRatePercent / 100)
-        : itemTotal;
-      const itemTax = itemTotal - itemTaxable;
-      const itemRate = quantity > 0 ? itemTaxable / quantity : itemTaxable;
-      const itemOutOfGujarat = invoice.outOfGujarat === true;
-      const itemValues = {
-        "{{ITEM_NO}}": index + 1,
-        "{{ITEM_NAME}}": item.productName,
-        "{{ITEM_HSN}}": item.hsCode,
-        "{{ITEM_QTY}}": item.quantity,
-        "{{ITEM_RATE}}": invoiceNumber(itemRate),
-        "{{ITEM_TAXABLE_VALUE}}": invoiceNumber(itemTaxable),
-        "{{ITEM_CGST_PERCENT}}": itemOutOfGujarat ? "0" : itemRatePercent / 2,
-        "{{ITEM_CGST_AMOUNT}}": invoiceNumber(itemOutOfGujarat ? 0 : itemTax / 2),
-        "{{ITEM_SGST_PERCENT}}": itemOutOfGujarat ? "0" : itemRatePercent / 2,
-        "{{ITEM_SGST_AMOUNT}}": invoiceNumber(itemOutOfGujarat ? 0 : itemTax / 2),
-        "{{ITEM_IGST_PERCENT}}": itemOutOfGujarat ? itemRatePercent : "0",
-        "{{ITEM_IGST_AMOUNT}}": invoiceNumber(itemOutOfGujarat ? itemTax : 0),
-        "{{ITEM_TOTAL}}": invoiceNumber(itemTotal),
-      };
-      const generatedRow = Object.entries(itemValues).reduce(
-        (row, [from, to]) => row.split(from).join(escapeXml(to)),
-        itemRow,
-      );
-      // Word paragraph and revision identifiers must not be duplicated when
-      // one template row is expanded into multiple invoice rows.
-      return generatedRow
-        .replace(/\s+w14:(?:paraId|textId)="[^"]*"/g, "")
-        .replace(/\s+w:(?:rsidR|rsidRPr|rsidRDefault|rsidTr)="[^"]*"/g, "");
-    });
-    const blankRows = itemSlots.slice(generatedRows.length);
-    const replacementRows = generatedRows.length >= itemSlots.length
-      ? generatedRows
-      : [...generatedRows, ...blankRows];
-    const originalRows = itemSlots.join("");
-    documentXml = documentXml.replace(originalRows, replacementRows.join(""));
-  }
-
-  for (const [from, to] of Object.entries(replacements)) {
-    documentXml = documentXml.split(from).join(escapeXml(to));
-  }
-  zip.updateFile("word/document.xml", Buffer.from(documentXml, "utf8"));
-  replaceQrImageInDocx(zip, upiQrPath ? fs.readFileSync(upiQrPath) : null);
-  return zip;
-}
-
 let mainWindow;
 const authenticatedWebContents = new Set();
 const publicIpcChannels = new Set([
@@ -388,13 +200,6 @@ function createWindow() {
     },
   });
   mainWindow = win;
-  if (process.platform === "win32") {
-    win.webContents.once("did-finish-load", () => {
-      warmupWordPdfWorker().catch((error) => {
-        console.warn("Invoice PDF converter warm-up failed; it will retry when needed.", error);
-      });
-    });
-  }
   const isExternalHttpUrl = (url) =>
     url.startsWith("http://") || url.startsWith("https://");
 
@@ -837,15 +642,26 @@ app.whenReady().then(() => {
     }
 
     const stagingPath = path.join(path.dirname(targetPath), `.${path.basename(targetPath, ".pdf")}.${Date.now()}.tmp.pdf`);
-    const docxPath = path.join(app.getPath("temp"), `stockwise-invoice-${billId}-${Date.now()}.docx`);
     const backupPath = `${targetPath}.stockwise-backup`;
     let backupCreated = false;
     let installed = false;
     try {
       const savedSettings = getAppSettings().invoiceDefaults || {};
       const upiQrPath = await ensureUpiQr({ userDataPath: app.getPath("userData"), upiId: savedSettings.upiId, shopName: savedSettings.shopName });
-      fillInvoiceTemplate(invoice || {}, upiQrPath).writeZip(docxPath);
-      await convertDocxToPdf(docxPath, stagingPath);
+      const qrDataUrl = upiQrPath && fs.existsSync(upiQrPath)
+        ? `data:image/png;base64,${fs.readFileSync(upiQrPath).toString("base64")}`
+        : "";
+      const logoPath = path.join(__dirname, "invoice-logo.png");
+      const logoDataUrl = fs.existsSync(logoPath)
+        ? `data:image/png;base64,${fs.readFileSync(logoPath).toString("base64")}`
+        : "";
+      const invoiceData = invoice || {};
+      const items = Array.isArray(invoiceData.products) ? invoiceData.products : [];
+      const subtotal = items.reduce((sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.priceAtSale) || 0), 0);
+      const discount = Number(invoiceData.discount) || 0;
+      const amountInWords = invoiceData.amountInWords?.trim() || invoiceAmountInWords(Math.max(0, subtotal - discount));
+      const html = createInvoiceHtml({ ...invoiceData, date: formatDate(invoiceData.date) }, { qrDataUrl, logoDataUrl, amountInWords });
+      await renderInvoicePdf(html, stagingPath);
       if (!fs.existsSync(stagingPath) || fs.statSync(stagingPath).size === 0) throw new Error("The PDF generator returned an empty file.");
       if (fs.existsSync(targetPath)) {
         fs.renameSync(targetPath, backupPath);
@@ -869,9 +685,7 @@ app.whenReady().then(() => {
       }
       try { fs.rmSync(stagingPath, { force: true }); } catch { /* Best effort cleanup. */ }
       throw new Error(`Could not save invoice PDF: ${error.message}`, { cause: error });
-    } finally {
-      try { fs.rmSync(docxPath, { force: true }); } catch { /* Best effort cleanup. */ }
-    }
+    } finally { /* HTML staging is removed by the hidden PDF renderer. */ }
     if (openAfterSave) {
       const error = await shell.openPath(targetPath);
       if (error) throw new Error(`PDF saved, but could not open it: ${error}`);
@@ -926,7 +740,6 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
 
-app.on("before-quit", stopWordPdfWorker);
 
 app.on("second-instance", () => {
   const [window] = BrowserWindow.getAllWindows();

@@ -3,12 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { Buffer } from "node:buffer";
-import { createRequire } from "node:module";
-import { createUpiUri, ensureUpiQr, replaceQrImageInDocx, validateUpiId } from "./upiQr.js";
-
-const require = createRequire(import.meta.url);
-const AdmZip = require("adm-zip");
+import { createUpiUri, ensureUpiQr, validateUpiId } from "./upiQr.js";
 
 test("UPI IDs validate and URI encodes shop name without an amount", () => {
   assert.equal(validateUpiId(" merchant.name@okaxis "), "merchant.name@okaxis");
@@ -45,16 +40,3 @@ test("QR cache persists, reuses unchanged payload, invalidates changed settings,
   }
 });
 
-test("DOCX QR replacement follows the named placeholder and removes it when unconfigured", () => {
-  const zip = new AdmZip();
-  zip.addFile("word/document.xml", Buffer.from('<w:drawing><wp:docPr descr="Shop logo"/><a:blip r:embed="rId8"/></w:drawing><w:drawing><wp:docPr name="qr"/><a:blip r:embed="rId9"/></w:drawing>'));
-  zip.addFile("word/_rels/document.xml.rels", Buffer.from('<Relationships><Relationship Id="rId8" Type="image" Target="media/image1.png"/><Relationship Id="rId9" Type="image" Target="media/image2.png"/></Relationships>'));
-  zip.addFile("word/media/image1.png", Buffer.from("shop logo"));
-  zip.addFile("word/media/image2.png", Buffer.from("old qr png"));
-  const image = Buffer.from("new qr png");
-  replaceQrImageInDocx(zip, image);
-  assert.equal(zip.readFile("word/media/image1.png").toString(), "shop logo");
-  assert.equal(zip.readFile("word/media/image2.png").toString(), image.toString());
-  replaceQrImageInDocx(zip, null);
-  assert.doesNotMatch(zip.readAsText("word/document.xml"), /descr="UPI payment QR code"/);
-});

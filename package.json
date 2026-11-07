@@ -87,10 +87,6 @@
     },
     "extraResources": [
       {
-        "from": "Invoice.docx",
-        "to": "Invoice.docx"
-      },
-      {
         "from": "build/icon.ico",
         "to": "icon.ico"
       }
