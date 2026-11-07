@@ -204,7 +204,7 @@ html, body {
   width: 100%; height: 100%; table-layout: fixed; border-collapse: collapse;
   border-left: var(--border-width-outer) solid var(--line);
   border-right: var(--border-width-outer) solid var(--line);
-  border-bottom: var(--border-width-outer) solid var(--line);
+  border-bottom: none;
   font-size: 7.2pt;
 }
 .product-table col:nth-child(1)  { width: 4% }
@@ -264,32 +264,47 @@ html, body {
 .page-total-label { text-align: center; font-weight: 700 }
 
 /* ═══════════════════════════ FOOTER ═══════════════════════════ */
+/* Single 3-row × 2-column grid so left and right cells share the same row heights.
+   Row 1: Bank Details | Financial Summary    (39mm)
+   Row 2: Terms & Conditions | (Summary cont) (23mm) — bottoms aligned across
+   Row 3: Customer Signature | Auth Signatory  (32mm) — bottoms aligned across
+   The Financial Summary spans rows 1+2 on the right. */
 .footer {
   height: var(--footer-height); flex: none;
-  display: grid; grid-template-columns: 1fr 1fr;
-}
-.footer-left, .footer-right {
-  display: grid; min-width: 0;
-}
-/* Left footer rows: Bank Details | Terms | Customer Signature */
-.footer-left {
-  height: 94mm; align-self: start;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   grid-template-rows: 39mm 23mm 32mm;
-  border: var(--border-width-outer) solid var(--line); border-right: 0;
-}
-/* Right footer rows: Grand Total Summary (with Total in Words) | Certification | Auth Signatory (with stamp space) */
-.footer-right {
-  height: 94mm; align-self: start;
-  grid-template-rows: 54mm 10mm 30mm;
   border: var(--border-width-outer) solid var(--line);
 }
 
 .foot-cell {
-  border-bottom: var(--border-width) solid var(--line);
   padding: 1.1mm 1.5mm; font-size: 7.5pt; line-height: 1.2;
   min-width: 0; overflow-wrap: anywhere;
 }
-.foot-cell:last-child { border-bottom: 0 }
+/* Left cells: column 1 — right border separates from column 2, bottom border separates rows */
+.foot-cell-l1 {
+  grid-column: 1;
+  border-right: var(--border-width) solid var(--line);
+  border-bottom: var(--border-width) solid var(--line);
+}
+/* Bank details: extra top padding so heading has breathing room */
+.foot-cell-bank { padding-top: 2.5mm }
+/* Financial summary spans rows 1+2 on the right — no right border (outer handles it) */
+.foot-cell-summary {
+  grid-column: 2; grid-row: 1 / 3;
+  border-bottom: var(--border-width) solid var(--line);
+}
+/* Customer Signature: row 3 left — right border, no bottom border */
+.foot-cell-custsig {
+  grid-column: 1; grid-row: 3;
+  border-right: var(--border-width) solid var(--line);
+  position: relative;
+}
+/* Auth Signatory: row 3 right — no right or bottom border */
+.foot-cell-auth {
+  grid-column: 2; grid-row: 3;
+  position: relative;
+}
 
 .terms-content { white-space: pre-line }
 .foot-title { font-size: 7.6pt; font-weight: 700; text-decoration: underline; margin-bottom: .8mm }
@@ -304,24 +319,35 @@ html, body {
 .pay-upi { font-size: 6.8pt; font-weight: 700; text-align: center; white-space: nowrap }
 
 /* Financial summary */
-.summary-lines { font-size: 7.5pt; line-height: 1.35 }
+.summary-lines {
+  font-size: 7.5pt; line-height: 1.35;
+  padding-top: 1mm;
+}
 .summary-line {
   display: flex; align-items: flex-start; justify-content: space-between;
   gap: 2mm; vertical-align: top; min-height: 7mm; padding: 1mm 0;
 }
+.summary-line:first-child { padding-top: 1.5mm }
 .summary-line strong { white-space: nowrap }
 .grand-total {
   font-size: 10pt; font-weight: 700;
   border-top: var(--border-width) solid var(--line);
-  margin-top: .8mm; padding-top: .8mm;
+  margin: .8mm -1.5mm 0; padding: .8mm 1.5mm 0;
 }
 /* Total in Words row inside the summary */
 .total-words-row {
   border-top: var(--border-width) solid var(--line);
-  margin-top: .8mm; padding-top: 1mm;
+  margin: .8mm -1.5mm 0; padding: 1mm 1.5mm 0;
 }
 .total-words-row .foot-title { margin-bottom: .4mm }
 .total-words-row .words-content { font-weight: 500; font-size: 7.6pt }
+
+/* Certification block inside the summary cell (below Total in Words) */
+.cert-block {
+  border-top: var(--border-width) solid var(--line);
+  margin: .8mm -1.5mm 0; padding: 1mm 1.5mm 0;
+  font-size: 7.5pt; line-height: 1.2;
+}
 
 .continuation {
   height: 100%; display: flex; flex-direction: column;
@@ -330,11 +356,10 @@ html, body {
 }
 .continuation span { font-size: 7.6pt; font-weight: 400; margin-top: 1mm }
 
-/* Signature areas – shared height enforcement */
-.footer-left .foot-cell:last-child,
-.footer-right .foot-cell:last-child { position: relative }
+/* Signature labels – centered at bottom of their cells */
 .signature-label {
-  position: absolute; bottom: 1.2mm; left: 1.5mm;
+  position: absolute; bottom: 1.2mm; left: 0; right: 0;
+  text-align: center;
   font-size: 7.5pt; font-weight: 700;
 }
 .signature-space { height: 7mm }
@@ -455,7 +480,7 @@ function table(rows){
 function footer(page,total,last){
   const i=D.invoice, t=D.totals;
 
-  /* ─── Right top: financial summary with Total in Words integrated ─── */
+  /* ─── Right top: financial summary + certification (spans rows 1+2) ─── */
   const rightTop = last
     ? '<div class="summary-lines">'
         +'<div class="summary-line"><span>Taxable Amount</span><strong>'+money(t.taxable)+'</strong></div>'
@@ -469,9 +494,13 @@ function footer(page,total,last){
         +'</div>'
         +'<div class="summary-line eo-oe"><strong>(E &amp; O.E.)</strong></div>'
       +'</div>'
+      +'<div class="cert-block">'
+        +'<div class="foot-title">Certification</div>'
+        +esc(i.certification)
+      +'</div>'
     : '<div class="continuation">CONTINUED ON NEXT PAGE<span>Final invoice summary will appear on the last page.</span></div>';
 
-  /* ─── Bank details with QR below it ─── */
+  /* ─── Bank details with QR ─── */
   const bankSection = '<div class="foot-title">Bank Details</div>'
     +'<div class="bank-grid">'
       +'<div class="bank-lines">'
@@ -487,29 +516,22 @@ function footer(page,total,last){
       +'</div>'
     +'</div>';
 
+  /* ─── Terms section ─── */
+  const termsSection = '<div class="foot-title">Terms and Conditions</div>'
+    +'<div class="terms-content">'+esc(i.terms)+'</div>';
+
   return '<footer class="footer">'
-    +'<div class="footer-left">'
-      +'<section class="foot-cell">'+bankSection+'</section>'
-      +'<section class="foot-cell">'
-        +'<div class="foot-title">Terms and Conditions</div>'
-        +'<div class="terms-content">'+esc(i.terms)+'</div>'
-      +'</section>'
-      +'<section class="foot-cell">'
-        +'<div class="signature-space"></div>'
-        +'<div class="signature-label">Customer Signature</div>'
-      +'</section>'
-    +'</div>'
-    +'<div class="footer-right">'
-      +'<section class="foot-cell">'+rightTop+'</section>'
-      +'<section class="foot-cell">'
-        +'<div class="foot-title">Certification</div>'
-        +esc(i.certification)
-      +'</section>'
-      +'<section class="foot-cell">'
-        +'<div class="stamp-space"></div>'
-        +'<div class="signature-label">Authorised Signatory</div>'
-      +'</section>'
-    +'</div>'
+    +'<section class="foot-cell foot-cell-l1 foot-cell-bank">'+bankSection+'</section>'
+    +'<section class="foot-cell foot-cell-summary">'+rightTop+'</section>'
+    +'<section class="foot-cell foot-cell-l1">'+termsSection+'</section>'
+    +'<section class="foot-cell foot-cell-custsig">'
+      +'<div class="signature-space"></div>'
+      +'<div class="signature-label">Customer Signature</div>'
+    +'</section>'
+    +'<section class="foot-cell foot-cell-auth">'
+      +'<div class="stamp-space"></div>'
+      +'<div class="signature-label">Authorised Signatory</div>'
+    +'</section>'
   +'</footer>'
   +'<div class="page-count">Page '+page+' of '+total+'</div>';
 }
