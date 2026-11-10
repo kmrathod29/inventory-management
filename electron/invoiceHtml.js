@@ -58,6 +58,7 @@ export function createInvoiceHtml(invoice, { qrDataUrl = "", logoDataUrl = "", a
     invoice: {
       shopName: invoice.shopName || "Dipali Traders",
       tagline: invoice.shopTagline || "",
+      addressLines: [invoice.shopAddressLine1 || invoice.shopAddress, invoice.shopAddressLine2, invoice.shopAddressLine3].filter(Boolean),
       address: [invoice.shopAddressLine1 || invoice.shopAddress, invoice.shopAddressLine2, invoice.shopAddressLine3].filter(Boolean).join(", "),
       phone: invoice.shopTelephone,
       email: invoice.shopEmail,
@@ -110,6 +111,8 @@ export function createInvoiceHtml(invoice, { qrDataUrl = "", logoDataUrl = "", a
 html, body {
   margin: 0; padding: 0; background: #fff; color: var(--ink);
   font-family: Arial, sans-serif;
+  font-size: 10pt;
+  font-weight: 700;
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
 
@@ -133,21 +136,21 @@ html, body {
 .company-main {
   position: absolute; left: 0; top: 2mm; width: 139mm; min-width: 0;
 }
-.company-name { font-size: 18pt; line-height: 1; font-weight: 700; letter-spacing: .1mm }
+.company-name { font-size: 23pt; line-height: 1; font-weight: 900; letter-spacing: .1mm }
 .tagline {
   display: block; width: 139mm; height: 6mm; max-width: 139mm;
   margin-top: 1.3mm; padding: 1.1mm 1.5mm;
-  background: #000; color: #fff; font-size: 8.5pt; font-weight: 700; overflow: hidden;
+  background: #000; color: #fff; font-size: 9.2pt; font-weight: 800; overflow: hidden;
 }
-.address { margin-top: 1mm; font-size: 7.8pt; line-height: 1.2 }
-/* Contact info – aligned inside the 139mm info area, right-aligned */
+.address { width: 70mm; margin-top: 2mm; font-size: 8.4pt; line-height: 1.2; font-weight: 700 }
+/* Contact info sits beside the address block without overlapping the company header. */
 .contact {
-  position: absolute; left: 0; width: 139mm; bottom: 4mm;
-  text-align: right; font-size: 7.8pt; line-height: 1.25; padding-top: 0;
+  position: absolute; left: 75mm; top: 19mm; width: 64mm;
+  text-align: right; font-size: 8.4pt; line-height: 1.25; padding-top: 0; font-weight: 700;
 }
 /* Logo – right side, centered in remaining 60mm gap so margins are equal */
 .logo-box {
-  position: absolute; right: 13mm; top: 0; width: 34mm; height: 27mm;
+  position: absolute; right: 18mm; top: 0; width: 34mm; height: 27mm;
   display: flex; align-items: flex-start; justify-content: center;
 }
 .company-head:after {
@@ -163,11 +166,11 @@ html, body {
 .invoice-band > div {
   display: flex; align-items: center; justify-content: center;
   padding: 1mm; border-right: var(--border-width) solid var(--line);
-  font-size: 8.5pt; font-weight: 700;
+  font-size: 9.4pt; font-weight: 800;
 }
 .invoice-band > div:first-child { justify-content: flex-start; padding-left: 1.5mm }
-.invoice-band > div:last-child { border-right: 0; font-size: 7.5pt }
-.invoice-band .heading { font-size: 13.5pt; letter-spacing: .4mm }
+.invoice-band > div:last-child { border-right: 0; font-size: 8.2pt }
+.invoice-band .heading { font-size: 14.5pt; letter-spacing: .4mm; font-weight: 800 }
 
 /* ═══════════════════════════ CUSTOMER SECTION ═══════════════════════════ */
 .customer {
@@ -176,24 +179,24 @@ html, body {
 }
 .customer-left {
   border-right: var(--border-width) solid var(--line);
-  padding: 1.4mm 2mm; font-size: 8.5pt; line-height: 1.35;
+  padding: 1.4mm 2mm; font-size: 9.1pt; line-height: 1.35; font-weight: 700;
 }
 .customer-title {
-  text-align: center; font-size: 9pt; font-weight: 700; text-decoration: none;
+  text-align: center; font-size: 9.5pt; font-weight: 800; text-decoration: none;
   margin: -1.4mm -2mm .5mm; padding: 1.3mm 0 .8mm;
   border-bottom: var(--border-width) solid var(--line);
 }
-.customer-line { min-height: 3.6mm; white-space: normal; overflow-wrap: anywhere }
-.customer-line b { display: inline-block; width: 24mm }
+.customer-line { min-height: 3.6mm; white-space: normal; overflow-wrap: anywhere; font-weight: 700 }
+.customer-line b { display: inline-block; width: 24mm; font-weight: 800 }
 
 /* Invoice No/Date – vertically centered */
 .customer-right {
-  padding: 2mm; font-size: 8.5pt; line-height: 1.4;
+  padding: 2mm; font-size: 9.1pt; line-height: 1.4;
   display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
-  gap: 2mm;
+  gap: 2mm; font-weight: 700;
 }
 .customer-right .inv-field { display: block; width: 100% }
-.customer-right .inv-field b { display: inline-block; width: 28mm }
+.customer-right .inv-field b { display: inline-block; width: 28mm; font-weight: 800 }
 
 /* ═══════════════════════════ PRODUCT TABLE ═══════════════════════════ */
 .products {
@@ -205,7 +208,8 @@ html, body {
   border-left: var(--border-width-outer) solid var(--line);
   border-right: var(--border-width-outer) solid var(--line);
   border-bottom: none;
-  font-size: 7.2pt;
+  font-size: 8pt;
+  font-weight: 700;
 }
 .product-table col:nth-child(1)  { width: 4% }
 .product-table col:nth-child(2)  { width: 22.5% }
@@ -224,32 +228,34 @@ html, body {
 .product-table th, .product-table td {
   border: var(--border-width) solid var(--line);
   padding: .6mm .5mm; vertical-align: top; overflow-wrap: normal;
+  font-weight: 700;
 }
 .product-table thead th { vertical-align: middle }
 
 .product-table .center {
   text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums;
+  font-weight: 800;
 }
 /* Financial values: LEFT aligned with small padding */
 .product-table .left-num {
   text-align: left; white-space: nowrap; font-variant-numeric: tabular-nums;
-  padding-left: 1mm; font-weight: 500;
+  padding-left: 1mm; font-weight: 800;
 }
 .product-table .name {
   text-align: left; line-height: 1.15; white-space: normal;
   overflow-wrap: anywhere; word-break: normal;
-  padding-left: 1.2mm; font-weight: 600;
+  padding-left: 1.2mm; font-weight: 800;
 }
 
 /* Page Total row */
 .product-table tfoot td {
-  vertical-align: middle; font-size: 7pt; font-weight: 700;
+  vertical-align: middle; font-size: 7.8pt; font-weight: 800;
   padding-top: 1mm; padding-bottom: 1mm;
 }
 
 .product-table thead { height: var(--product-header-height) }
 .product-table thead th {
-  text-align: center; font-weight: 700; line-height: 1.1; font-size: 7.6pt;
+  text-align: center; font-weight: 800; line-height: 1.1; font-size: 8.3pt;
 }
 .product-table thead tr:first-child { height: 6mm }
 .product-table thead tr:last-child { height: 7mm }
@@ -261,7 +267,7 @@ html, body {
 .product-table tbody tr.filler td { padding: 0; border-top: 0; border-bottom: 0 }
 
 .product-table tfoot { height: var(--page-total-height) }
-.page-total-label { text-align: center; font-weight: 700 }
+.page-total-label { text-align: center; font-weight: 800 }
 
 /* ═══════════════════════════ FOOTER ═══════════════════════════ */
 /*  3-row × 2-column shared grid — left and right cells share identical row heights
@@ -276,78 +282,99 @@ html, body {
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 45mm 24mm 31mm;
   border: var(--border-width-outer) solid var(--line);
+  margin-top: 1.8mm;
 }
 
 .foot-cell {
-  padding: 1.5mm 1.5mm; font-size: 7.5pt; line-height: 1.2;
+  padding: 1.5mm 1.5mm; font-size: 8.2pt; line-height: 1.2;
   min-width: 0; overflow-wrap: anywhere;
-  overflow: hidden;
+  overflow: hidden; font-weight: 700;
 }
 
-/* ── Row 1 left: Bank Details ── */
+/* ── Left column: bank details and terms are visually taller/heavier than the right side ── */
 .foot-cell-bank {
   grid-column: 1; grid-row: 1;
   border-right: var(--border-width) solid var(--line);
   border-bottom: var(--border-width) solid var(--line);
-  display: flex; flex-direction: column; justify-content: center;
+  display: flex; flex-direction: column; justify-content: flex-start;
   padding-top: 0;
+  min-height: 45mm;
 }
-/* ── Row 1 right: Financial Summary ── */
-.foot-cell-summary {
-  grid-column: 2; grid-row: 1;
-  border-bottom: var(--border-width) solid var(--line);
-  padding-top: 1.5mm;
-}
-/* ── Row 2 left: Terms & Conditions ── */
 .foot-cell-terms {
   grid-column: 1; grid-row: 2;
   border-right: var(--border-width) solid var(--line);
   border-bottom: var(--border-width) solid var(--line);
   display: flex; flex-direction: column;
+  min-height: 24mm;
 }
-/* Terms content vertically centered below heading */
-.terms-inner {
-  flex: 1; display: flex; align-items: center;
-}
-/* ── Row 2 right: Certification ── */
-.foot-cell-cert {
-  grid-column: 2; grid-row: 2;
-  border-bottom: var(--border-width) solid var(--line);
-}
-/* ── Row 3 left: Customer Signature ── */
 .foot-cell-custsig {
   grid-column: 1; grid-row: 3;
   border-right: var(--border-width) solid var(--line);
   position: relative;
+  min-height: 31mm;
 }
-/* ── Row 3 right: Authorised Signatory ── */
+
+/* ── Right column: financial summary and certification are designed with separate proportions ── */
+.foot-cell-summary {
+  grid-column: 2; grid-row: 1;
+  border-bottom: var(--border-width) solid var(--line);
+  padding-top: 1.5mm;
+  min-height: 45mm;
+}
+.foot-cell-cert {
+  grid-column: 2; grid-row: 2;
+  border-bottom: var(--border-width) solid var(--line);
+  min-height: 24mm;
+}
 .foot-cell-auth {
   grid-column: 2; grid-row: 3;
   position: relative;
+  min-height: 31mm;
 }
 
-.terms-content { white-space: pre-line; font-size: 7.5pt; line-height: 1.3 }
-.foot-title { font-size: 7.6pt; font-weight: 700; text-decoration: underline; margin-bottom: .8mm }
-.words-content { font-size: 7.6pt; line-height: 1.25 }
+/* Terms content vertically centered below heading */
+.terms-inner {
+  flex: 1; display: flex; align-items: center;
+}
+
+.terms-content { white-space: pre-line; font-size: 8.2pt; line-height: 1.3; font-weight: 700 }
+.foot-title { font-size: 8.2pt; font-weight: 800; text-decoration: underline; margin-bottom: .8mm; text-align: center; }
+.foot-cell-bank > .foot-title,
+.foot-cell-terms > .foot-title,
+.total-words-row > .foot-title {
+  display: flex;
+  height: 6mm;
+  min-height: 6mm;
+  align-items: center;
+  justify-content: center;
+  margin: 0 -1.5mm .8mm;
+  padding: 0 1.5mm;
+  border-bottom: var(--border-width) solid var(--line);
+  text-decoration: none;
+}
+.words-content { font-size: 8pt; line-height: 1.25; font-weight: 700 }
 
 /* Bank Details + QR layout */
 .bank-grid { display: grid; grid-template-columns: 1fr 22mm; gap: 1mm }
-.bank-lines { font-size: 7.5pt; line-height: 1.35 }
+.bank-lines { font-size: 9.2pt; line-height: 1.4; font-weight: 700 }
+.bank-line { display: grid; grid-template-columns: 24mm minmax(0, 1fr); column-gap: 1mm }
+.bank-label { white-space: nowrap }
+.bank-value { min-width: 0; overflow-wrap: anywhere }
 /* QR with caption stacked vertically */
 .qr-container { display: flex; flex-direction: column; align-items: center; gap: 1mm }
-.qr { width: 20mm; height: 20mm; object-fit: contain }
-.pay-upi { font-size: 6.8pt; font-weight: 700; text-align: center; white-space: nowrap }
+.qr { width: 28mm; height: 28mm; object-fit: contain }
+.pay-upi { font-size: 7pt; font-weight: 800; text-align: center; white-space: nowrap }
 
 /* Financial summary — compact row spacing to fit in 45mm */
-.summary-lines { font-size: 7.5pt; line-height: 1.3 }
+.summary-lines { font-size: 8.1pt; line-height: 1.3; font-weight: 700 }
 .summary-line {
   display: flex; align-items: baseline; justify-content: space-between;
   gap: 2mm; min-height: 6mm; padding: .6mm 0;
 }
 .summary-line:first-child { padding-top: 1mm }
-.summary-line strong { white-space: nowrap }
+.summary-line strong { white-space: nowrap; font-weight: 800 }
 .grand-total {
-  font-size: 9.5pt; font-weight: 700;
+  font-size: 10.3pt; font-weight: 800;
   border-top: var(--border-width) solid var(--line);
   margin: .5mm -1.5mm 0; padding: .6mm 1.5mm 0;
 }
@@ -357,22 +384,22 @@ html, body {
   margin: .5mm -1.5mm 0; padding: .8mm 1.5mm 0;
 }
 .total-words-row .foot-title { margin-bottom: .3mm }
-.total-words-row .words-content { font-weight: 500; font-size: 7.4pt }
+.total-words-row .words-content { font-weight: 700; font-size: 8pt }
 
 /* Certification text in its own row-2 cell */
-.cert-text { font-size: 7.5pt; line-height: 1.3; margin-top: .5mm }
+.cert-text { font-size: 8.1pt; line-height: 1.3; margin-top: .5mm; font-weight: 700 }
 
 .continuation {
   height: 100%; display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  text-align: center; font-size: 9pt; font-weight: 700;
+  text-align: center; font-size: 9.3pt; font-weight: 800;
 }
-.continuation span { font-size: 7.6pt; font-weight: 400; margin-top: 1mm }
+.continuation span { font-size: 7.8pt; font-weight: 600; margin-top: 1mm }
 
 /* Signature labels — centered, 3.5mm from bottom border */
 .signature-label {
   position: absolute; bottom: 3.5mm; left: 0; right: 0;
-  text-align: center; font-size: 7.5pt; font-weight: 700;
+  text-align: center; font-size: 8pt; font-weight: 800;
 }
 .signature-space { height: 7mm }
 
@@ -404,17 +431,17 @@ function heading(){
     +'<div class="company-main">'
       +'<div class="company-name">'+esc(i.shopName)+'</div>'
       +'<div class="tagline"></div>'
-      +'<div class="address">'+esc(i.address)+'</div>'
+      +'<div class="address">'+(i.addressLines||[]).map(line => esc(line)).join('<br>')+'</div>'
     +'</div>'
     +'<div class="contact">'
-      +[i.phone&&('Phone: '+i.phone),i.email&&('Email: '+i.email),i.gstin&&('GSTIN: '+i.gstin),'PAN: '+(i.pan||'')].filter(Boolean).map(esc).join('<br>')
+      +[i.phone&&('Phone: '+i.phone),i.email&&('Email: '+i.email),i.pan&&('PAN: '+i.pan)].filter(Boolean).map(esc).join('<br>')
     +'</div>'
     +'<div class="logo-box">'
       +(i.logoDataUrl?'<img class="logo" alt="Dipali Traders logo" src="'+i.logoDataUrl+'">':'')
     +'</div>'
   +'</header>'
   +'<div class="invoice-band">'
-    +'<div>PAN: '+esc(i.pan)+'</div>'
+    +'<div>GSTIN: '+esc(i.gstin||'')+'</div>'
     +'<div class="heading">INVOICE</div>'
     +'<div>ORIGINAL FOR RECIPIENT</div>'
   +'</div>'
@@ -516,11 +543,11 @@ function footer(page,total,last){
   const bankSection = '<div class="foot-title">Bank Details</div>'
     +'<div class="bank-grid">'
       +'<div class="bank-lines">'
-        +'<div>Bank Name: '+esc(i.bankName)+'</div>'
-        +'<div>Branch: '+esc(i.bankBranch)+'</div>'
-        +'<div>Account No.: '+esc(i.bankAccountNumber)+'</div>'
-        +'<div>IFSC: '+esc(i.bankIfsc)+'</div>'
-        +'<div>UPI ID: '+esc(i.upiId)+'</div>'
+        +'<div class="bank-line"><span class="bank-label">Bank Name:</span><span class="bank-value">'+esc(i.bankName)+'</span></div>'
+        +'<div class="bank-line"><span class="bank-label">Branch:</span><span class="bank-value">'+esc(i.bankBranch)+'</span></div>'
+        +'<div class="bank-line"><span class="bank-label">Account No.:</span><span class="bank-value">'+esc(i.bankAccountNumber)+'</span></div>'
+        +'<div class="bank-line"><span class="bank-label">IFSC:</span><span class="bank-value">'+esc(i.bankIfsc)+'</span></div>'
+        +'<div class="bank-line"><span class="bank-label">UPI ID:</span><span class="bank-value">'+esc(i.upiId)+'</span></div>'
       +'</div>'
       +'<div class="qr-container">'
         +(D.qrDataUrl?'<img class="qr" alt="UPI QR code" src="'+D.qrDataUrl+'">':'')
