@@ -76,7 +76,7 @@ export function createInvoiceHtml(invoice, { qrDataUrl = "", logoDataUrl = "", a
       bankAccountNumber: invoice.bankAccountNumber,
       bankIfsc: invoice.bankIfsc,
       upiId: invoice.upiId,
-      terms: invoice.termsAndConditions || invoice.terms || "Our Responsibility Ceases as soon as goods leaves our Premises.\nGoods once sold will not taken back.\nDelivery Ex-Premises.",
+      terms: invoice.termsAndConditions || invoice.terms || "Our Responsibility Ceases as soon as goods leaves our Premises.\nGoods once sold will not taken back.",
       certification: invoice.certification || "Certified that the particulars given above are true and correct.",
       logoDataUrl,
     },
@@ -131,6 +131,7 @@ html, body {
 /* ═══════════════════════════ COMPANY HEADER ═══════════════════════════ */
 .company-head {
   height: var(--header-height); position: relative; display: block; padding: 0;
+  margin-bottom: 2mm;
 }
 /* Left info area – stops before logo */
 .company-main {
@@ -138,15 +139,15 @@ html, body {
 }
 .company-name { font-size: 23pt; line-height: 1; font-weight: 900; letter-spacing: .1mm }
 .tagline {
-  display: block; width: 139mm; height: 6mm; max-width: 139mm;
-  margin-top: 1.3mm; padding: 1.1mm 1.5mm;
-  background: #000; color: #fff; font-size: 9.2pt; font-weight: 800; overflow: hidden;
+  display: block; width: 139mm; min-height: 6mm; max-width: 139mm;
+  margin-top: 1.3mm; padding: 1mm 1.5mm;
+  background: #000; color: #fff; font-size: 9.7pt; font-weight: 800; overflow-wrap: anywhere;
 }
-.address { width: 70mm; margin-top: 2mm; font-size: 8.4pt; line-height: 1.2; font-weight: 700 }
+.address { width: 70mm; margin-top: 2mm; margin-bottom: 4mm; font-size: 8.9pt; line-height: 1.2; font-weight: 700 }
 /* Contact info sits beside the address block without overlapping the company header. */
 .contact {
   position: absolute; left: 75mm; top: 19mm; width: 64mm;
-  text-align: right; font-size: 8.4pt; line-height: 1.25; padding-top: 0; font-weight: 700;
+  text-align: right; font-size: 8.9pt; line-height: 1.25; padding-top: 0; font-weight: 700;
 }
 /* Logo – right side, centered in remaining 60mm gap so margins are equal */
 .logo-box {
@@ -166,11 +167,11 @@ html, body {
 .invoice-band > div {
   display: flex; align-items: center; justify-content: center;
   padding: 1mm; border-right: var(--border-width) solid var(--line);
-  font-size: 9.4pt; font-weight: 800;
+  font-size: 9.9pt; font-weight: 800;
 }
-.invoice-band > div:first-child { justify-content: flex-start; padding-left: 1.5mm }
-.invoice-band > div:last-child { border-right: 0; font-size: 8.2pt }
-.invoice-band .heading { font-size: 14.5pt; letter-spacing: .4mm; font-weight: 800 }
+.invoice-band > div:first-child { justify-content: flex-start; padding-left: 1.5mm; font-size: 11pt }
+.invoice-band > div:last-child { border-right: 0; font-size: 8.7pt }
+.invoice-band .heading { font-size: 15pt; letter-spacing: .4mm; font-weight: 800 }
 
 /* ═══════════════════════════ CUSTOMER SECTION ═══════════════════════════ */
 .customer {
@@ -179,10 +180,10 @@ html, body {
 }
 .customer-left {
   border-right: var(--border-width) solid var(--line);
-  padding: 1.4mm 2mm; font-size: 9.1pt; line-height: 1.35; font-weight: 700;
+  padding: 1.4mm 2mm; font-size: 9.6pt; line-height: 1.35; font-weight: 700;
 }
 .customer-title {
-  text-align: center; font-size: 9.5pt; font-weight: 800; text-decoration: none;
+  text-align: center; font-size: 10pt; font-weight: 800; text-decoration: none;
   margin: -1.4mm -2mm .5mm; padding: 1.3mm 0 .8mm;
   border-bottom: var(--border-width) solid var(--line);
 }
@@ -191,7 +192,7 @@ html, body {
 
 /* Invoice No/Date – vertically centered */
 .customer-right {
-  padding: 2mm; font-size: 9.1pt; line-height: 1.4;
+  padding: 2mm; font-size: 9.6pt; line-height: 1.4;
   display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
   gap: 2mm; font-weight: 700;
 }
@@ -208,7 +209,7 @@ html, body {
   border-left: var(--border-width-outer) solid var(--line);
   border-right: var(--border-width-outer) solid var(--line);
   border-bottom: none;
-  font-size: 8pt;
+  font-size: 8.5pt;
   font-weight: 700;
 }
 .product-table col:nth-child(1)  { width: 4% }
@@ -231,31 +232,38 @@ html, body {
   font-weight: 700;
 }
 .product-table thead th { vertical-align: middle }
+.product-table tbody tr.product-row td { font-weight: 400 }
 
 .product-table .center {
   text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums;
-  font-weight: 800;
+  font-weight: 400;
 }
 /* Financial values: LEFT aligned with small padding */
 .product-table .left-num {
   text-align: left; white-space: nowrap; font-variant-numeric: tabular-nums;
-  padding-left: 1mm; font-weight: 800;
+  padding-left: 1mm; font-weight: 400;
 }
 .product-table .name {
   text-align: left; line-height: 1.15; white-space: normal;
   overflow-wrap: anywhere; word-break: normal;
-  padding-left: 1.2mm; font-weight: 800;
+  padding-left: 1.2mm; font-weight: 400;
 }
+.product-table tbody tr.product-row td:last-child { font-weight: 800 }
 
 /* Page Total row */
 .product-table tfoot td {
-  vertical-align: middle; font-size: 7.8pt; font-weight: 800;
+  vertical-align: middle; font-size: 8.3pt; font-weight: 800;
   padding-top: 1mm; padding-bottom: 1mm;
+}
+.product-table tfoot td,
+.product-table tfoot td.left-num,
+.product-table tfoot td.center {
+  font-weight: 800;
 }
 
 .product-table thead { height: var(--product-header-height) }
 .product-table thead th {
-  text-align: center; font-weight: 800; line-height: 1.1; font-size: 8.3pt;
+  text-align: center; font-weight: 800; line-height: 1.1; font-size: 8.8pt;
 }
 .product-table thead tr:first-child { height: 6mm }
 .product-table thead tr:last-child { height: 7mm }
@@ -316,15 +324,9 @@ html, body {
 
 /* ── Right column: financial summary and certification are designed with separate proportions ── */
 .foot-cell-summary {
-  grid-column: 2; grid-row: 1;
-  border-bottom: var(--border-width) solid var(--line);
+  grid-column: 2; grid-row: 1 / span 2;
   padding-top: 1.5mm;
-  min-height: 45mm;
-}
-.foot-cell-cert {
-  grid-column: 2; grid-row: 2;
-  border-bottom: var(--border-width) solid var(--line);
-  min-height: 24mm;
+  min-height: 69mm;
 }
 .foot-cell-auth {
   grid-column: 2; grid-row: 3;
@@ -337,8 +339,8 @@ html, body {
   flex: 1; display: flex; align-items: center;
 }
 
-.terms-content { white-space: pre-line; font-size: 8.2pt; line-height: 1.3; font-weight: 700 }
-.foot-title { font-size: 8.2pt; font-weight: 800; text-decoration: underline; margin-bottom: .8mm; text-align: center; }
+.terms-content { white-space: pre-line; font-size: 8.7pt; line-height: 1.3; font-weight: 700 }
+.foot-title { font-size: 8.7pt; font-weight: 800; text-decoration: underline; margin-bottom: .8mm; text-align: center; }
 .foot-cell-bank > .foot-title,
 .foot-cell-terms > .foot-title,
 .total-words-row > .foot-title {
@@ -352,21 +354,21 @@ html, body {
   border-bottom: var(--border-width) solid var(--line);
   text-decoration: none;
 }
-.words-content { font-size: 8pt; line-height: 1.25; font-weight: 700 }
+.words-content { font-size: 8.5pt; line-height: 1.25; font-weight: 700 }
 
 /* Bank Details + QR layout */
 .bank-grid { display: grid; grid-template-columns: 1fr 22mm; gap: 1mm }
-.bank-lines { font-size: 9.2pt; line-height: 1.4; font-weight: 700 }
+.bank-lines { font-size: 9.7pt; line-height: 1.4; font-weight: 700 }
 .bank-line { display: grid; grid-template-columns: 24mm minmax(0, 1fr); column-gap: 1mm }
 .bank-label { white-space: nowrap }
 .bank-value { min-width: 0; overflow-wrap: anywhere }
 /* QR with caption stacked vertically */
-.qr-container { display: flex; flex-direction: column; align-items: center; gap: 1mm }
+.qr-container { display: flex; flex-direction: column; align-items: center; gap: 1mm; transform: translateX(-2mm) }
 .qr { width: 28mm; height: 28mm; object-fit: contain }
 .pay-upi { font-size: 7pt; font-weight: 800; text-align: center; white-space: nowrap }
 
 /* Financial summary — compact row spacing to fit in 45mm */
-.summary-lines { font-size: 8.1pt; line-height: 1.3; font-weight: 700 }
+.summary-lines { font-size: 8.6pt; line-height: 1.3; font-weight: 700 }
 .summary-line {
   display: flex; align-items: baseline; justify-content: space-between;
   gap: 2mm; min-height: 6mm; padding: .6mm 0;
@@ -374,9 +376,10 @@ html, body {
 .summary-line:first-child { padding-top: 1mm }
 .summary-line strong { white-space: nowrap; font-weight: 800 }
 .grand-total {
-  font-size: 10.3pt; font-weight: 800;
-  border-top: var(--border-width) solid var(--line);
-  margin: .5mm -1.5mm 0; padding: .6mm 1.5mm 0;
+  font-size: 14pt; font-weight: 800;
+  border-top: var(--border-width-outer) solid var(--line);
+  margin: .5mm -1.5mm 0; padding: 1mm 1.5mm;
+  background: #ededed;
 }
 /* Total in Words row */
 .total-words-row {
@@ -384,10 +387,15 @@ html, body {
   margin: .5mm -1.5mm 0; padding: .8mm 1.5mm 0;
 }
 .total-words-row .foot-title { margin-bottom: .3mm }
-.total-words-row .words-content { font-weight: 700; font-size: 8pt }
+.total-words-row .words-content { font-weight: 700; font-size: 10pt; text-align: center }
 
-/* Certification text in its own row-2 cell */
-.cert-text { font-size: 8.1pt; line-height: 1.3; margin-top: .5mm; font-weight: 700 }
+/* Certification follows the amount in words as a single line. */
+.cert-text {
+  font-size: 7pt; line-height: 1.2; font-weight: 700; white-space: nowrap; text-align: center;
+  margin: .5mm -1.5mm 0; padding: 1mm 1.5mm;
+  border-top: var(--border-width) solid var(--line);
+  border-bottom: var(--border-width) solid var(--line);
+}
 
 .continuation {
   height: 100%; display: flex; flex-direction: column;
@@ -430,7 +438,7 @@ function heading(){
   return '<header class="company-head">'
     +'<div class="company-main">'
       +'<div class="company-name">'+esc(i.shopName)+'</div>'
-      +'<div class="tagline"></div>'
+      +'<div class="tagline">'+esc(i.tagline)+'</div>'
       +'<div class="address">'+(i.addressLines||[]).map(line => esc(line)).join('<br>')+'</div>'
     +'</div>'
     +'<div class="contact">'
@@ -455,7 +463,7 @@ function heading(){
       +'<div class="customer-line"><b>PAN:</b> '+esc(i.customerPan||'')+'</div>'
     +'</div>'
     +'<div class="customer-right">'
-      +'<div class="inv-field"><b>Invoice Number</b> '+esc(i.invoiceNumber)+'</div>'
+      +'<div class="inv-field"><b>Invoice No.</b> '+esc(i.invoiceNumber)+'</div>'
       +'<div class="inv-field"><b>Invoice Date</b> '+esc(i.date)+'</div>'
     +'</div>'
   +'</section>';
@@ -531,13 +539,9 @@ function footer(page,total,last){
           +'<div class="foot-title">Total in Words</div>'
           +'<div class="words-content">'+esc(D.amountInWords)+'</div>'
         +'</div>'
-        +'<div class="summary-line eo-oe"><strong>(E &amp; O.E.)</strong></div>'
+        +'<div class="cert-text">'+esc(i.certification)+' (E &amp; O.E.)</div>'
       +'</div>'
     : '<div class="continuation">CONTINUED ON NEXT PAGE<span>Final invoice summary will appear on the last page.</span></div>';
-
-  /* ─── Row 2 right: Certification ─── */
-  const certContent = '<div class="foot-title">Certification</div>'
-    +'<div class="cert-text">'+esc(i.certification)+'</div>';
 
   /* ─── Row 1 left: Bank Details + QR ─── */
   const bankSection = '<div class="foot-title">Bank Details</div>'
@@ -563,7 +567,6 @@ function footer(page,total,last){
     +'<section class="foot-cell foot-cell-bank">'+bankSection+'</section>'
     +'<section class="foot-cell foot-cell-summary">'+summaryContent+'</section>'
     +'<section class="foot-cell foot-cell-terms">'+termsSection+'</section>'
-    +'<section class="foot-cell foot-cell-cert">'+certContent+'</section>'
     +'<section class="foot-cell foot-cell-custsig">'
       +'<div class="signature-label">Customer Signature</div>'
     +'</section>'
